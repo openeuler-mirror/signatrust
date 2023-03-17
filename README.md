@@ -1,5 +1,5 @@
 # Signatrust
-[![RepoSize](https://img.shields.io/github/repo-size/TommyLike/signatrust)](https://github.com/volcano-sh/volcano)
+[![RepoSize](https://img.shields.io/github/repo-size/TommyLike/signatrust)](https://gitee.com/openeuler/signatrust)
 [![Clippy check](https://github.com/TommyLike/signatrust/actions/workflows/build.yml/badge.svg)](https://github.com/TommyLike/signatrust/actions/workflows/build.yml)
 
 Signatrust offers a highly secure, async and efficient solution for signing Linux packages and binaries using Rust. Our unified
