@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package signatrust;
+
+
+// The Signatrust service definition.
+service Signatrust {
+  rpc SignStream(stream SignStreamRequest) returns (SignStreamResponse) {};
+}
+
+message SignStreamRequest {
+  bytes data = 1;
+  string key_type = 2;
+  string key_id = 3;
+  map<string, string> options = 4;
+}
+
+message SignStreamResponse {
+  bytes signature = 1;
+  string error = 2;
+}
+

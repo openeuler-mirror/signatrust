@@ -1,0 +1,13 @@
+resources:
+- namespace.yaml
+- deployment.yaml
+- service.yaml
+- config.yaml
+- pvc.yaml
+commonLabels:
+  owner: tommylike
+commonAnnotations:
+  email: tommylikehu@gmail.com
+namespace: signatrust
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
