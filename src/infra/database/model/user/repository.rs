@@ -1,26 +1,27 @@
 /*
- * // Copyright (c) 2023 Huawei Technologies Co.,Ltd. All rights reserved.
- * //
- * // signatrust is licensed under Mulan PSL v2.
- * // You can use this software according to the terms and conditions of the Mulan
- * // PSL v2.
- * // You may obtain a copy of Mulan PSL v2 at:
- * //         http://license.coscl.org.cn/MulanPSL2
- * // THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY
- * // KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
- * // NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * // See the Mulan PSL v2 for more details.
+ *
+ *  * // Copyright (c) 2023 Huawei Technologies Co.,Ltd. All rights reserved.
+ *  * //
+ *  * // signatrust is licensed under Mulan PSL v2.
+ *  * // You can use this software according to the terms and conditions of the Mulan
+ *  * // PSL v2.
+ *  * // You may obtain a copy of Mulan PSL v2 at:
+ *  * //         http://license.coscl.org.cn/MulanPSL2
+ *  * // THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY
+ *  * // KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+ *  * // NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ *  * // See the Mulan PSL v2 for more details.
+ *
  */
 
 use super::dto::UserDTO;
 
 use crate::infra::database::pool::DbPool;
-use crate::model::user::entity::User;
-use crate::model::user::repository::Repository;
+use crate::domain::user::entity::User;
+use crate::domain::user::repository::Repository;
 use crate::util::error::Result;
 use async_trait::async_trait;
 use std::boxed::Box;
-
 
 #[derive(Clone)]
 pub struct UserRepository {

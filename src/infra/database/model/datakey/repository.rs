@@ -1,49 +1,44 @@
 /*
- * // Copyright (c) 2023 Huawei Technologies Co.,Ltd. All rights reserved.
- * //
- * // signatrust is licensed under Mulan PSL v2.
- * // You can use this software according to the terms and conditions of the Mulan
- * // PSL v2.
- * // You may obtain a copy of Mulan PSL v2 at:
- * //         http://license.coscl.org.cn/MulanPSL2
- * // THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY
- * // KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
- * // NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * // See the Mulan PSL v2 for more details.
+ *
+ *  * // Copyright (c) 2023 Huawei Technologies Co.,Ltd. All rights reserved.
+ *  * //
+ *  * // signatrust is licensed under Mulan PSL v2.
+ *  * // You can use this software according to the terms and conditions of the Mulan
+ *  * // PSL v2.
+ *  * // You may obtain a copy of Mulan PSL v2 at:
+ *  * //         http://license.coscl.org.cn/MulanPSL2
+ *  * // THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY
+ *  * // KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+ *  * // NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ *  * // See the Mulan PSL v2 for more details.
+ *
  */
 
 use super::dto::DataKeyDTO;
-
-use crate::infra::cipher::engine::EncryptionEngine;
 use crate::infra::database::pool::DbPool;
-
-use crate::model::datakey::entity::{DataKey, KeyState};
-use crate::model::datakey::repository::Repository;
+use crate::domain::datakey::entity::{DataKey, KeyState};
+use crate::domain::datakey::repository::Repository;
 use crate::util::error::{Result};
 use async_trait::async_trait;
 use std::boxed::Box;
-use std::sync::Arc;
-
 
 #[derive(Clone)]
-pub struct EncryptedDataKeyRepository {
+pub struct DataKeyRepository {
     db_pool: DbPool,
-    encryption_engine: Arc<Box<dyn EncryptionEngine>>,
 }
 
-impl EncryptedDataKeyRepository {
-    pub fn new(db_pool: DbPool, encryption_engine: Arc<Box<dyn EncryptionEngine>>) -> Self {
+impl DataKeyRepository {
+    pub fn new(db_pool: DbPool) -> Self {
         Self {
             db_pool,
-            encryption_engine,
         }
     }
 }
 
 #[async_trait]
-impl Repository for EncryptedDataKeyRepository {
-    async fn create(&self, data_key: &DataKey) -> Result<DataKey> {
-        let dto = DataKeyDTO::encrypt(data_key, &self.encryption_engine).await?;
+impl Repository for DataKeyRepository {
+    async fn create(&self, data_key: DataKey) -> Result<DataKey> {
+        let dto = DataKeyDTO::try_from(data_key)?;
         let record : u64 = sqlx::query("INSERT INTO data_key(name, description, user, email, attributes, key_type, private_key, public_key, certificate, create_at, expire_at, key_state, soft_delete) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
             .bind(&dto.name)
             .bind(&dto.description)
@@ -70,7 +65,7 @@ impl Repository for EncryptedDataKeyRepository {
             .await?;
         let mut results = vec![];
         for dto in dtos.into_iter() {
-            results.push(dto.decrypt(&self.encryption_engine).await?);
+            results.push(DataKey::try_from(dto)?);
         }
         Ok(results)
     }
@@ -81,7 +76,7 @@ impl Repository for EncryptedDataKeyRepository {
             .bind(false)
             .fetch_one(&self.db_pool)
             .await?;
-        Ok(dto.decrypt(&self.encryption_engine).await?)
+        Ok(DataKey::try_from(dto)?)
     }
 
     async fn update_state(&self, id: i32, state: KeyState) -> Result<()> {
@@ -102,7 +97,7 @@ impl Repository for EncryptedDataKeyRepository {
             .bind(false)
             .fetch_one(&self.db_pool)
             .await?;
-        Ok(dto.decrypt(&self.encryption_engine).await?)
+        Ok(DataKey::try_from(dto)?)
     }
 
     async fn delete_by_id(&self, id: i32) -> Result<()> {

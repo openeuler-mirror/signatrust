@@ -16,8 +16,10 @@ auth_url = "https://omapi.test.osinfra.cn/oneid/oidc/authorize"
 token_url = "https://omapi.test.osinfra.cn/oneid/oidc/token"
 userinfo_url = "https://omapi.test.osinfra.cn/oneid/oidc/user"
 redirect_url = "https://127.0.0.1:8080/api/v1/users/callback"
-[kms-provider]
-type = "dummy"
+[sign-backend]
+type = "memory"
+[memory.kms-provider]
+type = "huaweicloud"
 kms_id = "65ccb4d8-cc45-4139-b380-2fcff184ac4f"
 endpoint = "cn-north-4.myhuaweicloud.com"
 project_name = "cn-north-4"
@@ -25,9 +27,10 @@ project_id = "25f40abeecb84d3e90731de258ca71ec"
 username = "freesky-edward"
 password = ""
 domain="freesky-edward"
+[memory.encryption-engine]
+keep_in_days = 180
+algorithm = "aes256gsm"
 [database]
 connection_url = "mysql://test:test@127.0.0.1:3306/signatrust"
 max_connection = 5
-[encryption-engine]
-keep_in_days = 180
-algorithm = "aes256gsm"
+
