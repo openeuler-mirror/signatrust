@@ -1,47 +1,45 @@
 /*
- * // Copyright (c) 2023 Huawei Technologies Co.,Ltd. All rights reserved.
- * //
- * // signatrust is licensed under Mulan PSL v2.
- * // You can use this software according to the terms and conditions of the Mulan
- * // PSL v2.
- * // You may obtain a copy of Mulan PSL v2 at:
- * //         http://license.coscl.org.cn/MulanPSL2
- * // THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY
- * // KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
- * // NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
- * // See the Mulan PSL v2 for more details.
+ *
+ *  * // Copyright (c) 2023 Huawei Technologies Co.,Ltd. All rights reserved.
+ *  * //
+ *  * // signatrust is licensed under Mulan PSL v2.
+ *  * // You can use this software according to the terms and conditions of the Mulan
+ *  * // PSL v2.
+ *  * // You may obtain a copy of Mulan PSL v2 at:
+ *  * //         http://license.coscl.org.cn/MulanPSL2
+ *  * // THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY
+ *  * // KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+ *  * // NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ *  * // See the Mulan PSL v2 for more details.
+ *
  */
 
 use super::dto::ClusterKeyDTO;
-
 use crate::infra::database::pool::DbPool;
-use crate::infra::kms::kms_provider::KMSProvider;
-use crate::model::clusterkey::entity::ClusterKey;
-use crate::model::clusterkey::repository::Repository;
+use crate::domain::clusterkey::entity::ClusterKey;
+use crate::domain::clusterkey::repository::Repository;
 use crate::util::error::Result;
 use async_trait::async_trait;
 use std::boxed::Box;
-use std::sync::Arc;
+
 
 #[derive(Clone)]
-pub struct EncryptedClusterKeyRepository {
+pub struct ClusterKeyRepository {
     db_pool: DbPool,
-    kms_provider: Arc<Box<dyn KMSProvider>>,
 }
 
-impl EncryptedClusterKeyRepository {
-    pub fn new(db_pool: DbPool, kms_provider: Arc<Box<dyn KMSProvider>>) -> Self {
+impl ClusterKeyRepository {
+    pub fn new(db_pool: DbPool) -> Self {
         Self {
             db_pool,
-            kms_provider,
         }
     }
 }
 
 #[async_trait]
-impl Repository for EncryptedClusterKeyRepository {
-    async fn create(&self, cluster_key: &ClusterKey) -> Result<()> {
-        let dto = ClusterKeyDTO::encrypt(cluster_key, &self.kms_provider).await?;
+impl Repository for ClusterKeyRepository {
+    async fn create(&self, cluster_key: ClusterKey) -> Result<()> {
+        let dto = ClusterKeyDTO::from(cluster_key);
         let _ : Option<ClusterKeyDTO> = sqlx::query_as("INSERT IGNORE INTO cluster_key(data, algorithm, identity, create_at, expire_at) VALUES (?, ?, ?, ?, ?)")
             .bind(&dto.data)
             .bind(&dto.algorithm)
@@ -61,7 +59,7 @@ impl Repository for EncryptedClusterKeyRepository {
         .fetch_optional(&self.db_pool)
         .await?;
         match latest {
-            Some(l) => return Ok(Some(l.decrypt(&self.kms_provider).await?)),
+            Some(l) => return Ok(Some(ClusterKey::from(l))),
             None => Ok(None),
         }
     }
@@ -71,7 +69,7 @@ impl Repository for EncryptedClusterKeyRepository {
             .bind(id)
             .fetch_one(&self.db_pool)
             .await?;
-        Ok(selected.decrypt(&self.kms_provider).await?)
+        Ok(ClusterKey::from(selected))
     }
 
     async fn delete_by_id(&self, id: i32) -> Result<()> {

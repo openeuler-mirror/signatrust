@@ -65,9 +65,29 @@ According to our performance tests, Signatrust outperformed Obs Sign(with pgp ag
 
 Based on these test results, it appears that Signatrust is a more efficient and effective solution for signing RPM packages, it's also worth noting that the performance issue of obs sign is mainly due to the gpg's agent implementation.
 
+# Backend Security
+In order to support different levels of backend security, signatrust supports different kinds of sign backend, `memory` backend is the default one which will provide better performance
+while all sensitive data are stored decrypted in memory. the configuration would be like:
+```shell
+[sign-backend]
+type = "memory"
+[memory.kms-provider]
+type = ""
+kms_id = ""
+endpoint = ""
+project_name = ""
+project_id = ""
+username = ""
+password = ""
+domain=""
+[memory.encryption-engine]
+keep_in_days = 180
+algorithm = "aes256gsm"
+```
+
 # Quick Start Guide
 ## Local development
-To ensure the security of sensitive data, Signatrust requires an external KMS system for encryption and decryption. However,
+When using memory backend, to ensure the security of sensitive data, Signatrust requires an external KMS system for encryption and decryption. However,
 to run the system locally for development purposes, you will need to configure a **dummy** KMS provider
 ```shell
 [kms-provider]
