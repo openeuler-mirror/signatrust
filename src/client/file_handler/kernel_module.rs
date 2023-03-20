@@ -15,15 +15,19 @@
  */
 
 use std::path::PathBuf;
+use std::str;
 use super::traits::FileHandler;
 use async_trait::async_trait;
 use crate::util::error::Result;
+use std::fs;
+use std::io;
 
 use uuid::Uuid;
-use std::io::Write;
+use std::io::{Read, Seek, Write};
 use bincode::{config, Decode, Encode};
 use std::collections::HashMap;
 use std::os::raw::{c_uchar, c_uint};
+
 use crate::client::cmd::options;
 use crate::client::sign_identity::KeyType;
 use crate::util::error::Error;
@@ -32,6 +36,8 @@ use crate::util::error::Error;
 const FILE_EXTENSION: &str = "p7s";
 const PKEY_ID_PKCS7: c_uchar = 2;
 const MAGIC_NUMBER: &str = "~Module signature appended~\n";
+const MAGIC_NUMBER_SIZE: usize = 28;
+const SIGNATURE_SIZE: usize = 40;
 
 // Reference https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/scripts/sign-file.c
 #[derive(Encode, Decode, PartialEq, Debug)]
@@ -90,6 +96,25 @@ impl KernelModuleFileHandler {
         signed.write_all(MAGIC_NUMBER.as_bytes())?;
         Ok(())
     }
+
+    pub fn file_unsigned(&self, path: &PathBuf) -> Result<bool> {
+        let mut file = fs::File::open(path)?;
+        file.seek(io::SeekFrom::End((MAGIC_NUMBER_SIZE as i64) * -1))?;
+        let mut signature_ending: [u8; MAGIC_NUMBER_SIZE] = [0; MAGIC_NUMBER_SIZE];
+        file.read(&mut signature_ending)?;
+        match str::from_utf8(&signature_ending.to_vec()) {
+            Ok(ending) => {
+                return if ending == MAGIC_NUMBER {
+                    Ok(false)
+                } else {
+                    Ok(true)
+                }
+            }
+            Err(_) => {
+                Ok(true)
+            }
+        }
+    }
 }
 
 #[async_trait]
@@ -102,6 +127,15 @@ impl FileHandler for KernelModuleFileHandler {
             }
         }
         Ok(())
+    }
+
+    //NOTE: currently we don't support sign signed kernel module file
+    async fn split_data(&self, path: &PathBuf, _sign_options: &mut HashMap<String, String>) -> Result<Vec<Vec<u8>>> {
+        let content = fs::read(path)?;
+        if self.file_unsigned(path)? {
+            return Ok(vec![content])
+        }
+        Err(Error::KOAlreadySignedError)
     }
 
     /* when assemble checksum signature when only create another .asc file separately */

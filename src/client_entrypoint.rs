@@ -80,7 +80,7 @@ fn main() -> Result<()> {
     if let Some(handler) = command {
         handler.validate().expect("failed to validate command option");
         if !handler.handle().expect("failed to perform command") {
-            return Err(Error::PartialFailureError)
+            return Err(Error::PartialSuccessError)
         }
     }
     Ok(())

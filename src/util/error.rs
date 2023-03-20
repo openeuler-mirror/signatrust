@@ -104,7 +104,9 @@ pub enum Error {
     #[error("failed to encode in bincode: {0}")]
     BincodeError(String),
     #[error("failed to sign some of the files")]
-    PartialFailureError,
+    PartialSuccessError,
+    #[error("kernel module file signed already")]
+    KOAlreadySignedError,
 }
 
 #[derive(Deserialize, Serialize)]
