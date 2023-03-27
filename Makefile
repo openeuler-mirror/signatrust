@@ -4,6 +4,11 @@ GIT_COMMIT=$(shell git rev-parse --verify HEAD)
 db:
 	./scripts/initialize-database.sh
 
+
+## Prepare basic administrator and keys
+init:
+	./scripts/initialize-user-and-keys.sh
+
 client-image:
 	docker build -t tommylike/signatrust-client:$(GIT_COMMIT) --build-arg BINARY=client -f Dockerfile .
 
@@ -12,3 +17,6 @@ data-server-image:
 
 control-server-image:
 	docker build -t tommylike/signatrust-control-server:$(GIT_COMMIT) --build-arg BINARY=control-server -f Dockerfile .
+
+control-admin-image:
+	docker build -t tommylike/signatrust-control-admin:$(GIT_COMMIT) --build-arg BINARY=control-admin -f Dockerfile .

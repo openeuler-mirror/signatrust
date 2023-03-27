@@ -54,7 +54,7 @@ pub struct PgpKeyGenerationParameter {
     key_length: String,
     #[validate(custom(function = "validate_utc_time", message="invalid openpgp attribute 'created_at'"))]
     create_at: String,
-    #[validate(custom(function= "validate_utc_time", message="invalid openpgp attribute 'expire_at'"))]
+    #[validate(custom(function= "validate_utc_time_not_expire", message="invalid openpgp attribute 'expire_at'"))]
     expire_at: String,
 }
 
@@ -89,19 +89,30 @@ fn validate_key_size(key_size: &str) -> std::result::Result<(), ValidationError>
     Ok(())
 }
 
-fn validate_utc_time(expire: &str) -> std::result::Result<(), ValidationError> {
+fn validate_utc_time_not_expire(expire: &str) -> std::result::Result<(), ValidationError> {
     let now = Utc::now();
     match expire.parse::<DateTime<Utc>>() {
         Ok(expire) => {
             if expire <= now {
                 return Err(ValidationError::new("expire time less than current time"))
             }
+            Ok(())
         },
         Err(_e) => {
             return Err(ValidationError::new("failed to parse time string to utc"));
         }
     }
-    Ok(())
+}
+
+fn validate_utc_time(expire: &str) -> std::result::Result<(), ValidationError> {
+    match expire.parse::<DateTime<Utc>>() {
+        Ok(_) => {
+            Ok(())
+        },
+        Err(_) => {
+            return Err(ValidationError::new("failed to parse time string to utc"));
+        }
+    }
 }
 
 pub struct OpenPGPPlugin {

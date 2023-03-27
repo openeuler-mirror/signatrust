@@ -36,8 +36,11 @@ use url::Url;
 
 #[async_trait]
 pub trait UserService: Send + Sync{
-    async fn save(&self, u: &User) -> Result<User>;
     async fn get_token(&self, u: &UserIdentity) -> Result<Vec<Token>>;
+    async fn get_token_by_value(&self, token: &str) -> Result<Token>;
+    async fn save(&self, u: &User) -> Result<User>;
+    async fn get_user_by_id(&self, id: i32) -> Result<User>;
+    async fn get_by_email(&self, email: &str) -> Result<User>;
     async fn generate_token(&self, u: &UserIdentity) -> Result<Token>;
     async fn get_login_url(&self) -> Result<Url>;
     async fn validate_user(&self, code: &str) -> Result<User>;
@@ -148,12 +151,20 @@ where
     R: UserRepository,
     T: TokenRepository
 {
+    async fn get_token_by_value(&self, token: &str) -> Result<Token> {
+        self.token_repository.get_token_by_value(token).await
+    }
+
     async fn save(&self, u: &User) -> Result<User> {
         return self.user_repository.create(u).await
     }
 
     async fn get_token(&self, user: &UserIdentity) -> Result<Vec<Token>> {
-        return self.token_repository.get_token_by_user_id(user.id).await
+        self.token_repository.get_token_by_user_id(user.id).await
+    }
+
+    async fn get_by_email(&self, email: &str) -> Result<User> {
+        self.user_repository.get_by_email(email).await
     }
 
     async fn generate_token(&self, u: &UserIdentity) -> Result<Token> {
@@ -181,5 +192,9 @@ where
                 Err(Error::AuthError(format!("failed to get access token {}", err)))
             }
         }
+    }
+
+    async fn get_user_by_id(&self, id: i32) -> Result<User> {
+        self.user_repository.get_by_id(id).await
     }
 }

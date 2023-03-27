@@ -93,7 +93,7 @@ pub struct DataKey {
     pub id: i32,
     pub name: String,
     pub description: String,
-    pub user: String,
+    pub user: i32,
     pub email: String,
     pub attributes: HashMap<String, String>,
     pub key_type: KeyType,

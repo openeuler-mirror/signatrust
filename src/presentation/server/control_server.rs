@@ -37,16 +37,42 @@ use crate::infra::database::model::token::repository::TokenRepository;
 use crate::infra::database::model::user::repository::UserRepository;
 use crate::infra::sign_backend::factory::SignBackendFactory;
 use crate::application::user::{DBUserService, UserService};
+use crate::domain::datakey::entity::DataKey;
+use crate::domain::token::entity::Token;
+use crate::domain::user::entity::User;
+use crate::presentation::handler::control::model::user::dto::UserIdentity;
 
 pub struct ControlServer {
     server_config: Arc<RwLock<Config>>,
+    user_service: Arc<dyn UserService>,
+    key_service: Arc<dyn KeyService>,
+
 }
 
 impl ControlServer {
     pub async fn new(server_config: Arc<RwLock<Config>>) -> Result<Self> {
         let database = server_config.read()?.get_table("database")?;
         create_pool(&database).await?;
+        let data_repository = datakeyRepository::DataKeyRepository::new(
+            get_db_pool()?,
+        );
+        let sign_backend = SignBackendFactory::new_engine(
+            server_config.clone(), get_db_pool()?).await?;
+        //initialize repos
+        let user_repo = UserRepository::new(get_db_pool()?);
+        let token_repo = TokenRepository::new(get_db_pool()?);
+
+        //initialize the service
+        let user_service = Arc::new(
+            DBUserService::new(
+                user_repo.clone(), token_repo,
+                server_config.clone())?) as Arc<dyn UserService>;
+        let key_service = Arc::new(
+            DBKeyService::new(
+                data_repository, sign_backend)) as Arc<dyn KeyService>;
         let server = ControlServer {
+            user_service,
+            key_service,
             server_config,
         };
         Ok(server)
@@ -69,21 +95,10 @@ impl ControlServer {
 
         info!("control server starts");
         // Start http server
-        let data_repository = datakeyRepository::DataKeyRepository::new(
-            get_db_pool()?,
-        );
-        let sign_backend = SignBackendFactory::new_engine(
-            self.server_config.clone(), get_db_pool()?).await?;
-        //initialize repos
-        let user_repo = UserRepository::new(get_db_pool()?);
-        let token_repo = TokenRepository::new(get_db_pool()?);
-
-        //initialize the service
         let user_service = web::Data::from(
-            Arc::new(DBUserService::new(user_repo.clone(), token_repo,
-                                        self.server_config.clone())?) as Arc<dyn UserService>);
+            self.user_service.clone());
         let key_service = web::Data::from(
-            Arc::new(DBKeyService::new(data_repository, sign_backend)) as Arc<dyn KeyService>);
+            self.key_service.clone());
 
         let http_server = HttpServer::new(move || {
             App::new()
@@ -127,5 +142,22 @@ impl ControlServer {
             http_server.bind_openssl(addr, builder)?.run().await?;
         }
         Ok(())
+    }
+
+    //used for control admin cmd
+    pub async fn create_user_token(&self, user: &User) -> Result<Token> {
+        let user = self.user_service.save(user).await?;
+        self.user_service.generate_token(&UserIdentity::from(user)).await
+    }
+
+    //used for control admin cmd
+    pub async fn create_keys(&self, data: &mut DataKey) -> Result<DataKey> {
+        let key = self.key_service.create(data).await?;
+        self.key_service.enable(key.id).await?;
+        Ok(key)
+    }
+
+    pub async fn get_user_by_email(&self, email: &str) -> Result<User> {
+        self.user_service.get_by_email(email).await
     }
 }

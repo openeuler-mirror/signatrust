@@ -23,12 +23,14 @@ use crate::presentation::handler::control::model::datakey::dto::{DataKeyDTO, Exp
 use crate::util::error::Error;
 use validator::Validate;
 use crate::application::datakey::KeyService;
+use crate::domain::datakey::entity::DataKey;
 use super::model::user::dto::UserIdentity;
 
 
-async fn create_data_key(_user: UserIdentity, key_service: web::Data<dyn KeyService>, datakey: web::Json<DataKeyDTO>,) -> Result<impl Responder, Error> {
+async fn create_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, datakey: web::Json<DataKeyDTO>,) -> Result<impl Responder, Error> {
     datakey.validate()?;
-    Ok(HttpResponse::Created().json(DataKeyDTO::try_from(key_service.into_inner().create(datakey.0).await?)?))
+    let mut key = DataKey::convert_from(datakey.0, user)?;
+    Ok(HttpResponse::Created().json(DataKeyDTO::try_from(key_service.into_inner().create(&mut key).await?)?))
 }
 
 async fn list_data_key(_user: UserIdentity, key_service: web::Data<dyn KeyService>) -> Result<impl Responder, Error> {
