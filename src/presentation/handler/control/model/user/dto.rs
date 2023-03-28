@@ -8,11 +8,8 @@ use futures::Future;
 use serde::{Deserialize, Serialize};
 use std::convert::From;
 use chrono::{Utc};
-use crate::infra::database::model::token::repository::TokenRepository;
-use crate::infra::database::model::user::repository::UserRepository;
-use crate::domain::token::repository::Repository as tokenRepository;
+use crate::application::user::UserService;
 use crate::domain::user::entity::User;
-use crate::domain::user::repository::Repository as userRepository;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct UserIdentity {
@@ -40,16 +37,12 @@ impl FromRequest for UserIdentity {
                 //fetch valid token
                 None => {
                     if let Some(value) = req.clone().headers().get("Authorization") {
-                        if let Some(tk_repo) = req.clone().app_data::<web::Data<TokenRepository>>() {
-                            if let Ok(token) = tk_repo.get_ref().get_token_by_value(value.to_str().unwrap()).await {
+                        if let Some(user_service) = req.clone().app_data::<web::Data<dyn UserService>>() {
+                            if let Ok(token) = user_service.get_ref().get_token_by_value(value.to_str().unwrap()).await {
                                 //token exists and valid
                                 if token.expire_at.gt(&Utc::now()) {
-                                    if let Some(us_repo) = req.clone().app_data::<web::Data<UserRepository>>() {
-                                        if let Ok(user) = us_repo.get_ref().get_by_id(token.user_id).await {
-                                            return Ok(UserIdentity::from(user));
-                                        }
-                                    } else {
-                                        warn!("unable to find token's user info");
+                                    if let Ok(user) = user_service.get_ref().get_user_by_id(token.user_id).await {
+                                        return Ok(UserIdentity::from(user));
                                     }
                                 } else {
                                     warn!("token expired");

@@ -19,14 +19,13 @@ use crate::domain::sign_service::SignBackend;
 use crate::util::error::{Result};
 use async_trait::async_trait;
 use crate::domain::datakey::entity::{DataKey, KeyState};
-use crate::presentation::handler::control::model::datakey::dto::DataKeyDTO;
 
 use crate::util::signer_container::DataKeyContainer;
 use std::collections::HashMap;
 
 #[async_trait]
 pub trait KeyService: Send + Sync{
-    async fn create(&self, data: DataKeyDTO) -> Result<DataKey>;
+    async fn create(&self, data: &mut DataKey) -> Result<DataKey>;
     async fn get_all(&self) -> Result<Vec<DataKey>>;
     async fn get_one(&self, id: i32) -> Result<DataKey>;
     async fn delete_one(&self, id: i32) -> Result<()>;
@@ -68,10 +67,9 @@ where
     R: DatakeyRepository + Clone,
     S: SignBackend + ?Sized
 {
-    async fn create(&self, data: DataKeyDTO) -> Result<DataKey> {
-        let mut key = DataKey::try_from(data)?;
-        self.sign_service.generate_keys(&mut key).await?;
-        self.repository.create(key).await
+    async fn create(&self, data: &mut DataKey) -> Result<DataKey> {
+        self.sign_service.generate_keys(data).await?;
+        self.repository.create(data.clone()).await
     }
 
     async fn get_all(&self) -> Result<Vec<DataKey>> {

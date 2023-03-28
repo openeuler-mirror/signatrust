@@ -16,6 +16,7 @@ use validator::{Validate, ValidationError};
 use std::collections::HashMap;
 use crate::util::error::Error;
 use serde::{Deserialize, Serialize};
+use crate::presentation::handler::control::model::user::dto::UserIdentity;
 
 #[derive(Deserialize, Serialize)]
 pub struct ExportKey {
@@ -40,11 +41,12 @@ pub struct DataKeyDTO {
     pub id: i32,
     #[validate(length(min = 4, max = 20))]
     pub name: String,
-    #[validate(email)]
+    #[serde(skip_deserializing)]
     pub email: String,
     #[validate(length(min = 0, max = 100))]
     pub description: String,
-    pub user: String,
+    #[serde(skip_deserializing)]
+    pub user: i32,
     pub attributes: HashMap<String, String>,
     pub key_type: String,
     #[validate(custom = "validate_utc_time")]
@@ -62,10 +64,8 @@ fn validate_utc_time(expire: &str) -> std::result::Result<(), ValidationError> {
     Ok(())
 }
 
-impl TryFrom<DataKeyDTO> for DataKey {
-    type Error = Error;
-
-    fn try_from(dto: DataKeyDTO) -> Result<Self> {
+impl DataKey {
+    pub fn convert_from(dto: DataKeyDTO, identity: UserIdentity) -> Result<Self> {
         let mut combined_attributes = dto.attributes.clone();
         combined_attributes.insert("name".to_string(), dto.name.clone());
         combined_attributes.insert("email".to_string(), dto.email.clone());
@@ -75,8 +75,8 @@ impl TryFrom<DataKeyDTO> for DataKey {
             id: dto.id,
             name: dto.name,
             description: dto.description,
-            user: dto.user,
-            email: dto.email,
+            user: identity.id,
+            email: identity.email,
             attributes: combined_attributes,
             key_type: KeyType::from_str(dto.key_type.as_str())?,
             private_key: vec![],

@@ -85,28 +85,53 @@ keep_in_days = 180
 algorithm = "aes256gsm"
 ```
 
+# Components
+This project consists of several binaries:
+1. **data-server**: the data server used for handle signing requests and exposes the gRPC for clients.
+2. **control-server**: the control server used for handle administration requests and expose http requests for Web UI.
+3. **control-admin**: the control-admin is mainly used in develop environment for convenience, i.e. generate administrator and tokens without the integration of external OIDC server.
+4. **client**: the client is responsible for handle signing task locally and will exchange signature with data server.
+
+
+
 # Quick Start Guide
 ## Local development
+Run these command correspondingly to build or run project executable binary:
+```shell
+# build binary
+cargo build --bin control-server/data-server/client/control-admin
+# running command
+RUST_BACKTRACE=full RUST_LOG=debug ./target/debug/<binary> --config <config-file-path>
+```
 When using memory backend, to ensure the security of sensitive data, Signatrust requires an external KMS system for encryption and decryption. However,
-to run the system locally for development purposes, you will need to configure a **dummy** KMS provider
+to run the system locally for development purpose, you will need to configure a **dummy** KMS provider
 ```shell
 [kms-provider]
 type = "dummy"
 ```
-Additionally, we have provided a script to set up the MySQL database in a Docker environment. To use the script, you will
+Additionally, we have developed a script to set up the MySQL database in a Docker environment. To use the script, you will
 need to install the Docker server, the MySQL binary, and the [Sqlx binary](https://github.com/launchbadge/sqlx/blob/main/sqlx-cli/README.md#enable-building-in-offline-mode-with-query).
-Once you have these installed, simply run the
-command below:
+Once you have these installed, simply run the command below to initialize the database.
 ```shell
 make db
 ```
-Run these command correspondingly to build binary or launching server:
+In order to develop without the need of setting up the external OIDC server, simple run the prepared script which will generate the default admin&token and the default keys:
 ```shell
-# build binary
-cargo build --bin control-server/data-server/client
-# running command
-RUST_BACKTRACE=full RUST_LOG=debug ./target/debug/<binary> --config <config-file-path>
+make init
 ```
-
+Pay attention to the command output:
+```shell
+...skipped output
+[Result]: Administrator tommylikehu@gmail.com has been successfully created with token XmUICsVV48EjfkWYv3ch1eutRJOQh7mp3bRfmQDL will expire 2023-09-23 11:20:33 UTC
+...skipped output
+[Result]: Keys 'default-pgp' type pgp has been successfully generated
+```
+Now you can use this token to debug the control service API or use the pgp keys for signing rpm packages with client.
+```shell
+curl -k --header "Authorization:XmUICsVV48EjfkWYv3ch1eutRJOQh7mp3bRfmQDL" -v http(s)://localhost:8080/api/v1/keys/
+```
+```shell
+RUST_BACKTRACE=full RUST_LOG=info ./target/debug/client --config <client-config-file-path> add --key-id default-pgp  --file-type rpm --key-type pgp .data/simple.rpm
+```
 
 # Contribute
