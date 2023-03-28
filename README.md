@@ -125,6 +125,7 @@ Pay attention to the command output:
 [Result]: Administrator tommylikehu@gmail.com has been successfully created with token XmUICsVV48EjfkWYv3ch1eutRJOQh7mp3bRfmQDL will expire 2023-09-23 11:20:33 UTC
 ...skipped output
 [Result]: Keys 'default-pgp' type pgp has been successfully generated
+[Result]: Keys 'default-x509' type x509 has been successfully generated
 ```
 Now you can use this token to debug the control service API or use the pgp keys for signing rpm packages with client.
 ```shell

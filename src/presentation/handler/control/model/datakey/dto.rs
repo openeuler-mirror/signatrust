@@ -62,7 +62,6 @@ impl DataKey {
     pub fn convert_from(dto: DataKeyDTO, identity: UserIdentity) -> Result<Self> {
         let mut combined_attributes = dto.attributes.clone();
         combined_attributes.insert("name".to_string(), dto.name.clone());
-        combined_attributes.insert("email".to_string(), dto.email.clone());
         combined_attributes.insert("create_at".to_string(), dto.create_at.clone());
         combined_attributes.insert("expire_at".to_string(), dto.expire_at.clone());
         Ok(DataKey {

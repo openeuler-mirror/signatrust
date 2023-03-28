@@ -38,7 +38,7 @@ impl Display for FileType {
     }
 }
 
-#[derive(clap::ValueEnum, Clone, Debug)]
+#[derive(clap::ValueEnum, Clone, Debug, PartialEq)]
 pub enum KeyType {
     PGP,
     X509,
