@@ -39,6 +39,7 @@ use std::str::from_utf8;
 use validator::{Validate, ValidationError};
 use pgp::composed::StandaloneSignature;
 use crate::domain::datakey::entity::SecDataKey;
+use super::util::{validate_utc_time_not_expire, validate_utc_time};
 
 const DETACHED_SIGNATURE: &str = "detached";
 
@@ -87,32 +88,6 @@ fn validate_key_size(key_size: &str) -> std::result::Result<(), ValidationError>
         return Err(ValidationError::new("invalid key size"));
     }
     Ok(())
-}
-
-fn validate_utc_time_not_expire(expire: &str) -> std::result::Result<(), ValidationError> {
-    let now = Utc::now();
-    match expire.parse::<DateTime<Utc>>() {
-        Ok(expire) => {
-            if expire <= now {
-                return Err(ValidationError::new("expire time less than current time"))
-            }
-            Ok(())
-        },
-        Err(_e) => {
-            return Err(ValidationError::new("failed to parse time string to utc"));
-        }
-    }
-}
-
-fn validate_utc_time(expire: &str) -> std::result::Result<(), ValidationError> {
-    match expire.parse::<DateTime<Utc>>() {
-        Ok(_) => {
-            Ok(())
-        },
-        Err(_) => {
-            return Err(ValidationError::new("failed to parse time string to utc"));
-        }
-    }
 }
 
 pub struct OpenPGPPlugin {

@@ -31,6 +31,7 @@ use validator::{Validate, ValidationError};
 use crate::domain::datakey::entity::SecDataKey;
 use crate::util::error::{Error, Result};
 use crate::domain::sign_plugin::SignPlugins;
+use super::util::{validate_utc_time_not_expire, validate_utc_time};
 
 #[derive(Debug, Validate, Deserialize)]
 pub struct X509KeyGenerationParameter {
@@ -52,7 +53,7 @@ pub struct X509KeyGenerationParameter {
     key_length: String,
     #[validate(custom(function = "validate_utc_time", message="invalid x509 attribute 'created_at'"))]
     create_at: String,
-    #[validate(custom(function= "validate_utc_time", message="invalid x509 attribute 'expire_at'"))]
+    #[validate(custom(function= "validate_utc_time_not_expire", message="invalid x509 attribute 'expire_at'"))]
     expire_at: String,
 }
 
@@ -89,21 +90,6 @@ fn validate_x509_key_type(key_type: &str) -> std::result::Result<(), ValidationE
 fn validate_x509_key_size(key_size: &str) -> std::result::Result<(), ValidationError> {
     if !vec!["2048", "3072", "4096"].contains(&key_size) {
         return Err(ValidationError::new("invalid key size"));
-    }
-    Ok(())
-}
-
-fn validate_utc_time(expire: &str) -> std::result::Result<(), ValidationError> {
-    let now = Utc::now();
-    match expire.parse::<DateTime<Utc>>() {
-        Ok(expire) => {
-            if expire <= now {
-                return Err(ValidationError::new("expire time less than current time"))
-            }
-        },
-        Err(_e) => {
-            return Err(ValidationError::new("failed to parse time string to utc"));
-        }
     }
     Ok(())
 }

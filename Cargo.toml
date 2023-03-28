@@ -84,7 +84,7 @@ path = "src/control_server_entrypoint.rs"
 
 [[bin]]
 name = "control-admin"
-path = "src/control_admin.rs"
+path = "src/control_admin_entrypoint.rs"
 
 [profile.release]
 strip = "debuginfo"

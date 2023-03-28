@@ -23,7 +23,6 @@ use crate::util::error::{Result};
 use clap::{Parser, Subcommand};
 use clap::{Args};
 use crate::client::sign_identity;
-use crate::client::cmd::traits::SignCommand;
 use crate::domain::datakey::entity::{DataKey};
 use crate::domain::user::entity::User;
 use crate::presentation::handler::control::model::datakey::dto::DataKeyDTO;
@@ -81,18 +80,58 @@ pub struct CommandGenerateKeys {
     #[arg(help = "specify the the description of this key pairs")]
     description: String,
     #[arg(long)]
-    #[arg(help = "specify the type of internal key used for this key pairs, ie, rsa")]
+    #[arg(help = "specify the type of internal key used for keys generation, ie, rsa")]
     param_key_type: String,
     #[arg(long)]
-    #[arg(help = "specify the type of internal key size used for this key pairs, ie, 1024")]
+    #[arg(help = "specify the type of internal key used for keys generation, ie, 1024")]
     param_key_size: String,
+    //pgp specific parameters
+    #[arg(long)]
+    #[arg(help = "specify the email used for openPGP key generation. ")]
+    param_pgp_email: Option<String>,
+    //x509 specific parameters
+    #[arg(long)]
+    #[arg(help = "specify the 'CommonName' used for x509 key generation. ")]
+    param_x509_common_name: Option<String>,
+    #[arg(long)]
+    #[arg(help = "specify the 'OrganizationalUnit' used for x509 key generation. ")]
+    param_x509_organizational_unit: Option<String>,
+    #[arg(long)]
+    #[arg(help = "specify the 'Organization' used for x509 key generation. ")]
+    param_x509_organization: Option<String>,
+    #[arg(long)]
+    #[arg(help = "specify the 'Locality' used for x509 key generation. ")]
+    param_x509_locality: Option<String>,
+    #[arg(long)]
+    #[arg(help = "specify the 'ProvinceName' used for x509 key generation. ")]
+    param_x509_province_name: Option<String>,
+    #[arg(long)]
+    #[arg(help = "specify the 'CountryName' used for x509 key generation. ")]
+    param_x509_country_name: Option<String>,
     #[arg(long)]
     #[arg(help = "specify the email of admin which this key bounds to")]
     email: String,
     #[arg(long)]
     #[arg(value_enum)]
-    #[arg(help = "specify the key type for generating")]
+    #[arg(help = "specify th type of key")]
     key_type: sign_identity::KeyType,
+}
+
+fn generate_keys_parameters(command: &CommandGenerateKeys) -> HashMap<String, String> {
+    let mut attributes = HashMap::new();
+    attributes.insert("key_type".to_string(), command.param_key_type.clone());
+    attributes.insert("key_length".to_string(), command.param_key_size.clone());
+    if command.key_type == sign_identity::KeyType::PGP {
+        attributes.insert("email".to_string(), command.param_pgp_email.clone().unwrap());
+    } else if command.key_type == sign_identity::KeyType::X509 {
+        attributes.insert("common_name".to_string(), command.param_x509_common_name.clone().unwrap());
+        attributes.insert("country_name".to_string(), command.param_x509_country_name.clone().unwrap());
+        attributes.insert("locality".to_string(), command.param_x509_locality.clone().unwrap());
+        attributes.insert("province_name".to_string(), command.param_x509_province_name.clone().unwrap());
+        attributes.insert("organization".to_string(), command.param_x509_organization.clone().unwrap());
+        attributes.insert("organizational_unit".to_string(), command.param_x509_organizational_unit.clone().unwrap());
+    }
+    attributes
 }
 
 #[tokio::main]
@@ -112,17 +151,15 @@ async fn main() -> Result<()> {
         }
         Some(Commands::GenerateKeys(generate_keys)) => {
             let user = control_server.get_user_by_email(&generate_keys.email).await?;
-            let mut attributes = HashMap::new();
-            attributes.insert("key_type".to_string(), generate_keys.param_key_type);
-            attributes.insert("key_length".to_string(), generate_keys.param_key_size);
+
             let now = Utc::now();
             let key = DataKeyDTO {
                 id: 0,
-                name: generate_keys.name,
-                description: generate_keys.description,
+                name: generate_keys.name.clone(),
+                description: generate_keys.description.clone(),
                 user: user.id,
                 email: user.email.clone(),
-                attributes,
+                attributes: generate_keys_parameters(&generate_keys),
                 key_type: generate_keys.key_type.to_string(),
                 create_at: format!("{}", now),
                 expire_at: format!("{}", now + Duration::days(30)),
