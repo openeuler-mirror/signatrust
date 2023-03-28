@@ -1,16 +1,9 @@
 use crate::domain::datakey::entity::{DataKey, KeyState};
 use crate::domain::datakey::entity::KeyType;
-
 use crate::util::error::Result;
-
 use chrono::{DateTime, Utc};
-
-
-
-
-
 use std::str::FromStr;
-
+use crate::util::key::sorted_map;
 
 use validator::{Validate, ValidationError};
 use std::collections::HashMap;
@@ -47,6 +40,7 @@ pub struct DataKeyDTO {
     pub description: String,
     #[serde(skip_deserializing)]
     pub user: i32,
+    #[serde(serialize_with = "sorted_map")]
     pub attributes: HashMap<String, String>,
     pub key_type: String,
     #[validate(custom = "validate_utc_time")]

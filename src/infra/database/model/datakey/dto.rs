@@ -19,12 +19,9 @@ use crate::domain::datakey::entity::KeyType;
 use crate::domain::datakey::traits::ExtendableAttributes;
 use crate::util::error::{Error};
 use crate::util::key;
+
 use chrono::{DateTime, Utc};
-
 use sqlx::FromRow;
-
-
-
 use std::str::FromStr;
 
 #[derive(Debug, FromRow)]

@@ -39,6 +39,7 @@ use actix_web::cookie::KeyError;
 use openidconnect::url::ParseError as OIDCParseError;
 use openidconnect::ConfigurationError;
 use openidconnect::UserInfoError;
+use anyhow::Error as AnyhowError;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -83,6 +84,8 @@ pub enum Error {
     InvalidCookieKeyError,
     #[error("failed to perform auth operation: {0}")]
     AuthError(String),
+    #[error("failed to connect to redis store: {0}")]
+    RedisError(String),
 
     //client error
     #[error("file type not supported {0}")]
@@ -303,6 +306,13 @@ impl From<ConfigurationError> for Error {
         Error::AuthError(err.to_string())
     }
 }
+
+impl From<AnyhowError> for Error {
+    fn from(err: AnyhowError) -> Self {
+        Error::RedisError(err.to_string())
+    }
+}
+
 
 impl From<UserInfoError<openidconnect::reqwest::Error<reqwest::Error>>> for Error {
     fn from(err: UserInfoError<openidconnect::reqwest::Error<reqwest::Error>>) -> Self {

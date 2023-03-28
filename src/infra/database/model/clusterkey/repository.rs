@@ -22,7 +22,6 @@ use crate::util::error::Result;
 use async_trait::async_trait;
 use std::boxed::Box;
 
-
 #[derive(Clone)]
 pub struct ClusterKeyRepository {
     db_pool: DbPool,

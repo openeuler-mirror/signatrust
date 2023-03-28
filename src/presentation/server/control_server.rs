@@ -16,20 +16,19 @@
 
 use std::net::SocketAddr;
 use std::sync::{Arc, RwLock};
-
 use actix_web::{App, HttpServer, middleware, web, cookie::Key};
 use config::Config;
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
-
-use actix_identity::IdentityMiddleware;
-use actix_session::{config::PersistentSession, storage::CookieSessionStore, SessionMiddleware};
+use actix_identity::{IdentityMiddleware};
+use actix_session::{config::PersistentSession, storage::RedisSessionStore, SessionMiddleware};
+use actix_limitation::{Limiter, RateLimiter};
 use time::Duration as timeDuration;
+use std::time::Duration;
 
 use crate::infra::database::model::datakey::repository as datakeyRepository;
 use crate::infra::database::pool::{create_pool, get_db_pool};
-
 use crate::presentation::handler::control::*;
-
+use actix_web::{dev::ServiceRequest};
 use crate::util::error::Result;
 
 use crate::application::datakey::{DBKeyService, KeyService};
@@ -92,6 +91,7 @@ impl ControlServer {
             .parse()?;
 
         let key = self.server_config.read()?.get_string("control-server.cookie_key")?;
+        let redis_connection = self.server_config.read()?.get_string("control-server.redis_connection")?;
 
         info!("control server starts");
         // Start http server
@@ -100,23 +100,47 @@ impl ControlServer {
         let key_service = web::Data::from(
             self.key_service.clone());
 
+        //prepare redis store
+        let store = RedisSessionStore::new(&redis_connection).await?;
+        let limiter = web::Data::new(
+            Limiter::builder(&redis_connection)
+                .key_by(|req: &ServiceRequest| {
+                    if let Some(cookie) = req.cookie(&"Signatrust") {
+                        return Some(cookie.to_string());
+                    }
+                    if let Some(value) = req.clone().headers().get("Authorization") {
+                        return Some(value.to_str().unwrap().to_string());
+                    }
+                    None
+                })
+                .limit(self.server_config.read()?.get_string("control-server.limits_per_minute")?.parse()?)
+                .period(Duration::from_secs(60))
+                .build()
+                .unwrap(),
+        );
+
         let http_server = HttpServer::new(move || {
             App::new()
-                // enable logger
-                .app_data(key_service.clone())
-                .app_data(user_service.clone())
                 .wrap(middleware::Logger::default())
                 .wrap(IdentityMiddleware::default())
+                //rate limiter handler
+                .wrap(RateLimiter::default())
+                // session handler
                 .wrap(
                     SessionMiddleware::builder(
-                        CookieSessionStore::default(), Key::from(key.as_bytes()))
+                        store.clone(), Key::from(key.as_bytes()))
                         .session_lifecycle(PersistentSession::default().session_ttl(timeDuration::hours(1)))
-                        .cookie_name("signatrust".to_owned())
+                        .cookie_name("Signatrust".to_owned())
                         .cookie_secure(false)
                         .cookie_domain(None)
                         .cookie_path("/".to_owned())
                         .build(),
                 )
+                // enable logger
+                .app_data(key_service.clone())
+                .app_data(user_service.clone())
+                .app_data(limiter.clone())
+                //session handler
                 .service(web::scope("/api/v1")
                     .service(user_handler::get_scope())
                     .service(datakey_handler::get_scope()))

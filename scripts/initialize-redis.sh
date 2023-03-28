@@ -27,7 +27,7 @@ function redis-cluster-up {
   echo "redis is running up with ip address $(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' signatrust-redis)"
   echo "waiting redis to be ready"
   sleep 5
-  echo "redis is ready"
+  echo "redis is ready, use password ${REDIS_PASSWORD} for connection"
 }
 
 echo "Preparing redis environment for signatrust developing......"
