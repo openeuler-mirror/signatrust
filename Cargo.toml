@@ -32,6 +32,7 @@ async-trait = "0.1.60"
 md-5 = "0.10.5"
 notify = "5.0.0"
 env_logger = "0.10.0"
+anyhow = "1.0.66"
 thiserror = "1.0.38"
 sqlx = { version = "0.6.3", features = ["migrate", "mysql", "runtime-tokio-rustls", "chrono"] }
 once_cell = "1.16.0"
@@ -59,7 +60,8 @@ bincode = "2.0.0-rc.2"
 secstr = "0.5.1"
 openssl = "0.10.45"
 actix-identity = "0.5.2"
-actix-session = { version = "0.7.2", features = ["cookie-session"]}
+actix-session = { version = "0.7.2", features = ["redis-rs-session"]}
+actix-limitation = "0.4.0"
 time = "0.3.17"
 openidconnect = "2.5.0"
 url = "2.3.1"

@@ -1,7 +1,11 @@
 GIT_COMMIT=$(shell git rev-parse --verify HEAD)
 
+## Prepare the redis database
+redis:
+	./scripts/initialize-redis.sh
+
 ## Prepare mysql database
-db:
+db: redis
 	./scripts/initialize-database.sh
 
 

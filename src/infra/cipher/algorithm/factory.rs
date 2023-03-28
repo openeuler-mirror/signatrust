@@ -16,8 +16,6 @@ use crate::infra::cipher::algorithm::aes::Aes256GcmEncryptor;
 use crate::infra::cipher::algorithm::traits::{Algorithm, Encryptor};
 use crate::util::error::{Result};
 
-
-
 use std::str::FromStr;
 use std::sync::Arc;
 

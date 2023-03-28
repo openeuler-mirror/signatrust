@@ -17,8 +17,6 @@
 
 use crate::domain::clusterkey::entity::ClusterKey;
 
-
-
 use sqlx::types::chrono;
 use sqlx::FromRow;
 

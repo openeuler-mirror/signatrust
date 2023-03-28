@@ -58,7 +58,7 @@ function prepare-database {
   sqlx migrate run
 }
 
-echo "Preparing environment for signatrust developing......"
+echo "Preparing mysql  environment for signatrust developing......"
 
 check-prerequisites
 
