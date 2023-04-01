@@ -135,7 +135,8 @@ pub struct SecDataKey {
     pub private_key: SecVec<u8>,
     pub public_key: SecVec<u8>,
     pub certificate: SecVec<u8>,
-    pub identity: String
+    pub identity: String,
+    pub attributes: HashMap<String, String>
 }
 
 impl SecDataKey {
@@ -145,6 +146,7 @@ impl SecDataKey {
             public_key: SecVec::new(engine.decode(data_key.public_key.clone()).await?),
             certificate: SecVec::new(engine.decode(data_key.certificate.clone()).await?),
             identity: data_key.get_identity(),
+            attributes: data_key.attributes.clone(),
         })
     }
 }

@@ -51,6 +51,8 @@ pub struct X509KeyGenerationParameter {
     key_type: String,
     #[validate(custom(function = "validate_x509_key_size", message="invalid x509 attribute 'key_length'"))]
     key_length: String,
+    #[validate(custom(function= "validate_x509_digest_algorithm_type", message="invalid digest algorithm"))]
+    digest_algorithm: String,
     #[validate(custom(function = "validate_utc_time", message="invalid x509 attribute 'created_at'"))]
     create_at: String,
     #[validate(custom(function= "validate_utc_time_not_expire", message="invalid x509 attribute 'expire_at'"))]
@@ -64,6 +66,21 @@ impl X509KeyGenerationParameter {
             "dsa" => Ok(PKey::from_dsa(Dsa::generate(self.key_length.parse()?)?)?),
             _ => Err(Error::ParameterError(
                 "invalid key type for x509".to_string(),
+            )),
+        };
+    }
+
+    pub fn get_digest_algorithm(&self) -> Result<MessageDigest> {
+        return match self.digest_algorithm.as_str() {
+            "none" => Ok(MessageDigest::null()),
+            "md5" => Ok(MessageDigest::md5()),
+            "sha1" => Ok(MessageDigest::sha1()),
+            "sha2_256" => Ok(MessageDigest::sha224()),
+            "sha2_384" => Ok(MessageDigest::sha256()),
+            "sha2_512" => Ok(MessageDigest::sha384()),
+            "sha2_224" => Ok(MessageDigest::sha512()),
+            _ => Err(Error::ParameterError(
+                "invalid digest algorithm for openpgp".to_string(),
             )),
         };
     }
@@ -82,14 +99,14 @@ impl X509KeyGenerationParameter {
 
 fn validate_x509_key_type(key_type: &str) -> std::result::Result<(), ValidationError> {
     if !vec!["rsa", "dsa"].contains(&key_type) {
-        return Err(ValidationError::new("invalid key type"));
+        return Err(ValidationError::new("invalid key type, possible values are rsa/dsa"));
     }
     Ok(())
 }
 
 fn validate_x509_key_size(key_size: &str) -> std::result::Result<(), ValidationError> {
     if !vec!["2048", "3072", "4096"].contains(&key_size) {
-        return Err(ValidationError::new("invalid key size"));
+        return Err(ValidationError::new("invalid key size, possible values are 2048/3072/4096"));
     }
     Ok(())
 }
@@ -100,11 +117,19 @@ fn days_in_duration(time: &str) -> Result<i64> {
     Ok((end - start).num_days())
 }
 
+fn validate_x509_digest_algorithm_type(key_type: &str) -> std::result::Result<(), ValidationError> {
+    if !vec!["none", "md5", "sha1", "sha1", "sha2_256","sha2_384","sha2_512","sha2_224"].contains(&key_type) {
+        return Err(ValidationError::new("invalid hash algorithm, possible values are none/md5/sha1/sha1/sha2_256/sha2_384/sha2_512/sha2_224"));
+    }
+    Ok(())
+}
+
 pub struct X509Plugin {
     private_key: SecVec<u8>,
     public_key: SecVec<u8>,
     certificate: SecVec<u8>,
     identity: String,
+    attributes: HashMap<String, String>
 }
 
 impl X509Plugin {
@@ -119,12 +144,13 @@ impl X509Plugin {
 }
 
 impl SignPlugins for X509Plugin {
-    fn new(db: &SecDataKey) -> Result<Self> {
+    fn new(db: SecDataKey) -> Result<Self> {
         Ok(Self {
             private_key: db.private_key.clone(),
             public_key: db.public_key.clone(),
             certificate: db.certificate.clone(),
             identity: db.identity.clone(),
+            attributes: db.attributes.clone()
         })
     }
 
@@ -137,19 +163,18 @@ impl SignPlugins for X509Plugin {
     }
 
     fn generate_keys(
-        value: &HashMap<String, String>,
+        attributes: &HashMap<String, String>,
     ) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>)> {
-        let parameter = X509Plugin::attributes_validate(value)?;
+        let parameter = X509Plugin::attributes_validate(attributes)?;
         let keys = parameter.get_key()?;
         let mut generator = x509::X509Builder::new()?;
-        let hash = MessageDigest::sha256();
         generator.set_subject_name(parameter.get_subject_name()?.as_ref())?;
         generator.set_issuer_name(parameter.get_subject_name()?.as_ref())?;
         generator.set_pubkey(keys.as_ref())?;
         generator.set_version(2)?;
         generator.set_not_before(Asn1Time::days_from_now(days_in_duration(&parameter.create_at)? as u32)?.as_ref())?;
         generator.set_not_after(Asn1Time::days_from_now(days_in_duration(&parameter.expire_at)? as u32)?.as_ref())?;
-        generator.sign(keys.as_ref(), hash)?;
+        generator.sign(keys.as_ref(), parameter.get_digest_algorithm()?)?;
         let cert = generator.build();
         Ok((
             keys.private_key_to_pem_pkcs8()?,

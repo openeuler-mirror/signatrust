@@ -99,6 +99,9 @@ impl KernelModuleFileHandler {
 
     pub fn file_unsigned(&self, path: &PathBuf) -> Result<bool> {
         let mut file = fs::File::open(path)?;
+        if file.metadata()?.len() <= MAGIC_NUMBER_SIZE as u64 {
+            return Ok(true)
+        }
         file.seek(io::SeekFrom::End((MAGIC_NUMBER_SIZE as i64) * -1))?;
         let mut signature_ending: [u8; MAGIC_NUMBER_SIZE] = [0; MAGIC_NUMBER_SIZE];
         file.read(&mut signature_ending)?;
