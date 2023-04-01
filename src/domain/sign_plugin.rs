@@ -19,7 +19,7 @@ use std::collections::HashMap;
 use crate::domain::datakey::entity::SecDataKey;
 
 pub trait SignPlugins: Send + Sync {
-    fn new(db: &SecDataKey) -> Result<Self>
+    fn new(db: SecDataKey) -> Result<Self>
         where
             Self: Sized;
     fn parse_attributes(
@@ -30,7 +30,7 @@ pub trait SignPlugins: Send + Sync {
         where
             Self: Sized;
     fn generate_keys(
-        value: &HashMap<String, String>,
+        attributes: &HashMap<String, String>,
     ) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>)>
         where
             Self: Sized;

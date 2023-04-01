@@ -89,7 +89,7 @@ impl SignBackend for MemorySignBackend {
 
     async fn sign(&self, data_key: &DataKey, content: Vec<u8>, options: HashMap<String, String>) -> Result<Vec<u8>> {
         let sec_key = SecDataKey::load(data_key, &self.engine).await?;
-        Signers::load_from_data_key(&data_key.key_type, &sec_key)?.sign(content, options)
+        Signers::load_from_data_key(&data_key.key_type, sec_key)?.sign(content, options)
     }
 
     async fn decode_public_keys(&self, data_key: &mut DataKey) -> Result<()> {

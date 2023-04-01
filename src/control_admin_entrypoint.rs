@@ -85,6 +85,9 @@ pub struct CommandGenerateKeys {
     #[arg(long)]
     #[arg(help = "specify the type of internal key used for keys generation, ie, 1024")]
     param_key_size: String,
+    #[arg(long)]
+    #[arg(help = "specify the type of digest algorithm used for signing, ie, sha1")]
+    digest_algorithm: String,
     //pgp specific parameters
     #[arg(long)]
     #[arg(help = "specify the email used for openPGP key generation. ")]
@@ -121,6 +124,7 @@ fn generate_keys_parameters(command: &CommandGenerateKeys) -> HashMap<String, St
     let mut attributes = HashMap::new();
     attributes.insert("key_type".to_string(), command.param_key_type.clone());
     attributes.insert("key_length".to_string(), command.param_key_size.clone());
+    attributes.insert("digest_algorithm".to_string(), command.digest_algorithm.clone());
     if command.key_type == sign_identity::KeyType::PGP {
         attributes.insert("email".to_string(), command.param_pgp_email.clone().unwrap());
     } else if command.key_type == sign_identity::KeyType::X509 {

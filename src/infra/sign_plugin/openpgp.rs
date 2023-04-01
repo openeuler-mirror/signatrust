@@ -53,6 +53,8 @@ pub struct PgpKeyGenerationParameter {
     key_type: String,
     #[validate(custom(function = "validate_key_size", message="invalid openpgp attribute 'key_length'"))]
     key_length: String,
+    #[validate(custom(function= "validate_digest_algorithm_type", message="invalid digest algorithm"))]
+    digest_algorithm: String,
     #[validate(custom(function = "validate_utc_time", message="invalid openpgp attribute 'created_at'"))]
     create_at: String,
     #[validate(custom(function= "validate_utc_time_not_expire", message="invalid openpgp attribute 'expire_at'"))]
@@ -71,6 +73,23 @@ impl PgpKeyGenerationParameter {
         };
     }
 
+    pub fn get_digest_algorithm(&self) -> Result<HashAlgorithm> {
+        return match self.digest_algorithm.as_str() {
+            "none" => Ok(HashAlgorithm::None),
+            "md5" => Ok(HashAlgorithm::MD5),
+            "sha1" => Ok(HashAlgorithm::SHA1),
+            "sha2_256" => Ok(HashAlgorithm::SHA2_256),
+            "sha2_384" => Ok(HashAlgorithm::SHA2_384),
+            "sha2_512" => Ok(HashAlgorithm::SHA2_512),
+            "sha2_224" => Ok(HashAlgorithm::SHA2_224),
+            "sha3_256" => Ok(HashAlgorithm::SHA3_256),
+            "sha3_512" => Ok(HashAlgorithm::SHA3_512),
+            _ => Err(Error::ParameterError(
+                "invalid digest algorithm for openpgp".to_string(),
+            )),
+        };
+    }
+
     pub fn get_user_id(&self) -> String {
         format!("{} <{}>", self.name, self.email)
     }
@@ -78,14 +97,21 @@ impl PgpKeyGenerationParameter {
 
 fn validate_key_type(key_type: &str) -> std::result::Result<(), ValidationError> {
     if !vec!["rsa", "ecdh", "eddsa"].contains(&key_type) {
-        return Err(ValidationError::new("invalid key type"));
+        return Err(ValidationError::new("invalid key type, possible values are rsa/ecdh/eddsa"));
+    }
+    Ok(())
+}
+
+fn validate_digest_algorithm_type(key_type: &str) -> std::result::Result<(), ValidationError> {
+    if !vec!["none", "md5", "sha1", "sha1", "sha2_256", "sha2_384","sha2_512","sha2_224","sha3_256", "sha3_512"].contains(&key_type) {
+        return Err(ValidationError::new("invalid hash algorithm, possible values are none/md5/sha1/sha1/sha2_256/sha2_384/sha2_512/sha2_224/sha3_256/sha3_512"));
     }
     Ok(())
 }
 
 fn validate_key_size(key_size: &str) -> std::result::Result<(), ValidationError> {
     if !vec!["2048", "3072", "4096"].contains(&key_size) {
-        return Err(ValidationError::new("invalid key size"));
+        return Err(ValidationError::new("invalid key size, possible values are 2048/3072/4096"));
     }
     Ok(())
 }
@@ -94,6 +120,7 @@ pub struct OpenPGPPlugin {
     secret_key: SignedSecretKey,
     public_key: SignedPublicKey,
     identity: String,
+    attributes: HashMap<String, String>
 }
 
 impl OpenPGPPlugin {
@@ -108,7 +135,7 @@ impl OpenPGPPlugin {
 }
 
 impl SignPlugins for OpenPGPPlugin {
-    fn new(db: &SecDataKey) -> Result<Self> {
+    fn new(db: SecDataKey) -> Result<Self> {
         let private = from_utf8(&db.private_key.unsecure()).map_err(|e| Error::KeyParseError(e.to_string()))?;
         let (secret_key, _) =
             SignedSecretKey::from_string(private).map_err(|e| Error::KeyParseError(e.to_string()))?;
@@ -119,6 +146,7 @@ impl SignPlugins for OpenPGPPlugin {
             secret_key,
             public_key,
             identity: db.identity.clone(),
+            attributes: db.attributes.clone(),
         })
     }
 
@@ -131,9 +159,9 @@ impl SignPlugins for OpenPGPPlugin {
     }
 
     fn generate_keys(
-        value: &HashMap<String, String>,
+        attributes: &HashMap<String, String>,
     ) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>)> {
-        let parameter = OpenPGPPlugin::attributes_validate(value)?;
+        let parameter = OpenPGPPlugin::attributes_validate(attributes)?;
         let mut key_params = SecretKeyParamsBuilder::default();
         let create_at = parameter.create_at.parse()?;
         let expire :DateTime<Utc> = parameter.expire_at.parse()?;
@@ -144,7 +172,7 @@ impl SignPlugins for OpenPGPPlugin {
             .can_sign(true)
             .primary_user_id(parameter.get_user_id())
             .preferred_symmetric_algorithms(smallvec![SymmetricKeyAlgorithm::AES256,])
-            .preferred_hash_algorithms(smallvec![HashAlgorithm::SHA2_256,])
+            .preferred_hash_algorithms(smallvec![parameter.get_digest_algorithm()?])
             .preferred_compression_algorithms(smallvec![CompressionAlgorithm::ZLIB,])
             .created_at(create_at)
             .expiration(Some(duration));
@@ -162,13 +190,14 @@ impl SignPlugins for OpenPGPPlugin {
     }
 
     fn sign(&self, content: Vec<u8>, options: HashMap<String, String>) -> Result<Vec<u8>> {
+        let parameter = OpenPGPPlugin::attributes_validate(&self.attributes)?;
         let passwd_fn = String::new;
         let now = Utc::now();
         let sig_cfg = SignatureConfig {
             version: SignatureVersion::V4,
             typ: SignatureType::Binary,
             pub_alg: self.public_key.primary_key.algorithm(),
-            hash_alg: HashAlgorithm::SHA2_256,
+            hash_alg: parameter.get_digest_algorithm()?,
             issuer: Some(self.secret_key.key_id()),
             created: Some(now),
             unhashed_subpackets: vec![],
