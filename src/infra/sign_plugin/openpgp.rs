@@ -55,7 +55,7 @@ pub struct PgpKeyGenerationParameter {
     key_length: String,
     #[validate(custom(function= "validate_digest_algorithm_type", message="invalid digest algorithm"))]
     digest_algorithm: String,
-    #[validate(custom(function = "validate_utc_time", message="invalid openpgp attribute 'created_at'"))]
+    #[validate(custom(function = "validate_utc_time", message="invalid openpgp attribute 'create_at'"))]
     create_at: String,
     #[validate(custom(function= "validate_utc_time_not_expire", message="invalid openpgp attribute 'expire_at'"))]
     expire_at: String,

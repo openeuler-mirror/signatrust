@@ -53,7 +53,7 @@ pub struct X509KeyGenerationParameter {
     key_length: String,
     #[validate(custom(function= "validate_x509_digest_algorithm_type", message="invalid digest algorithm"))]
     digest_algorithm: String,
-    #[validate(custom(function = "validate_utc_time", message="invalid x509 attribute 'created_at'"))]
+    #[validate(custom(function = "validate_utc_time", message="invalid x509 attribute 'create_at'"))]
     create_at: String,
     #[validate(custom(function= "validate_utc_time_not_expire", message="invalid x509 attribute 'expire_at'"))]
     expire_at: String,

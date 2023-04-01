@@ -20,12 +20,15 @@ use sqlx::FromRow;
 use chrono::{DateTime, Utc};
 
 use crate::domain::token::entity::Token;
+use crate::util::key::get_token_hash;
 
 #[derive(Debug, FromRow)]
 pub(super) struct TokenDTO {
     pub id: i32,
     pub user_id: i32,
+    pub description: String,
     pub token: String,
+    pub create_at: DateTime<Utc>,
     pub expire_at: DateTime<Utc>,
 }
 
@@ -35,7 +38,9 @@ impl TokenDTO {
         Ok(Self {
             id: token.id,
             user_id: token.user_id,
-            token: token.token.clone(),
+            description: token.description.clone(),
+            token: get_token_hash(&token.token),
+            create_at: token.create_at,
             expire_at: token.expire_at,
         })
     }
@@ -43,7 +48,9 @@ impl TokenDTO {
         Ok(Token {
             id: self.id,
             user_id: self.user_id,
+            description: self.description.clone(),
             token: self.token.clone(),
+            create_at: self.create_at,
             expire_at:self.expire_at,
         })
     }

@@ -7,7 +7,6 @@ use std::pin::Pin;
 use futures::Future;
 use serde::{Deserialize, Serialize};
 use std::convert::From;
-use chrono::{Utc};
 use crate::application::user::UserService;
 use crate::domain::user::entity::User;
 
@@ -38,14 +37,9 @@ impl FromRequest for UserIdentity {
                 None => {
                     if let Some(value) = req.clone().headers().get("Authorization") {
                         if let Some(user_service) = req.clone().app_data::<web::Data<dyn UserService>>() {
-                            if let Ok(token) = user_service.get_ref().get_token_by_value(value.to_str().unwrap()).await {
-                                //token exists and valid
-                                if token.expire_at.gt(&Utc::now()) {
-                                    if let Ok(user) = user_service.get_ref().get_user_by_id(token.user_id).await {
-                                        return Ok(UserIdentity::from(user));
-                                    }
-                                } else {
-                                    warn!("token expired");
+                            if let Ok(token) = user_service.get_ref().get_valid_token(value.to_str().unwrap()).await {
+                                if let Ok(user) = user_service.get_ref().get_user_by_id(token.user_id).await {
+                                    return Ok(UserIdentity::from(user));
                                 }
                             } else {
                                 warn!("unable to find token record");

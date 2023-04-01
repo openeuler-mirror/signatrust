@@ -22,6 +22,7 @@ use async_trait::async_trait;
 use std::boxed::Box;
 
 use crate::infra::database::model::token::dto::TokenDTO;
+use crate::util::key::get_token_hash;
 
 
 #[derive(Clone)]
@@ -42,9 +43,11 @@ impl Repository for TokenRepository {
 
     async fn create(&self, token: &Token) -> Result<Token> {
         let dto = TokenDTO::encrypt(token).await?;
-        let record : u64 = sqlx::query("INSERT INTO token(user_id, token, expire_at) VALUES (?, ?, ?)")
+        let record : u64 = sqlx::query("INSERT INTO token(user_id, description, token, create_at, expire_at) VALUES (?, ?, ?, ?, ?)")
             .bind(&dto.user_id)
+            .bind(&dto.description)
             .bind(&dto.token)
+            .bind(&dto.create_at)
             .bind(&dto.expire_at)
             .execute(&self.db_pool)
             .await?.last_insert_id();
@@ -61,7 +64,7 @@ impl Repository for TokenRepository {
 
     async fn get_token_by_value(&self, token: &str) -> Result<Token> {
         let selected: TokenDTO = sqlx::query_as("SELECT * FROM token WHERE token = ?")
-            .bind(token)
+            .bind(get_token_hash(token))
             .fetch_one(&self.db_pool)
             .await?;
         Ok(selected.decrypt().await?)

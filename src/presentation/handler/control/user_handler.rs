@@ -53,8 +53,8 @@ async fn callback(req: HttpRequest, user_service: web::Data<dyn UserService>, co
     }
 }
 
-async fn new_token(user: UserIdentity, user_service: web::Data<dyn UserService>) -> Result<impl Responder, Error> {
-    let token = user_service.into_inner().generate_token(&user).await?;
+async fn new_token(user: UserIdentity, user_service: web::Data<dyn UserService>, token: web::Json<TokenDTO>) -> Result<impl Responder, Error> {
+    let token = user_service.into_inner().generate_token(&user, token.0).await?;
     Ok(HttpResponse::Ok().json(TokenDTO::from(token)))
 }
 
@@ -73,5 +73,5 @@ pub fn get_scope() -> Scope {
         .service(web::resource("/login").route(web::get().to(login)))
         .service(web::resource("/logout").route(web::post().to(logout)))
         .service(web::resource("/callback").route(web::get().to(callback)))
-        .service(web::resource("/api_keys").route(web::get().to(new_token)).route(web::post().to(list_token)))
+        .service(web::resource("/api_keys").route(web::post().to(new_token)).route(web::get().to(list_token)))
 }

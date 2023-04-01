@@ -19,6 +19,7 @@ use rand::{thread_rng, Rng};
 use rand::distributions::Alphanumeric;
 use serde::{Serialize, Serializer};
 use std::collections::{HashMap, BTreeMap};
+use sha1::Digest;
 
 pub fn encode_u8_to_hex_string(value: &[u8]) -> String {
     value
@@ -33,6 +34,13 @@ pub fn decode_hex_string_to_u8(value: &String) -> Vec<u8> {
 
 pub fn generate_api_token() -> String {
     thread_rng().sample_iter(&Alphanumeric).take(40).map(char::from).collect()
+}
+
+pub fn get_token_hash(real_token: &str) -> String {
+    let mut hasher = sha1::Sha1::default();
+    hasher.update(real_token);
+    let digest = hasher.finalize();
+    return hex::encode(digest)
 }
 
 pub fn sorted_map<S: Serializer, K: Serialize + Ord, V: Serialize>(value: &HashMap<K, V>, serializer: S) -> Result<S::Ok, S::Error> {
