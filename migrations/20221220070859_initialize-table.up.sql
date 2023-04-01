@@ -36,7 +36,9 @@ CREATE TABLE data_key (
 CREATE TABLE token (
                           id INT AUTO_INCREMENT,
                           user_id INT NOT NULL,
+                          description VARCHAR(255),
                           token VARCHAR(200),
+                          create_at DATETIME,
                           expire_at DATETIME,
                           PRIMARY KEY(id),
                           FOREIGN KEY (user_id) REFERENCES user(id)

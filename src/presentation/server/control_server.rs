@@ -39,6 +39,7 @@ use crate::application::user::{DBUserService, UserService};
 use crate::domain::datakey::entity::DataKey;
 use crate::domain::token::entity::Token;
 use crate::domain::user::entity::User;
+use crate::presentation::handler::control::model::token::dto::TokenDTO;
 use crate::presentation::handler::control::model::user::dto::UserIdentity;
 
 pub struct ControlServer {
@@ -171,7 +172,9 @@ impl ControlServer {
     //used for control admin cmd
     pub async fn create_user_token(&self, user: &User) -> Result<Token> {
         let user = self.user_service.save(user).await?;
-        self.user_service.generate_token(&UserIdentity::from(user)).await
+        self.user_service.generate_token(
+            &UserIdentity::from(user.clone()),
+            TokenDTO::new("default admin token".to_owned())).await
     }
 
     //used for control admin cmd

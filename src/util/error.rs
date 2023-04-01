@@ -86,6 +86,8 @@ pub enum Error {
     AuthError(String),
     #[error("failed to connect to redis store: {0}")]
     RedisError(String),
+    #[error("token has expired: {0}")]
+    TokenExpiredError(String),
 
     //client error
     #[error("file type not supported {0}")]

@@ -22,6 +22,7 @@ use crate::util::error::{Result, Error};
 use async_trait::async_trait;
 use std::sync::Arc;
 use std::sync::RwLock;
+use chrono::Utc;
 use serde::{Deserialize};
 use config::Config;
 use reqwest::{header, Client};
@@ -33,15 +34,17 @@ use openidconnect::{
 };
 use openidconnect::{JsonWebKeySet, ClientId, AuthUrl, UserInfoUrl, TokenUrl, RedirectUrl, ClientSecret, IssuerUrl};
 use url::Url;
+use crate::presentation::handler::control::model::token::dto::TokenDTO;
+use crate::util::key::{generate_api_token};
 
 #[async_trait]
 pub trait UserService: Send + Sync{
     async fn get_token(&self, u: &UserIdentity) -> Result<Vec<Token>>;
-    async fn get_token_by_value(&self, token: &str) -> Result<Token>;
+    async fn get_valid_token(&self, token: &str) -> Result<Token>;
     async fn save(&self, u: &User) -> Result<User>;
     async fn get_user_by_id(&self, id: i32) -> Result<User>;
     async fn get_by_email(&self, email: &str) -> Result<User>;
-    async fn generate_token(&self, u: &UserIdentity) -> Result<Token>;
+    async fn generate_token(&self, u: &UserIdentity, token: TokenDTO) -> Result<Token>;
     async fn get_login_url(&self) -> Result<Url>;
     async fn validate_user(&self, code: &str) -> Result<User>;
 }
@@ -151,24 +154,36 @@ where
     R: UserRepository,
     T: TokenRepository
 {
-    async fn get_token_by_value(&self, token: &str) -> Result<Token> {
-        self.token_repository.get_token_by_value(token).await
+    async fn get_token(&self, user: &UserIdentity) -> Result<Vec<Token>> {
+        self.token_repository.get_token_by_user_id(user.id).await
+    }
+
+    async fn get_valid_token(&self, token: &str) -> Result<Token> {
+        let token = self.token_repository.get_token_by_value(token).await?;
+        if token.expire_at.gt(&Utc::now()) {
+            return Ok(token)
+        }
+        Err(Error::TokenExpiredError(token.to_string()))
     }
 
     async fn save(&self, u: &User) -> Result<User> {
         return self.user_repository.create(u).await
     }
 
-    async fn get_token(&self, user: &UserIdentity) -> Result<Vec<Token>> {
-        self.token_repository.get_token_by_user_id(user.id).await
+    async fn get_user_by_id(&self, id: i32) -> Result<User> {
+        self.user_repository.get_by_id(id).await
     }
 
     async fn get_by_email(&self, email: &str) -> Result<User> {
         self.user_repository.get_by_email(email).await
     }
 
-    async fn generate_token(&self, u: &UserIdentity) -> Result<Token> {
-        return self.token_repository.create(&Token::new(u.id)?).await
+    async fn generate_token(&self, u: &UserIdentity, token: TokenDTO) -> Result<Token> {
+        let real_token = generate_api_token();
+        let created = Token::new(token.id, u.id, token.description, real_token)?;
+        self.token_repository.create(&created).await?;
+        Ok(created)
+
     }
 
     async fn get_login_url(&self) -> Result<Url> {
@@ -192,9 +207,5 @@ where
                 Err(Error::AuthError(format!("failed to get access token {}", err)))
             }
         }
-    }
-
-    async fn get_user_by_id(&self, id: i32) -> Result<User> {
-        self.user_repository.get_by_id(id).await
     }
 }
