@@ -9,9 +9,10 @@ use validator::{Validate, ValidationError};
 use std::collections::HashMap;
 use crate::util::error::Error;
 use serde::{Deserialize, Serialize};
+use utoipa::{ToSchema};
 use crate::presentation::handler::control::model::user::dto::UserIdentity;
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, ToSchema)]
 pub struct ExportKey {
     pub public_key: String,
     pub certificate: String,
@@ -28,7 +29,7 @@ impl TryFrom<DataKey> for ExportKey {
     }
 }
 
-#[derive(Debug, Validate, Deserialize, Serialize)]
+#[derive(Debug, Validate, Deserialize, Serialize, ToSchema)]
 pub struct DataKeyDTO {
     #[serde(skip_deserializing)]
     pub id: i32,

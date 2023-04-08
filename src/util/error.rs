@@ -40,6 +40,7 @@ use openidconnect::url::ParseError as OIDCParseError;
 use openidconnect::ConfigurationError;
 use openidconnect::UserInfoError;
 use anyhow::Error as AnyhowError;
+use utoipa::{ToSchema};
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -114,7 +115,7 @@ pub enum Error {
     KOAlreadySignedError,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, ToSchema)]
 pub struct ErrorMessage {
     detail: String
 }
