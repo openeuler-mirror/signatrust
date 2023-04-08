@@ -150,7 +150,7 @@ async fn main() -> Result<()> {
     //handle commands
     match app.command {
         Some(Commands::CreateAdmin(create_admin)) => {
-            let token = control_server.create_user_token(&User::new(create_admin.email.clone())?).await?;
+            let token = control_server.create_user_token(User::new(create_admin.email.clone())?).await?;
             info!("[Result]: Administrator {} has been successfully created with token {} will expire {}", &create_admin.email, &token.token, &token.expire_at)
         }
         Some(Commands::GenerateKeys(generate_keys)) => {

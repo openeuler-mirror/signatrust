@@ -39,13 +39,13 @@ impl UserRepository {
 #[async_trait]
 impl Repository for UserRepository {
 
-    async fn create(&self, user: &User) -> Result<User> {
+    async fn create(&self, user: User) -> Result<User> {
         return match self.get_by_email(&user.email).await {
             Ok(existed) => {
                 Ok(existed)
             }
             Err(_err) => {
-                let dto = UserDTO::encrypt(user).await?;
+                let dto = UserDTO::from(user);
                 let record : u64 = sqlx::query("INSERT INTO user(email) VALUES (?)")
                     .bind(&dto.email)
                     .execute(&self.db_pool)
@@ -60,7 +60,7 @@ impl Repository for UserRepository {
             .bind(id)
             .fetch_one(&self.db_pool)
             .await?;
-        Ok(selected.decrypt().await?)
+        Ok(User::from(selected))
     }
 
     async fn get_by_email(&self, email: &str) -> Result<User> {
@@ -68,7 +68,7 @@ impl Repository for UserRepository {
             .bind(email)
             .fetch_one(&self.db_pool)
             .await?;
-        Ok(selected.decrypt().await?)
+        Ok(User::from(selected))
     }
 
     async fn delete_by_id(&self, id: i32) -> Result<()> {

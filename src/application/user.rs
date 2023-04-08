@@ -41,7 +41,7 @@ use crate::util::key::{generate_api_token};
 pub trait UserService: Send + Sync{
     async fn get_token(&self, u: &UserIdentity) -> Result<Vec<Token>>;
     async fn get_valid_token(&self, token: &str) -> Result<Token>;
-    async fn save(&self, u: &User) -> Result<User>;
+    async fn save(&self, u: User) -> Result<User>;
     async fn get_user_by_id(&self, id: i32) -> Result<User>;
     async fn get_by_email(&self, email: &str) -> Result<User>;
     async fn generate_token(&self, u: &UserIdentity, token: TokenDTO) -> Result<Token>;
@@ -166,7 +166,7 @@ where
         Err(Error::TokenExpiredError(token.to_string()))
     }
 
-    async fn save(&self, u: &User) -> Result<User> {
+    async fn save(&self, u: User) -> Result<User> {
         return self.user_repository.create(u).await
     }
 
@@ -181,7 +181,8 @@ where
     async fn generate_token(&self, u: &UserIdentity, token: TokenDTO) -> Result<Token> {
         let real_token = generate_api_token();
         let created = Token::new(token.id, u.id, token.description, real_token)?;
-        self.token_repository.create(&created).await?;
+        self.token_repository.create(created.clone()).await?;
+        //return token with un-hashed value
         Ok(created)
 
     }
@@ -201,7 +202,7 @@ where
         match self.get_access_token(&code).await {
             Ok(token_response) => {
                 let id: User = User::new(self.get_user_info(&token_response.access_token).await?.email)?;
-                return self.user_repository.create(&id).await
+                return self.user_repository.create(id).await
             }
             Err(err) => {
                 Err(Error::AuthError(format!("failed to get access token {}", err)))

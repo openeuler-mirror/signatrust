@@ -170,7 +170,7 @@ impl ControlServer {
     }
 
     //used for control admin cmd
-    pub async fn create_user_token(&self, user: &User) -> Result<Token> {
+    pub async fn create_user_token(&self, user: User) -> Result<Token> {
         let user = self.user_service.save(user).await?;
         self.user_service.generate_token(
             &UserIdentity::from(user.clone()),

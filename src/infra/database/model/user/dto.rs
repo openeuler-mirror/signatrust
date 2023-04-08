@@ -13,8 +13,6 @@
  *  * // See the Mulan PSL v2 for more details.
  *
  */
-
-use crate::util::error::Result;
 use sqlx::FromRow;
 use crate::domain::user::entity::User;
 
@@ -24,19 +22,20 @@ pub(super) struct UserDTO {
     pub email: String
 }
 
-impl UserDTO {
-    pub async fn encrypt(
-        user: &User,
-    ) -> Result<Self> {
-        Ok(Self {
+impl From<User> for UserDTO {
+    fn from(user: User) -> Self {
+        Self {
             id: user.id,
-            email: user.email.clone(),
-        })
+            email: user.email,
+        }
     }
-    pub async fn decrypt(&self) -> Result<User> {
-        Ok(User {
-            id: self.id,
-            email: self.email.clone()
-        })
+}
+
+impl From<UserDTO> for User {
+    fn from(dto: UserDTO) -> Self {
+        Self {
+            id: dto.id,
+            email: dto.email
+        }
     }
 }

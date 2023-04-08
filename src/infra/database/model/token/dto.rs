@@ -13,9 +13,6 @@
  *  * // See the Mulan PSL v2 for more details.
  *
  */
-
-use crate::util::error::Result;
-
 use sqlx::FromRow;
 use chrono::{DateTime, Utc};
 
@@ -32,26 +29,28 @@ pub(super) struct TokenDTO {
     pub expire_at: DateTime<Utc>,
 }
 
-impl TokenDTO {
-    pub async fn encrypt(
-        token: &Token) -> Result<Self> {
-        Ok(Self {
+impl From<Token> for TokenDTO {
+    fn from(token: Token) -> Self {
+        Self {
             id: token.id,
             user_id: token.user_id,
             description: token.description.clone(),
             token: get_token_hash(&token.token),
             create_at: token.create_at,
             expire_at: token.expire_at,
-        })
+        }
     }
-    pub async fn decrypt(&self) -> Result<Token> {
-        Ok(Token {
-            id: self.id,
-            user_id: self.user_id,
-            description: self.description.clone(),
-            token: self.token.clone(),
-            create_at: self.create_at,
-            expire_at:self.expire_at,
-        })
+}
+
+impl From<TokenDTO> for Token {
+    fn from(dto: TokenDTO) -> Self {
+        Self {
+            id: dto.id,
+            user_id: dto.user_id,
+            description: dto.description.clone(),
+            token: dto.token.clone(),
+            create_at: dto.create_at,
+            expire_at:dto.expire_at,
+        }
     }
 }

@@ -55,7 +55,9 @@ async-channel = "1.8.0"
 uuid = { version = "1.3.0", features = ["v4"]}
 rpm-infra ="0.0.3"
 dns-lookup = {version="1.0.8"}
+#sha1 is used in openpgp signature generation
 sha1 = "0.10.5"
+sha2 = "0.10.6"
 bincode = "2.0.0-rc.2"
 secstr = "0.5.1"
 openssl = "0.10.45"
