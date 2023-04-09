@@ -9,8 +9,9 @@ use serde::{Deserialize, Serialize};
 use std::convert::From;
 use crate::application::user::UserService;
 use crate::domain::user::entity::User;
+use utoipa::{ToSchema};
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, ToSchema)]
 pub struct UserIdentity {
     pub email: String,
     pub id: i32,

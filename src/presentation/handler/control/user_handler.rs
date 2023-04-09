@@ -28,19 +28,79 @@ struct Code {
     pub code: String,
 }
 
+/// Start the login OIDC login process
+///
+/// ## Example
+/// Call the api endpoint with following curl.
+/// ```text
+/// curl https://domain:port/api/v1/user/login
+/// ```
+#[utoipa::path(
+    get,
+    path = "/api/v1/user/login",
+    responses(
+        (status = 302, description = "Redirect to login url"),
+        (status = 500, description = "Server internal error", body = ErrorMessage)
+    )
+)]
 async fn login(user_service: web::Data<dyn UserService>) -> Result<impl Responder, Error> {
     Ok(HttpResponse::Found().insert_header(("Location", user_service.into_inner().get_login_url().await?.as_str())).finish())
 }
 
+/// Get login user information
+///
+/// ## Example
+/// Call the api endpoint with following curl.
+/// ```text
+/// curl https://domain:port/api/v1/user/
+/// ```
+#[utoipa::path(
+    get,
+    path = "/api/v1/user/",
+    responses(
+        (status = 200, description = "get login user information", body = UserIdentity),
+        (status = 500, description = "Server internal error", body = ErrorMessage)
+    )
+)]
 async fn info(id: UserIdentity) -> Result<impl Responder, Error> {
     Ok(HttpResponse::Ok().json(id))
 }
 
+/// Logout current user
+///
+/// ## Example
+/// Call the api endpoint with following curl.
+/// ```text
+/// curl -X POST https://domain:port/api/v1/user/logout
+/// ```
+#[utoipa::path(
+    post,
+    path = "/api/v1/user/logout",
+    responses(
+        (status = 204, description = "logout successfully"),
+        (status = 500, description = "Server internal error", body = ErrorMessage)
+    )
+)]
 async fn logout(id: Identity) -> Result<impl Responder, Error> {
     id.logout();
     Ok( HttpResponse::NoContent().finish())
 }
 
+/// Callback API for OIDC provider
+///
+/// ## Example
+/// Call the api endpoint with following curl.
+/// ```text
+/// curl -X GET https://domain:port/api/v1/user/callback
+/// ```
+#[utoipa::path(
+    get,
+    path = "/api/v1/user/callback",
+    responses(
+    (status = 302, description = "logout succeed, redirect to index"),
+    (status = 500, description = "Server internal error", body = ErrorMessage)
+    )
+)]
 async fn callback(req: HttpRequest, user_service: web::Data<dyn UserService>, code: web::Query<Code>) -> Result<impl Responder, Error> {
     let user_entity:UserIdentity = UserIdentity::from(user_service.into_inner().validate_user(&code.code).await?);
     match Identity::login(&req.extensions(), serde_json::to_string(&user_entity)?) {
@@ -53,11 +113,48 @@ async fn callback(req: HttpRequest, user_service: web::Data<dyn UserService>, co
     }
 }
 
+/// Generate new token for current user
+///
+/// ## Example
+/// Call the api endpoint with following curl.
+/// ```text
+/// curl -X POST https://domain:port/api/v1/user/api_keys
+/// ```
+#[utoipa::path(
+    post,
+    path = "/api/v1/user/api_keys",
+    security(
+        ("Authorization" = [])
+    ),
+    responses(
+        (status = 201, description = "logout successfully", body = TokenDTO),
+        (status = 500, description = "Server internal error", body = ErrorMessage)
+    )
+)]
 async fn new_token(user: UserIdentity, user_service: web::Data<dyn UserService>, token: web::Json<TokenDTO>) -> Result<impl Responder, Error> {
     let token = user_service.into_inner().generate_token(&user, token.0).await?;
-    Ok(HttpResponse::Ok().json(TokenDTO::from(token)))
+    Ok(HttpResponse::Created().json(TokenDTO::from(token)))
 }
 
+/// List all tokens for current user
+///
+/// **NOTE**: only the token hash will be responsed.
+/// ## Example
+/// Call the api endpoint with following curl.
+/// ```text
+/// curl -X GET https://domain:port/api/v1/user/api_keys
+/// ```
+#[utoipa::path(
+    get,
+    path = "/api/v1/user/api_keys",
+    security(
+        ("Authorization" = [])
+    ),
+    responses(
+        (status = 200, description = "logout successfully", body = [TokenDTO]),
+        (status = 500, description = "Server internal error", body = ErrorMessage)
+    )
+)]
 async fn list_token(user: UserIdentity, user_service: web::Data<dyn UserService>) -> Result<impl Responder, Error> {
     let token = user_service.into_inner().get_token(&user).await?;
     let mut results = vec![];

@@ -6,9 +6,10 @@ use serde::{Deserialize, Serialize};
 use std::convert::From;
 use chrono::{DateTime, Utc};
 use crate::domain::token::entity::Token;
+use utoipa::{ToSchema};
 
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, ToSchema)]
 pub struct TokenDTO {
     #[serde(skip_deserializing)]
     pub id: i32,

@@ -76,11 +76,20 @@ impl Modify for SecurityAddon {
         crate::presentation::handler::control::datakey_handler::export_data_key,
         crate::presentation::handler::control::datakey_handler::enable_data_key,
         crate::presentation::handler::control::datakey_handler::disable_data_key,
-        crate::presentation::handler::control::datakey_handler::import_data_key
+        crate::presentation::handler::control::datakey_handler::import_data_key,
+
+        crate::presentation::handler::control::user_handler::login,
+        crate::presentation::handler::control::user_handler::callback,
+        crate::presentation::handler::control::user_handler::info,
+        crate::presentation::handler::control::user_handler::logout,
+        crate::presentation::handler::control::user_handler::new_token,
+        crate::presentation::handler::control::user_handler::list_token,
     ),
     components(
         schemas(crate::presentation::handler::control::model::datakey::dto::DataKeyDTO,
                 crate::presentation::handler::control::model::datakey::dto::ExportKey,
+                crate::presentation::handler::control::model::token::dto::TokenDTO,
+                crate::presentation::handler::control::model::user::dto::UserIdentity,
                 crate::util::error::ErrorMessage)
     ),
     modifiers(&SecurityAddon)
