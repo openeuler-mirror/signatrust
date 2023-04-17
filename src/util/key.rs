@@ -19,7 +19,7 @@ use rand::{thread_rng, Rng};
 use rand::distributions::Alphanumeric;
 use serde::{Serialize, Serializer};
 use std::collections::{HashMap, BTreeMap};
-use sha1::Digest;
+use sha2::{Sha256, Digest};
 
 pub fn encode_u8_to_hex_string(value: &[u8]) -> String {
     value
@@ -37,7 +37,7 @@ pub fn generate_api_token() -> String {
 }
 
 pub fn get_token_hash(real_token: &str) -> String {
-    let mut hasher = sha1::Sha1::default();
+    let mut hasher = Sha256::default();
     hasher.update(real_token);
     let digest = hasher.finalize();
     return hex::encode(digest)

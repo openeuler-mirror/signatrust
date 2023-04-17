@@ -41,8 +41,8 @@ impl TokenRepository {
 #[async_trait]
 impl Repository for TokenRepository {
 
-    async fn create(&self, token: &Token) -> Result<Token> {
-        let dto = TokenDTO::encrypt(token).await?;
+    async fn create(&self, token: Token) -> Result<Token> {
+        let dto = TokenDTO::from(token);
         let record : u64 = sqlx::query("INSERT INTO token(user_id, description, token, create_at, expire_at) VALUES (?, ?, ?, ?, ?)")
             .bind(&dto.user_id)
             .bind(&dto.description)
@@ -59,7 +59,7 @@ impl Repository for TokenRepository {
             .bind(id)
             .fetch_one(&self.db_pool)
             .await?;
-        Ok(selected.decrypt().await?)
+        Ok(Token::from(selected))
     }
 
     async fn get_token_by_value(&self, token: &str) -> Result<Token> {
@@ -67,7 +67,7 @@ impl Repository for TokenRepository {
             .bind(get_token_hash(token))
             .fetch_one(&self.db_pool)
             .await?;
-        Ok(selected.decrypt().await?)
+        Ok(Token::from(selected))
     }
 
     async fn delete_by_id(&self, id: i32) -> Result<()> {
@@ -85,7 +85,7 @@ impl Repository for TokenRepository {
             .await?;
         let mut results = vec![];
         for dto in dtos.into_iter() {
-            results.push(dto.decrypt().await?);
+            results.push(Token::from(dto));
         }
         Ok(results)
     }
