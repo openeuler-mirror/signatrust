@@ -31,7 +31,7 @@ use super::model::user::dto::UserIdentity;
 /// This will generate either a pgp private/public key pairs or a x509 private/public/cert keys.
 /// ## Generate pgp key
 /// To generate a pgp key the required parameters in `attributes` are:
-/// 1. **digest_algorithm**: the digest algorithm used for pgg, for example: sha2_256
+/// 1. **digest_algorithm**: the digest algorithm used for pgp, for example: sha2_256
 /// 2. **email**: email address used for identify the pgp key,
 /// 3. **key_length**: the private key length, for example, 2048,
 /// 4. **key_type**: the algorithm of private key, for example, rsa or dsa.
@@ -56,7 +56,7 @@ use super::model::user::dto::UserIdentity;
 ///
 /// ## Generate x509 key
 /// To generate a x509 key the required parameters in `attributes` are:
-/// 1. **digest_algorithm**: the digest algorithm used for pgg, for example: sha2_256
+/// 1. **digest_algorithm**: the digest algorithm used for x509 key, for example: sha2_256
 /// 2. **key_length**: the private key length, for example, 2048,
 /// 3. **key_type**: the algorithm of private key, for example, rsa or dsa.
 /// 4. **common_name**: common name (commonName, CN), used for certificate.
