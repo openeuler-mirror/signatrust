@@ -15,6 +15,11 @@
  */
 
 use std::net::SocketAddr;
+use utoipa::{
+    openapi::security::{ApiKey, ApiKeyValue, SecurityScheme},
+    Modify, OpenApi,
+};
+use utoipa_swagger_ui::SwaggerUi;
 use std::sync::{Arc, RwLock};
 use actix_web::{App, HttpServer, middleware, web, cookie::Key};
 use config::Config;
@@ -48,6 +53,48 @@ pub struct ControlServer {
     key_service: Arc<dyn KeyService>,
 
 }
+
+struct SecurityAddon;
+
+impl Modify for SecurityAddon {
+    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+        let components = openapi.components.as_mut().unwrap();
+        components.add_security_scheme(
+            "Authorization",
+            SecurityScheme::ApiKey(ApiKey::Header(ApiKeyValue::new("Authorization"))),
+        )
+    }
+}
+
+#[derive(OpenApi)]
+#[openapi(
+    paths(
+        crate::presentation::handler::control::datakey_handler::list_data_key,
+        crate::presentation::handler::control::datakey_handler::show_data_key,
+        crate::presentation::handler::control::datakey_handler::create_data_key,
+        crate::presentation::handler::control::datakey_handler::delete_data_key,
+        crate::presentation::handler::control::datakey_handler::export_data_key,
+        crate::presentation::handler::control::datakey_handler::enable_data_key,
+        crate::presentation::handler::control::datakey_handler::disable_data_key,
+        crate::presentation::handler::control::datakey_handler::import_data_key,
+
+        crate::presentation::handler::control::user_handler::login,
+        crate::presentation::handler::control::user_handler::callback,
+        crate::presentation::handler::control::user_handler::info,
+        crate::presentation::handler::control::user_handler::logout,
+        crate::presentation::handler::control::user_handler::new_token,
+        crate::presentation::handler::control::user_handler::list_token,
+    ),
+    components(
+        schemas(crate::presentation::handler::control::model::datakey::dto::DataKeyDTO,
+                crate::presentation::handler::control::model::datakey::dto::ExportKey,
+                crate::presentation::handler::control::model::token::dto::TokenDTO,
+                crate::presentation::handler::control::model::user::dto::UserIdentity,
+                crate::util::error::ErrorMessage)
+    ),
+    modifiers(&SecurityAddon)
+)]
+struct ControlApiDoc;
 
 impl ControlServer {
     pub async fn new(server_config: Arc<RwLock<Config>>) -> Result<Self> {
@@ -120,6 +167,8 @@ impl ControlServer {
                 .unwrap(),
         );
 
+        let openapi = ControlApiDoc::openapi();
+
         let http_server = HttpServer::new(move || {
             App::new()
                 .wrap(middleware::Logger::default())
@@ -145,6 +194,10 @@ impl ControlServer {
                 .service(web::scope("/api/v1")
                     .service(user_handler::get_scope())
                     .service(datakey_handler::get_scope()))
+                //open api document
+                .service(
+                    SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-doc/openapi.json", openapi.clone()),
+                )
         });
         if self.server_config
             .read()?

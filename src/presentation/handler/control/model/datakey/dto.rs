@@ -9,9 +9,10 @@ use validator::{Validate, ValidationError};
 use std::collections::HashMap;
 use crate::util::error::Error;
 use serde::{Deserialize, Serialize};
+use utoipa::{ToSchema};
 use crate::presentation::handler::control::model::user::dto::UserIdentity;
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, ToSchema)]
 pub struct ExportKey {
     pub public_key: String,
     pub certificate: String,
@@ -28,25 +29,35 @@ impl TryFrom<DataKey> for ExportKey {
     }
 }
 
-#[derive(Debug, Validate, Deserialize, Serialize)]
+#[derive(Debug, Validate, Deserialize, Serialize, ToSchema)]
 pub struct DataKeyDTO {
+    /// Key ID, leave empty when creating
     #[serde(skip_deserializing)]
     pub id: i32,
+    /// Key Name, should be identical, length between 4 and 20
     #[validate(length(min = 4, max = 20))]
     pub name: String,
     #[serde(skip_deserializing)]
+    /// User email, will be removed
     pub email: String,
+    /// Description, length between 0 and 100
     #[validate(length(min = 0, max = 100))]
     pub description: String,
+    /// User ID, leave empty when creating
     #[serde(skip_deserializing)]
     pub user: i32,
+    /// Attributes in map
     #[serde(serialize_with = "sorted_map")]
     pub attributes: HashMap<String, String>,
+    /// Key type current support pgp and x509
     pub key_type: String,
+    /// Create utc time, format: 2023-04-08 13:36:35.328324 UTC
     #[validate(custom = "validate_utc_time")]
     pub create_at: String,
+    /// Expire utc time, format: 2023-04-08 13:36:35.328324 UTC
     #[validate(custom = "validate_utc_time")]
     pub expire_at: String,
+    /// Key state, leave empty when creating
     #[serde(skip_deserializing)]
     pub key_state: String,
 }
