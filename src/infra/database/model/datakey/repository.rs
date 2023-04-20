@@ -39,13 +39,14 @@ impl DataKeyRepository {
 impl Repository for DataKeyRepository {
     async fn create(&self, data_key: DataKey) -> Result<DataKey> {
         let dto = DataKeyDTO::try_from(data_key)?;
-        let record : u64 = sqlx::query("INSERT INTO data_key(name, description, user, email, attributes, key_type, private_key, public_key, certificate, create_at, expire_at, key_state, soft_delete) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+        let record : u64 = sqlx::query("INSERT INTO data_key(name, description, user, email, attributes, key_type, fingerprint, private_key, public_key, certificate, create_at, expire_at, key_state, soft_delete) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
             .bind(&dto.name)
             .bind(&dto.description)
             .bind(&dto.user)
             .bind(dto.email)
             .bind(dto.attributes)
             .bind(dto.key_type)
+            .bind(dto.fingerprint)
             .bind(dto.private_key)
             .bind(dto.public_key)
             .bind(dto.certificate)

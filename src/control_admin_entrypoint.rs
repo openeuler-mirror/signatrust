@@ -165,6 +165,7 @@ async fn main() -> Result<()> {
                 email: user.email.clone(),
                 attributes: generate_keys_parameters(&generate_keys),
                 key_type: generate_keys.key_type.to_string(),
+                fingerprint: "".to_string(),
                 create_at: format!("{}", now),
                 expire_at: format!("{}", now + Duration::days(30)),
                 key_state: Default::default(),

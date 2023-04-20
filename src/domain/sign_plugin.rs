@@ -16,7 +16,7 @@
 
 use crate::util::error::Result;
 use std::collections::HashMap;
-use crate::domain::datakey::entity::SecDataKey;
+use crate::domain::datakey::entity::{DataKeyContent, SecDataKey};
 
 pub trait SignPlugins: Send + Sync {
     fn new(db: SecDataKey) -> Result<Self>
@@ -31,7 +31,7 @@ pub trait SignPlugins: Send + Sync {
             Self: Sized;
     fn generate_keys(
         attributes: &HashMap<String, String>,
-    ) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>)>
+    ) -> Result<DataKeyContent>
         where
             Self: Sized;
     fn sign(&self, content: Vec<u8>, options: HashMap<String, String>) -> Result<Vec<u8>>;

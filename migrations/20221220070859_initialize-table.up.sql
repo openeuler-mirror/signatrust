@@ -22,6 +22,7 @@ CREATE TABLE data_key (
                           email VARCHAR(40) NOT NULL,
                           attributes VARCHAR(1000),
                           key_type VARCHAR(10) NOT NULL,
+                          fingerprint VARCHAR(90) NOT NULL,
                           private_key TEXT,
                           public_key TEXT,
                           certificate TEXT,

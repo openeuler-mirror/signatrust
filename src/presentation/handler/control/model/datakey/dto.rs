@@ -51,6 +51,9 @@ pub struct DataKeyDTO {
     pub attributes: HashMap<String, String>,
     /// Key type current support pgp and x509
     pub key_type: String,
+    /// Fingerprint, leave empty when creating
+    #[serde(skip_deserializing)]
+    pub fingerprint: String,
     /// Create utc time, format: 2023-04-08 13:36:35.328324 UTC
     #[validate(custom = "validate_utc_time")]
     pub create_at: String,
@@ -83,6 +86,7 @@ impl DataKey {
             email: identity.email,
             attributes: combined_attributes,
             key_type: KeyType::from_str(dto.key_type.as_str())?,
+            fingerprint: "".to_string(),
             private_key: vec![],
             public_key: vec![],
             certificate: vec![],
@@ -106,6 +110,7 @@ impl TryFrom<DataKey> for DataKeyDTO {
             email: dto.email,
             attributes: dto.attributes,
             key_type: dto.key_type.to_string(),
+            fingerprint: dto.fingerprint,
             create_at: dto.create_at.to_string(),
             expire_at: dto.expire_at.to_string(),
             key_state: dto.key_state.to_string(),

@@ -28,9 +28,10 @@ use secstr::SecVec;
 use serde::Deserialize;
 
 use validator::{Validate, ValidationError};
-use crate::domain::datakey::entity::SecDataKey;
+use crate::domain::datakey::entity::{DataKeyContent, SecDataKey};
 use crate::util::error::{Error, Result};
 use crate::domain::sign_plugin::SignPlugins;
+use crate::util::key::encode_u8_to_hex_string;
 use super::util::{validate_utc_time_not_expire, validate_utc_time};
 
 #[derive(Debug, Validate, Deserialize)]
@@ -164,7 +165,7 @@ impl SignPlugins for X509Plugin {
 
     fn generate_keys(
         attributes: &HashMap<String, String>,
-    ) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>)> {
+    ) -> Result<DataKeyContent> {
         let parameter = X509Plugin::attributes_validate(attributes)?;
         let keys = parameter.get_key()?;
         let mut generator = x509::X509Builder::new()?;
@@ -176,11 +177,13 @@ impl SignPlugins for X509Plugin {
         generator.set_not_after(Asn1Time::days_from_now(days_in_duration(&parameter.expire_at)? as u32)?.as_ref())?;
         generator.sign(keys.as_ref(), parameter.get_digest_algorithm()?)?;
         let cert = generator.build();
-        Ok((
-            keys.private_key_to_pem_pkcs8()?,
-            keys.public_key_to_pem()?,
-            cert.to_pem()?
-        ))
+        Ok(DataKeyContent{
+            private_key: keys.private_key_to_pem_pkcs8()?,
+            public_key: keys.public_key_to_pem()?,
+            certificate: cert.to_pem()?,
+            fingerprint: encode_u8_to_hex_string(cert.digest(
+                MessageDigest::from_name("sha1").ok_or(Error::GeneratingKeyError("unable to generate digester".to_string()))?)?.as_ref())
+        })
     }
 
     fn sign(&self, content: Vec<u8>, _options: HashMap<String, String>) -> Result<Vec<u8>> {
