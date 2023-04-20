@@ -89,6 +89,8 @@ pub enum Error {
     RedisError(String),
     #[error("token has expired: {0}")]
     TokenExpiredError(String),
+    #[error("failed to generate keys: {0}")]
+    GeneratingKeyError(String),
 
     //client error
     #[error("file type not supported {0}")]

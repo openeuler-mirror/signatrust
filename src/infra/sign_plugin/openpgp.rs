@@ -38,7 +38,8 @@ use std::str::from_utf8;
 
 use validator::{Validate, ValidationError};
 use pgp::composed::StandaloneSignature;
-use crate::domain::datakey::entity::SecDataKey;
+use crate::domain::datakey::entity::{DataKeyContent, SecDataKey};
+use crate::util::key::encode_u8_to_hex_string;
 use super::util::{validate_utc_time_not_expire, validate_utc_time};
 
 const DETACHED_SIGNATURE: &str = "detached";
@@ -160,7 +161,7 @@ impl SignPlugins for OpenPGPPlugin {
 
     fn generate_keys(
         attributes: &HashMap<String, String>,
-    ) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>)> {
+    ) -> Result<DataKeyContent> {
         let parameter = OpenPGPPlugin::attributes_validate(attributes)?;
         let mut key_params = SecretKeyParamsBuilder::default();
         let create_at = parameter.create_at.parse()?;
@@ -182,11 +183,12 @@ impl SignPlugins for OpenPGPPlugin {
         let signed_secret_key = secret_key.sign(passwd_fn)?;
         let public_key = signed_secret_key.public_key();
         let signed_public_key = public_key.sign(&signed_secret_key, passwd_fn)?;
-        Ok((
-            signed_secret_key.to_armored_bytes(None)?,
-            signed_public_key.to_armored_bytes(None)?,
-            vec![],
-        ))
+        Ok(DataKeyContent{
+            private_key: signed_secret_key.to_armored_bytes(None)?,
+            public_key: signed_public_key.to_armored_bytes(None)?,
+            certificate: vec![],
+            fingerprint: encode_u8_to_hex_string(&signed_secret_key.fingerprint()),
+        })
     }
 
     fn sign(&self, content: Vec<u8>, options: HashMap<String, String>) -> Result<Vec<u8>> {

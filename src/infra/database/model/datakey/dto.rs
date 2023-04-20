@@ -33,6 +33,7 @@ pub(super) struct DataKeyDTO {
     pub email: String,
     pub attributes: String,
     pub key_type: String,
+    pub fingerprint: String,
     pub private_key: String,
     pub public_key: String,
     pub certificate: String,
@@ -46,7 +47,7 @@ pub(super) struct DataKeyDTO {
 impl TryFrom<DataKeyDTO> for DataKey {
     type Error = Error;
 
-    fn try_from(dto: DataKeyDTO) -> std::result::Result<Self, Self::Error> {
+    fn try_from(dto: DataKeyDTO) -> Result<Self, Self::Error> {
         Ok(DataKey {
             id: dto.id,
             name: dto.name.clone(),
@@ -55,6 +56,7 @@ impl TryFrom<DataKeyDTO> for DataKey {
             email: dto.email.clone(),
             attributes: serde_json::from_str(dto.attributes.as_str())?,
             key_type: KeyType::from_str(&dto.key_type)?,
+            fingerprint: dto.fingerprint.clone(),
             private_key: key::decode_hex_string_to_u8(&dto.private_key),
             public_key: key::decode_hex_string_to_u8(&dto.public_key),
             certificate: key::decode_hex_string_to_u8(&dto.certificate),
@@ -69,7 +71,7 @@ impl TryFrom<DataKeyDTO> for DataKey {
 impl TryFrom<DataKey> for DataKeyDTO {
     type Error = Error;
 
-    fn try_from(data_key: DataKey) -> std::result::Result<Self, Self::Error> {
+    fn try_from(data_key: DataKey) -> Result<Self, Self::Error> {
         Ok(DataKeyDTO {
             id: data_key.id,
             name: data_key.name.clone(),
@@ -78,6 +80,7 @@ impl TryFrom<DataKey> for DataKeyDTO {
             email: data_key.email.clone(),
             attributes: data_key.serialize_attributes()?,
             key_type: data_key.key_type.to_string(),
+            fingerprint: data_key.fingerprint.clone(),
             private_key: key::encode_u8_to_hex_string(
                 &data_key.private_key
             ),

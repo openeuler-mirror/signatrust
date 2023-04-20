@@ -97,6 +97,7 @@ pub struct DataKey {
     pub email: String,
     pub attributes: HashMap<String, String>,
     pub key_type: KeyType,
+    pub fingerprint: String,
     pub private_key: Vec<u8>,
     pub public_key: Vec<u8>,
     pub certificate: Vec<u8>,
@@ -121,12 +122,13 @@ impl ExtendableAttributes for DataKey {
 impl Identity for DataKey {
     fn get_identity(&self) -> String {
         format!(
-            "<ID:{},Name:{}, Email:{},User:{},Type:{}>",
+            "<ID:{},Name:{}, Email:{},User:{},Type:{},Fingerprint:{}>",
             self.id,
             self.name,
             self.email,
             self.user,
-            self.key_type
+            self.key_type,
+            self.fingerprint
         )
     }
 }
@@ -149,5 +151,12 @@ impl SecDataKey {
             attributes: data_key.attributes.clone(),
         })
     }
+}
+
+pub struct DataKeyContent {
+    pub private_key: Vec<u8>,
+    pub public_key: Vec<u8>,
+    pub certificate: Vec<u8>,
+    pub fingerprint: String,
 }
 
