@@ -81,9 +81,9 @@ impl KernelModuleFileHandler {
         Ok(())
     }
 
-    pub fn append_inline_signature(&self, module: &str, tempfile: &str, signature: &[u8]) -> Result<()> {
-        let mut signed = std::fs::File::create(tempfile)?;
-        signed.write_all(&std::fs::read(module)?)?;
+    pub fn append_inline_signature(&self, module: &PathBuf, tempfile: &PathBuf, signature: &[u8]) -> Result<()> {
+        let mut signed = fs::File::create(tempfile)?;
+        signed.write_all(&self.get_raw_content(module)?)?;
         signed.write_all(signature)?;
         let sig_struct = ModuleSignature::new(signature.len() as c_uint);
         signed.write_all(&bincode::encode_to_vec(
@@ -97,24 +97,42 @@ impl KernelModuleFileHandler {
         Ok(())
     }
 
-    pub fn file_unsigned(&self, path: &PathBuf) -> Result<bool> {
+    pub fn get_raw_content(&self, path: &PathBuf) -> Result<Vec<u8>> {
+        let raw_content = fs::read(path)?;
         let mut file = fs::File::open(path)?;
         if file.metadata()?.len() <= MAGIC_NUMBER_SIZE as u64 {
-            return Ok(true)
+            return Ok(raw_content)
         }
+        //identify magic string and end of the file
         file.seek(io::SeekFrom::End((MAGIC_NUMBER_SIZE as i64) * -1))?;
         let mut signature_ending: [u8; MAGIC_NUMBER_SIZE] = [0; MAGIC_NUMBER_SIZE];
         file.read(&mut signature_ending)?;
-        match str::from_utf8(&signature_ending.to_vec()) {
+        return match str::from_utf8(&signature_ending.to_vec()) {
             Ok(ending) => {
                 return if ending == MAGIC_NUMBER {
-                    Ok(false)
+                    file.seek(io::SeekFrom::End((SIGNATURE_SIZE) as i64 * -1))?;
+                    let mut signature_meta: [u8; SIGNATURE_SIZE - MAGIC_NUMBER_SIZE] = [0; SIGNATURE_SIZE - MAGIC_NUMBER_SIZE];
+                    file.read(&mut signature_meta)?;
+                    //decode kernel module signature struct
+                    let signature: ModuleSignature = bincode::decode_from_slice(
+                        &signature_meta,
+                        config::standard()
+                            .skip_fixed_array_length()
+                            .with_fixed_int_encoding()
+                            .with_big_endian(),
+                    )?.0;
+                    if raw_content.len() < SIGNATURE_SIZE + signature.sig_len as usize {
+                        Err(Error::SplitFileError("invalid kernel module signature size found".to_owned()))
+                    }
+                    //read raw content
+                    Ok(raw_content[0..(raw_content.len() - SIGNATURE_SIZE - signature.sig_len as usize)].to_owned())
                 } else {
-                    Ok(true)
+                    Ok(raw_content)
                 }
             }
             Err(_) => {
-                Ok(true)
+                //try to read whole content
+                Ok(raw_content)
             }
         }
     }
@@ -134,11 +152,7 @@ impl FileHandler for KernelModuleFileHandler {
 
     //NOTE: currently we don't support sign signed kernel module file
     async fn split_data(&self, path: &PathBuf, _sign_options: &mut HashMap<String, String>) -> Result<Vec<Vec<u8>>> {
-        let content = fs::read(path)?;
-        if self.file_unsigned(path)? {
-            return Ok(vec![content])
-        }
-        Err(Error::KOAlreadySignedError)
+        Ok(vec![self.get_raw_content(path)?])
     }
 
     /* when assemble checksum signature when only create another .asc file separately */
@@ -152,7 +166,7 @@ impl FileHandler for KernelModuleFileHandler {
                            format!("{}.{}", path.display(), FILE_EXTENSION)))
             }
         }
-        self.append_inline_signature(&path.display().to_string(), &temp_file.display().to_string(), &data[0])?;
+        self.append_inline_signature(path, &temp_file, &data[0])?;
         return Ok((temp_file.as_path().display().to_string(),
                    path.display().to_string()))
 
