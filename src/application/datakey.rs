@@ -26,6 +26,7 @@ use std::collections::HashMap;
 #[async_trait]
 pub trait KeyService: Send + Sync{
     async fn create(&self, data: &mut DataKey) -> Result<DataKey>;
+    async fn import(&self, data: &mut DataKey) -> Result<DataKey>;
     async fn get_all(&self) -> Result<Vec<DataKey>>;
     async fn get_one(&self, id: i32) -> Result<DataKey>;
     async fn delete_one(&self, id: i32) -> Result<()>;
@@ -69,6 +70,11 @@ where
 {
     async fn create(&self, data: &mut DataKey) -> Result<DataKey> {
         self.sign_service.generate_keys(data).await?;
+        self.repository.create(data.clone()).await
+    }
+
+    async fn import(&self, data: &mut DataKey) -> Result<DataKey> {
+        self.sign_service.validate_and_update(data).await?;
         self.repository.create(data.clone()).await
     }
 

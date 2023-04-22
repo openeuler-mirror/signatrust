@@ -25,7 +25,7 @@ use clap::{Args};
 use crate::client::sign_identity;
 use crate::domain::datakey::entity::{DataKey};
 use crate::domain::user::entity::User;
-use crate::presentation::handler::control::model::datakey::dto::DataKeyDTO;
+use crate::presentation::handler::control::model::datakey::dto::{CreateDataKeyDTO};
 use crate::presentation::handler::control::model::user::dto::UserIdentity;
 
 mod util;
@@ -157,21 +157,15 @@ async fn main() -> Result<()> {
             let user = control_server.get_user_by_email(&generate_keys.email).await?;
 
             let now = Utc::now();
-            let key = DataKeyDTO {
-                id: 0,
+            let key = CreateDataKeyDTO {
                 name: generate_keys.name.clone(),
                 description: generate_keys.description.clone(),
-                user: user.id,
-                email: user.email.clone(),
                 attributes: generate_keys_parameters(&generate_keys),
                 key_type: generate_keys.key_type.to_string(),
-                fingerprint: "".to_string(),
-                create_at: format!("{}", now),
                 expire_at: format!("{}", now + Duration::days(30)),
-                key_state: Default::default(),
             };
 
-            let keys = control_server.create_keys(&mut DataKey::convert_from(key, UserIdentity::from(user))?).await?;
+            let keys = control_server.create_keys(&mut DataKey::create_from(key, UserIdentity::from(user))?).await?;
             info!("[Result]: Keys {} type {} has been successfully generated", &keys.name, &generate_keys.key_type)
         }
         None => {}

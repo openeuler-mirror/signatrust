@@ -79,6 +79,14 @@ impl MemorySignBackend {
 
 #[async_trait]
 impl SignBackend for MemorySignBackend {
+    async fn validate_and_update(&self, data_key: &mut DataKey) -> Result<()> {
+        let _ = Signers::validate_and_update(data_key)?;
+        data_key.private_key = self.engine.encode(data_key.private_key.clone()).await?;
+        data_key.public_key = self.engine.encode(data_key.public_key.clone()).await?;
+        data_key.certificate = self.engine.encode(data_key.certificate.clone()).await?;
+        Ok(())
+    }
+
     async fn generate_keys(&self, data_key: &mut DataKey) -> Result<()> {
         let keys = Signers::generate_keys(&data_key.key_type, &data_key.attributes)?;
         data_key.private_key = self.engine.encode(keys.private_key).await?;

@@ -19,7 +19,7 @@ use actix_web::{
 };
 
 
-use crate::presentation::handler::control::model::datakey::dto::{DataKeyDTO, ExportKey};
+use crate::presentation::handler::control::model::datakey::dto::{CreateDataKeyDTO, DataKeyDTO, ExportKey, ImportDataKeyDTO};
 use crate::util::error::Error;
 use validator::Validate;
 use crate::application::datakey::KeyService;
@@ -39,10 +39,8 @@ use super::model::user::dto::UserIdentity;
 /// ```json
 /// {
 ///   "name": "test-pgp",
-///   "email": "tommylikehu@gmail.com",
 ///   "description": "hello world",
 ///   "key_type": "pgp",
-///   "user": "tommylike",
 ///   "attributes": {
 ///     "digest_algorithm": "sha2_256",
 ///     "key_type": "rsa",
@@ -69,10 +67,8 @@ use super::model::user::dto::UserIdentity;
 /// ```json
 /// {
 ///   "name": "test-x509",
-///   "email": "tommylikehu@gmail.com",
 ///   "description": "hello world",
 ///   "key_type": "x509",
-///   "user": "tommylike",
 ///   "attributes": {
 ///     "digest_algorithm": "sha2_256",
 ///     "key_type": "rsa",
@@ -95,8 +91,8 @@ use super::model::user::dto::UserIdentity;
 /// ```
 #[utoipa::path(
     post,
-    path = "/api/v1/keys",
-    request_body = DataKeyDTO,
+    path = "/api/v1/keys/",
+    request_body = CreateDataKeyDTO,
     security(
     ("Authorization" = [])
     ),
@@ -107,9 +103,9 @@ use super::model::user::dto::UserIdentity;
     (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn create_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, datakey: web::Json<DataKeyDTO>,) -> Result<impl Responder, Error> {
+async fn create_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, datakey: web::Json<CreateDataKeyDTO>,) -> Result<impl Responder, Error> {
     datakey.validate()?;
-    let mut key = DataKey::convert_from(datakey.0, user)?;
+    let mut key = DataKey::create_from(datakey.0, user)?;
     Ok(HttpResponse::Created().json(DataKeyDTO::try_from(key_service.into_inner().create(&mut key).await?)?))
 }
 
@@ -287,6 +283,37 @@ async fn disable_data_key(_user: UserIdentity, key_service: web::Data<dyn KeySer
 
 /// Import key
 ///
+/// Use this API to import openpgp or x509 keys
+/// ## Import openPGP keys
+/// `private_key` and `public_key` are required, and the content are represented in armored text format, for example:
+/// ```text
+///  -----BEGIN PGP PUBLIC KEY BLOCK-----
+///  xsFNBGRDujMBEADwXafQySUIUvuO0e7vTzgW8KkgzAFDmR7CO8tVplcQS03oZmrm
+///  ZhhjV+MnfsONMVzrAvusDIF4YnKSXGJI8Y4A21hsK6CV+1PxqCpcGqDQ88H1Gtd5
+///  ........skipped content.......
+///  vTw1M8qqdjRpJhdF8kNXZITlaMkLOwZuL3QvDvEORw41o8zgSN1ryQuN/HtSLOJr
+///  IcJ//T9nn8hCPxkMZE2T7JBEZBQwbzGjI5nUZV6nS6caINfXtkoRbta1SXcoRBSe
+///  L0fZUKYcKURCAbLmz0bcrOsDBqnK
+///  =c1i2
+/// -----END PGP PUBLIC KEY BLOCK-----
+/// ```
+/// you can specify the digest algorithm as well in the `attributes`, leave it blank will lead to the usage of 'sha2_256' as default.
+/// ```json
+/// "attributes": {
+///     "digest_algorithm": "sha2_256"
+/// }
+/// ```
+/// ## Import openSSL x509 keys
+/// `certificate` and `private` are required, and the content are represented in PEM format, for example:
+/// ```text
+/// -----BEGIN PRIVATE KEY-----
+/// MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDrd/0ui/bc5PJS
+/// Yo5eS9hD2M91NrJZPiF+vEdq/vOSypac9XukLjkhj1zADU2h35b1nMQoi0bG7SNr
+/// ........skipped content.......
+/// XTYUPye7CKt33tFhHYKj7EHvZmHkbmskpXdCiHpTZd4u84lwvH/acHfJ0Fqh0pV3
+/// IHehlWfHhjCxtw5Kzl3ncrHA
+/// -----END PRIVATE KEY-----
+/// ```
 /// ## Example
 /// Call the api endpoint with following curl.
 /// ```text
@@ -295,7 +322,7 @@ async fn disable_data_key(_user: UserIdentity, key_service: web::Data<dyn KeySer
 #[utoipa::path(
     post,
     path = "/api/v1/keys/import",
-    request_body = DataKeyDTO,
+    request_body = ImportDataKeyDTO,
     security(
     ("Authorization" = [])
     ),
@@ -306,8 +333,10 @@ async fn disable_data_key(_user: UserIdentity, key_service: web::Data<dyn KeySer
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn import_data_key(_user: UserIdentity) -> Result<impl Responder, Error> {
-    Ok(HttpResponse::Created())
+async fn import_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, datakey: web::Json<ImportDataKeyDTO>,) -> Result<impl Responder, Error> {
+    datakey.validate()?;
+    let mut key = DataKey::import_from(datakey.0, user)?;
+    Ok(HttpResponse::Created().json(DataKeyDTO::try_from(key_service.into_inner().import(&mut key).await?)?))
 }
 
 
@@ -317,10 +346,10 @@ pub fn get_scope() -> Scope {
             web::resource("/")
                 .route(web::get().to(list_data_key))
                 .route(web::post().to(create_data_key)))
+        .service( web::resource("/import").route(web::post().to(import_data_key)))
         .service( web::resource("/{id}")
             .route(web::get().to(show_data_key))
             .route(web::delete().to(delete_data_key)))
-        .service( web::resource("/import").route(web::post().to(import_data_key)))
         .service( web::resource("/{id}/export").route(web::post().to(export_data_key)))
         .service( web::resource("/{id}/enable").route(web::post().to(enable_data_key)))
         .service( web::resource("/{id}/disable").route(web::post().to(disable_data_key)))

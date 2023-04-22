@@ -17,7 +17,7 @@
 use crate::domain::sign_plugin::SignPlugins;
 use crate::infra::sign_plugin::openpgp::OpenPGPPlugin;
 use crate::infra::sign_plugin::x509::X509Plugin;
-use crate::domain::datakey::entity::{DataKeyContent, KeyType};
+use crate::domain::datakey::entity::{DataKey, DataKeyContent, KeyType};
 use crate::util::error::Result;
 use std::collections::HashMap;
 
@@ -43,6 +43,13 @@ impl Signers {
         match key_type {
             KeyType::OpenPGP => OpenPGPPlugin::generate_keys(value),
             KeyType::X509 => X509Plugin::generate_keys(value),
+        }
+    }
+
+    pub fn validate_and_update(datakey: &mut DataKey) -> Result<()> {
+        match datakey.key_type {
+            KeyType::OpenPGP => OpenPGPPlugin::validate_and_update(datakey),
+            KeyType::X509 => X509Plugin::validate_and_update(datakey),
         }
     }
 }

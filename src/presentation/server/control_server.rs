@@ -87,6 +87,8 @@ impl Modify for SecurityAddon {
     ),
     components(
         schemas(crate::presentation::handler::control::model::datakey::dto::DataKeyDTO,
+                crate::presentation::handler::control::model::datakey::dto::CreateDataKeyDTO,
+                crate::presentation::handler::control::model::datakey::dto::ImportDataKeyDTO,
                 crate::presentation::handler::control::model::datakey::dto::ExportKey,
                 crate::presentation::handler::control::model::token::dto::TokenDTO,
                 crate::presentation::handler::control::model::user::dto::UserIdentity,
