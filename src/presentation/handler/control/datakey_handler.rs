@@ -35,6 +35,7 @@ use super::model::user::dto::UserIdentity;
 /// 2. **email**: email address used for identify the pgp key,
 /// 3. **key_length**: the private key length, for example, 2048,
 /// 4. **key_type**: the algorithm of private key, for example, rsa or dsa.
+/// 5. **passphrase**: (optional) password of the key
 /// ### Request body example:
 /// ```json
 /// {
@@ -46,6 +47,7 @@ use super::model::user::dto::UserIdentity;
 ///     "key_type": "rsa",
 ///     "key_length": "2048",
 ///     "email": "test@openeuler.org",
+///     "passphrase": "password"
 ///   },
 ///   "create_at": "2023-04-12 22:10:57+08:00",
 ///   "expire_at": "2024-05-12 22:10:57+08:00"
@@ -298,9 +300,11 @@ async fn disable_data_key(_user: UserIdentity, key_service: web::Data<dyn KeySer
 /// -----END PGP PUBLIC KEY BLOCK-----
 /// ```
 /// you can specify the digest algorithm as well in the `attributes`, leave it blank will lead to the usage of 'sha2_256' as default.
+/// passphrase **MUST** be specified for accessing the imported keys when do signing.
 /// ```json
 /// "attributes": {
 ///     "digest_algorithm": "sha2_256"
+///     "passphrase": "husheng@1234"
 /// }
 /// ```
 /// ## Import openSSL x509 keys

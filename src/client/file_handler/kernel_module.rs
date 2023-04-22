@@ -122,7 +122,7 @@ impl KernelModuleFileHandler {
                             .with_big_endian(),
                     )?.0;
                     if raw_content.len() < SIGNATURE_SIZE + signature.sig_len as usize {
-                        Err(Error::SplitFileError("invalid kernel module signature size found".to_owned()))
+                        return Err(Error::SplitFileError("invalid kernel module signature size found".to_owned()));
                     }
                     //read raw content
                     Ok(raw_content[0..(raw_content.len() - SIGNATURE_SIZE - signature.sig_len as usize)].to_owned())
