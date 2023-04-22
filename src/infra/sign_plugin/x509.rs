@@ -15,6 +15,7 @@
  */
 
 use std::collections::HashMap;
+use std::time::{SystemTime, Duration};
 
 use chrono::{DateTime, Utc};
 use openssl::asn1::Asn1Time;
@@ -28,7 +29,7 @@ use secstr::SecVec;
 use serde::Deserialize;
 
 use validator::{Validate, ValidationError};
-use crate::domain::datakey::entity::{DataKeyContent, SecDataKey};
+use crate::domain::datakey::entity::{DataKey, DataKeyContent, SecDataKey};
 use crate::util::error::{Error, Result};
 use crate::domain::sign_plugin::SignPlugins;
 use crate::util::key::encode_u8_to_hex_string;
@@ -153,6 +154,20 @@ impl SignPlugins for X509Plugin {
             identity: db.identity.clone(),
             attributes: db.attributes.clone()
         })
+    }
+
+    fn validate_and_update(key: &mut DataKey) -> Result<()> where Self: Sized {
+        let _private_key = PKey::private_key_from_pem(&key.private_key)?;
+        let certificate = x509::X509::from_pem(&key.certificate)?;
+        if !key.public_key.is_empty() {
+            let _public_key = PKey::public_key_from_pem(&key.public_key)?;
+        }
+        let unix_time = Asn1Time::from_unix(0)?.diff(certificate.not_after())?;
+        let expire = SystemTime::UNIX_EPOCH + Duration::from_secs(unix_time.days as u64 * 86400 + unix_time.secs as u64);
+        key.expire_at = expire.into();
+        key.fingerprint = encode_u8_to_hex_string(
+            certificate.digest(MessageDigest::from_name("sha1").ok_or(Error::GeneratingKeyError("unable to generate digester".to_string()))?)?.as_ref());
+        Ok(())
     }
 
     fn parse_attributes(

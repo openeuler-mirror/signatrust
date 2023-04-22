@@ -16,10 +16,13 @@
 
 use crate::util::error::Result;
 use std::collections::HashMap;
-use crate::domain::datakey::entity::{DataKeyContent, SecDataKey};
+use crate::domain::datakey::entity::{DataKey, DataKeyContent, SecDataKey};
 
 pub trait SignPlugins: Send + Sync {
     fn new(db: SecDataKey) -> Result<Self>
+        where
+            Self: Sized;
+    fn validate_and_update(key: &mut DataKey) -> Result<()>
         where
             Self: Sized;
     fn parse_attributes(

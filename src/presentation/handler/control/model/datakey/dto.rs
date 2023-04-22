@@ -29,39 +29,72 @@ impl TryFrom<DataKey> for ExportKey {
     }
 }
 
-#[derive(Debug, Validate, Deserialize, Serialize, ToSchema)]
-pub struct DataKeyDTO {
-    /// Key ID, leave empty when creating
-    #[serde(skip_deserializing)]
-    pub id: i32,
+#[derive(Debug, Validate, Deserialize, ToSchema)]
+pub struct CreateDataKeyDTO {
     /// Key Name, should be identical, length between 4 and 20
     #[validate(length(min = 4, max = 20))]
     pub name: String,
-    #[serde(skip_deserializing)]
-    /// User email, will be removed
-    pub email: String,
     /// Description, length between 0 and 100
     #[validate(length(min = 0, max = 100))]
     pub description: String,
-    /// User ID, leave empty when creating
-    #[serde(skip_deserializing)]
-    pub user: i32,
     /// Attributes in map
     #[serde(serialize_with = "sorted_map")]
     pub attributes: HashMap<String, String>,
     /// Key type current support pgp and x509
+    #[validate(custom = "validate_key_type")]
     pub key_type: String,
-    /// Fingerprint, leave empty when creating
-    #[serde(skip_deserializing)]
-    pub fingerprint: String,
-    /// Create utc time, format: 2023-04-08 13:36:35.328324 UTC
-    #[validate(custom = "validate_utc_time")]
-    pub create_at: String,
     /// Expire utc time, format: 2023-04-08 13:36:35.328324 UTC
     #[validate(custom = "validate_utc_time")]
     pub expire_at: String,
-    /// Key state, leave empty when creating
-    #[serde(skip_deserializing)]
+}
+
+#[derive(Debug, Validate, Deserialize, ToSchema)]
+pub struct ImportDataKeyDTO {
+    /// Key Name, should be identical, length between 4 and 20
+    #[validate(length(min = 4, max = 20))]
+    pub name: String,
+    /// Description, length between 0 and 100
+    #[validate(length(min = 0, max = 100))]
+    pub description: String,
+    /// Attributes in map
+    pub attributes: HashMap<String, String>,
+    /// Key type current support pgp and x509
+    #[validate(custom = "validate_key_type")]
+    pub key_type: String,
+    /// private key in text format
+    pub private_key: String,
+    /// public key in text format
+    pub public_key: String,
+    /// certificate in text format
+    pub certificate: String,
+}
+
+#[derive(Debug, Validate, Serialize, ToSchema)]
+pub struct DataKeyDTO {
+    /// Key ID
+    pub id: i32,
+    /// Key Name
+    #[validate(length(min = 4, max = 20))]
+    pub name: String,
+    /// User email
+    pub email: String,
+    /// Description
+    #[validate(length(min = 0, max = 100))]
+    pub description: String,
+    /// User ID
+    pub user: i32,
+    /// Attributes in map
+    #[serde(serialize_with = "sorted_map")]
+    pub attributes: HashMap<String, String>,
+    /// Key type
+    pub key_type: String,
+    /// Fingerprint
+    pub fingerprint: String,
+    /// Create utc time, format: 2023-04-08 13:36:35.328324 UTC
+    pub create_at: String,
+    /// Expire utc time, format: 2023-04-08 13:36:35.328324 UTC
+    pub expire_at: String,
+    /// Key state
     pub key_state: String,
 }
 
@@ -72,14 +105,50 @@ fn validate_utc_time(expire: &str) -> std::result::Result<(), ValidationError> {
     Ok(())
 }
 
+fn validate_key_type(key_type: &str) -> std::result::Result<(), ValidationError> {
+    return match KeyType::from_str(key_type) {
+        Ok(_) => {
+            Ok(())
+        }
+        Err(_) => {
+            Err(ValidationError::new("unsupported key type"))
+        }
+    }
+}
+
 impl DataKey {
-    pub fn convert_from(dto: DataKeyDTO, identity: UserIdentity) -> Result<Self> {
+    pub fn import_from(dto: ImportDataKeyDTO, identity: UserIdentity) -> Result<Self> {
+        let now = Utc::now();
         let mut combined_attributes = dto.attributes.clone();
         combined_attributes.insert("name".to_string(), dto.name.clone());
-        combined_attributes.insert("create_at".to_string(), dto.create_at.clone());
+        combined_attributes.insert("create_at".to_string(), now.clone().to_string());
+        Ok(DataKey {
+            id: 0,
+            name: dto.name,
+            description: dto.description,
+            user: identity.id,
+            email: identity.email,
+            attributes: combined_attributes,
+            key_type: KeyType::from_str(dto.key_type.as_str())?,
+            fingerprint: "".to_string(),
+            private_key: dto.private_key.into_bytes(),
+            public_key: dto.public_key.into_bytes(),
+            certificate: dto.certificate.into_bytes(),
+            create_at: now.clone(),
+            expire_at: now,
+            soft_delete: false,
+            key_state: KeyState::default()
+        })
+    }
+
+    pub fn create_from(dto: CreateDataKeyDTO, identity: UserIdentity) -> Result<Self> {
+        let now = Utc::now();
+        let mut combined_attributes = dto.attributes.clone();
+        combined_attributes.insert("name".to_string(), dto.name.clone());
+        combined_attributes.insert("create_at".to_string(), now.clone().to_string());
         combined_attributes.insert("expire_at".to_string(), dto.expire_at.clone());
         Ok(DataKey {
-            id: dto.id,
+            id: 0,
             name: dto.name,
             description: dto.description,
             user: identity.id,
@@ -90,7 +159,7 @@ impl DataKey {
             private_key: vec![],
             public_key: vec![],
             certificate: vec![],
-            create_at: dto.create_at.parse()?,
+            create_at: now,
             expire_at: dto.expire_at.parse()?,
             soft_delete: false,
             key_state: KeyState::default()

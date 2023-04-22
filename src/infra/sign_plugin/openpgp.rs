@@ -38,7 +38,7 @@ use std::str::from_utf8;
 
 use validator::{Validate, ValidationError};
 use pgp::composed::StandaloneSignature;
-use crate::domain::datakey::entity::{DataKeyContent, SecDataKey};
+use crate::domain::datakey::entity::{DataKey, DataKeyContent, SecDataKey};
 use crate::util::key::encode_u8_to_hex_string;
 use super::util::{validate_utc_time_not_expire, validate_utc_time};
 
@@ -74,26 +74,26 @@ impl PgpKeyGenerationParameter {
         };
     }
 
-    pub fn get_digest_algorithm(&self) -> Result<HashAlgorithm> {
-        return match self.digest_algorithm.as_str() {
-            "none" => Ok(HashAlgorithm::None),
-            "md5" => Ok(HashAlgorithm::MD5),
-            "sha1" => Ok(HashAlgorithm::SHA1),
-            "sha2_256" => Ok(HashAlgorithm::SHA2_256),
-            "sha2_384" => Ok(HashAlgorithm::SHA2_384),
-            "sha2_512" => Ok(HashAlgorithm::SHA2_512),
-            "sha2_224" => Ok(HashAlgorithm::SHA2_224),
-            "sha3_256" => Ok(HashAlgorithm::SHA3_256),
-            "sha3_512" => Ok(HashAlgorithm::SHA3_512),
-            _ => Err(Error::ParameterError(
-                "invalid digest algorithm for openpgp".to_string(),
-            )),
-        };
-    }
-
     pub fn get_user_id(&self) -> String {
         format!("{} <{}>", self.name, self.email)
     }
+}
+
+pub fn get_digest_algorithm(hash_digest: &str) -> Result<HashAlgorithm> {
+    return match hash_digest {
+        "none" => Ok(HashAlgorithm::None),
+        "md5" => Ok(HashAlgorithm::MD5),
+        "sha1" => Ok(HashAlgorithm::SHA1),
+        "sha2_256" => Ok(HashAlgorithm::SHA2_256),
+        "sha2_384" => Ok(HashAlgorithm::SHA2_384),
+        "sha2_512" => Ok(HashAlgorithm::SHA2_512),
+        "sha2_224" => Ok(HashAlgorithm::SHA2_224),
+        "sha3_256" => Ok(HashAlgorithm::SHA3_256),
+        "sha3_512" => Ok(HashAlgorithm::SHA3_512),
+        _ => Err(Error::ParameterError(
+            "invalid digest algorithm for openpgp".to_string(),
+        )),
+    };
 }
 
 fn validate_key_type(key_type: &str) -> std::result::Result<(), ValidationError> {
@@ -151,6 +151,32 @@ impl SignPlugins for OpenPGPPlugin {
         })
     }
 
+    fn validate_and_update(key: &mut DataKey) -> Result<()> where Self: Sized {
+        //validate the digest
+        match key.attributes.get("digest_algorithm") {
+            Some(digest_str) => {
+                let _ = get_digest_algorithm(digest_str)?;
+            }
+            _ => {}
+        }
+        //validate keys
+        let private = from_utf8(&key.private_key).map_err(|e| Error::KeyParseError(e.to_string()))?;
+        let (secret_key, _) =
+            SignedSecretKey::from_string(private).map_err(|e| Error::KeyParseError(e.to_string()))?;
+        let public = from_utf8(&key.public_key).map_err(|e| Error::KeyParseError(e.to_string()))?;
+        let (public_key, _) =
+            SignedPublicKey::from_string(public).map_err(|e| Error::KeyParseError(e.to_string()))?;
+        //update key attributes
+        key.fingerprint = encode_u8_to_hex_string(&secret_key.fingerprint());
+        match public_key.expires_at() {
+            None => {}
+            Some(time) => {
+                key.expire_at = time
+            }
+        }
+        Ok(())
+    }
+
     fn parse_attributes(
         _private_key: Option<Vec<u8>>,
         _public_key: Option<Vec<u8>>,
@@ -173,7 +199,7 @@ impl SignPlugins for OpenPGPPlugin {
             .can_sign(true)
             .primary_user_id(parameter.get_user_id())
             .preferred_symmetric_algorithms(smallvec![SymmetricKeyAlgorithm::AES256,])
-            .preferred_hash_algorithms(smallvec![parameter.get_digest_algorithm()?])
+            .preferred_hash_algorithms(smallvec![get_digest_algorithm(parameter.digest_algorithm.as_str())?])
             .preferred_compression_algorithms(smallvec![CompressionAlgorithm::ZLIB,])
             .created_at(create_at)
             .expiration(Some(duration));
@@ -192,14 +218,20 @@ impl SignPlugins for OpenPGPPlugin {
     }
 
     fn sign(&self, content: Vec<u8>, options: HashMap<String, String>) -> Result<Vec<u8>> {
-        let parameter = OpenPGPPlugin::attributes_validate(&self.attributes)?;
+        let mut digest = HashAlgorithm::SHA2_256;
+        match options.get("digest_algorithm") {
+            Some(digest_str) => {
+                digest = get_digest_algorithm(digest_str)?
+            }
+            _ => {}
+        }
         let passwd_fn = String::new;
         let now = Utc::now();
         let sig_cfg = SignatureConfig {
             version: SignatureVersion::V4,
             typ: SignatureType::Binary,
             pub_alg: self.public_key.primary_key.algorithm(),
-            hash_alg: parameter.get_digest_algorithm()?,
+            hash_alg: digest,
             issuer: Some(self.secret_key.key_id()),
             created: Some(now),
             unhashed_subpackets: vec![],
