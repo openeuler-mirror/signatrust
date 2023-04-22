@@ -29,7 +29,7 @@ use std::sync::PoisonError;
 use rpm::RPMError;
 use thiserror::Error as ThisError;
 use tonic::transport::Error as TonicError;
-use bincode::error::EncodeError;
+use bincode::error::{EncodeError, DecodeError};
 use chrono::{OutOfRangeError, ParseError};
 use actix_web::{ResponseError, HttpResponse};
 use validator::ValidationErrors;
@@ -113,8 +113,6 @@ pub enum Error {
     BincodeError(String),
     #[error("failed to sign some of the files")]
     PartialSuccessError,
-    #[error("kernel module file signed already")]
-    KOAlreadySignedError,
 }
 
 #[derive(Deserialize, Serialize, ToSchema)]
@@ -269,6 +267,14 @@ impl From<EncodeError> for Error {
         Error::BincodeError(err.to_string())
     }
 }
+
+impl From<DecodeError> for Error {
+    fn from(err: DecodeError) -> Self
+    {
+        Error::BincodeError(err.to_string())
+    }
+}
+
 
 impl From<OutOfRangeError> for Error {
     fn from(err: OutOfRangeError) -> Self {
