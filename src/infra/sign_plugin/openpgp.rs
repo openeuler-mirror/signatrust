@@ -60,6 +60,7 @@ pub struct PgpKeyGenerationParameter {
     create_at: String,
     #[validate(custom(function= "validate_utc_time_not_expire", message="invalid openpgp attribute 'expire_at'"))]
     expire_at: String,
+    passphrase: Option<String>
 }
 
 impl PgpKeyGenerationParameter {
@@ -205,8 +206,15 @@ impl SignPlugins for OpenPGPPlugin {
             .expiration(Some(duration));
         let secret_key_params = key_params.build()?;
         let secret_key = secret_key_params.generate()?;
-        let passwd_fn = || String::new();
-        let signed_secret_key = secret_key.sign(passwd_fn)?;
+        let passwd_fn= || return match parameter.passphrase {
+            None => {
+                String::new()
+            }
+            Some(password) => {
+                password
+            }
+        };
+        let signed_secret_key = secret_key.sign(passwd_fn.clone())?;
         let public_key = signed_secret_key.public_key();
         let signed_public_key = public_key.sign(&signed_secret_key, passwd_fn)?;
         Ok(DataKeyContent{
@@ -225,7 +233,14 @@ impl SignPlugins for OpenPGPPlugin {
             }
             _ => {}
         }
-        let passwd_fn = String::new;
+        let passwd_fn = || return match options.get("passphrase") {
+            None => {
+                String::new()
+            }
+            Some(password) => {
+                password.to_string()
+            }
+        };
         let now = Utc::now();
         let sig_cfg = SignatureConfig {
             version: SignatureVersion::V4,

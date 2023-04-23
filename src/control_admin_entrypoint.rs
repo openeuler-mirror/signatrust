@@ -92,6 +92,9 @@ pub struct CommandGenerateKeys {
     #[arg(long)]
     #[arg(help = "specify the email used for openPGP key generation. ")]
     param_pgp_email: Option<String>,
+    #[arg(long)]
+    #[arg(help = "specify the passphrase for openPGP key generation. ")]
+    param_pgp_passphrase: Option<String>,
     //x509 specific parameters
     #[arg(long)]
     #[arg(help = "specify the 'CommonName' used for x509 key generation. ")]
@@ -127,6 +130,7 @@ fn generate_keys_parameters(command: &CommandGenerateKeys) -> HashMap<String, St
     attributes.insert("digest_algorithm".to_string(), command.digest_algorithm.clone());
     if command.key_type == sign_identity::KeyType::PGP {
         attributes.insert("email".to_string(), command.param_pgp_email.clone().unwrap());
+        attributes.insert("passphrase".to_string(), command.param_pgp_passphrase.clone().unwrap());
     } else if command.key_type == sign_identity::KeyType::X509 {
         attributes.insert("common_name".to_string(), command.param_x509_common_name.clone().unwrap());
         attributes.insert("country_name".to_string(), command.param_x509_country_name.clone().unwrap());

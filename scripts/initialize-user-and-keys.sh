@@ -22,7 +22,7 @@ function create_default_admin {
 
 function create_default_openpgp_keys {
   echo "start to create default openpgp keys identified with default-pgp"
-  RUST_LOG=info ./target/debug/control-admin --config ./config/server.toml generate-keys --name default-pgp --description "used for test purpose only" --key-type pgp --email tommylikehu@gmail.com --param-key-type rsa --param-key-size 2048 --param-pgp-email infra@openeuler.org --digest-algorithm sha2_256
+  RUST_LOG=info ./target/debug/control-admin --config ./config/server.toml generate-keys --name default-pgp --description "used for test purpose only" --key-type pgp --email tommylikehu@gmail.com --param-key-type rsa --param-key-size 2048 --param-pgp-email infra@openeuler.org --param-pgp-passphrase husheng1234 --digest-algorithm sha2_256
 }
 
 
