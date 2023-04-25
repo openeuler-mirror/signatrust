@@ -42,10 +42,10 @@ impl Display for Token {
 }
 
 impl Token {
-    pub fn new(id: i32, user_id: i32, description: String, token: String) -> Result<Self> {
+    pub fn new(user_id: i32, description: String, token: String) -> Result<Self> {
         let now = Utc::now();
         Ok(Token {
-            id,
+            id: 0,
             user_id,
             description,
             token,

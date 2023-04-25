@@ -34,17 +34,18 @@ use openidconnect::{
 };
 use openidconnect::{JsonWebKeySet, ClientId, AuthUrl, UserInfoUrl, TokenUrl, RedirectUrl, ClientSecret, IssuerUrl};
 use url::Url;
-use crate::presentation::handler::control::model::token::dto::TokenDTO;
+use crate::presentation::handler::control::model::token::dto::{CreateTokenDTO};
 use crate::util::key::{generate_api_token};
 
 #[async_trait]
 pub trait UserService: Send + Sync{
     async fn get_token(&self, u: &UserIdentity) -> Result<Vec<Token>>;
+    async fn delete_token(&self, u: &UserIdentity, id: i32) -> Result<()>;
     async fn get_valid_token(&self, token: &str) -> Result<Token>;
     async fn save(&self, u: User) -> Result<User>;
     async fn get_user_by_id(&self, id: i32) -> Result<User>;
     async fn get_by_email(&self, email: &str) -> Result<User>;
-    async fn generate_token(&self, u: &UserIdentity, token: TokenDTO) -> Result<Token>;
+    async fn generate_token(&self, u: &UserIdentity, token: CreateTokenDTO) -> Result<Token>;
     async fn get_login_url(&self) -> Result<Url>;
     async fn validate_user(&self, code: &str) -> Result<User>;
 }
@@ -158,6 +159,14 @@ where
         self.token_repository.get_token_by_user_id(user.id).await
     }
 
+    async fn delete_token(&self, u: &UserIdentity, id: i32) -> Result<()> {
+        let token = self.token_repository.get_token_by_id(id).await?;
+        if token.user_id != u.id {
+            return Err(Error::UnauthorizedError)
+        }
+        self.token_repository.delete_by_user_and_id(id, u.id).await
+    }
+
     async fn get_valid_token(&self, token: &str) -> Result<Token> {
         let token = self.token_repository.get_token_by_value(token).await?;
         if token.expire_at.gt(&Utc::now()) {
@@ -178,12 +187,13 @@ where
         self.user_repository.get_by_email(email).await
     }
 
-    async fn generate_token(&self, u: &UserIdentity, token: TokenDTO) -> Result<Token> {
+    async fn generate_token(&self, u: &UserIdentity, token: CreateTokenDTO) -> Result<Token> {
         let real_token = generate_api_token();
-        let created = Token::new(token.id, u.id, token.description, real_token)?;
-        self.token_repository.create(created.clone()).await?;
+        let created = Token::new(u.id, token.description, real_token.clone())?;
+        let mut new = self.token_repository.create(created).await?;
         //return token with un-hashed value
-        Ok(created)
+        new.token = real_token;
+        Ok(new)
 
     }
 

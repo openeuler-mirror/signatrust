@@ -44,7 +44,7 @@ use crate::application::user::{DBUserService, UserService};
 use crate::domain::datakey::entity::DataKey;
 use crate::domain::token::entity::Token;
 use crate::domain::user::entity::User;
-use crate::presentation::handler::control::model::token::dto::TokenDTO;
+use crate::presentation::handler::control::model::token::dto::{CreateTokenDTO};
 use crate::presentation::handler::control::model::user::dto::UserIdentity;
 
 pub struct ControlServer {
@@ -84,6 +84,7 @@ impl Modify for SecurityAddon {
         crate::presentation::handler::control::user_handler::logout,
         crate::presentation::handler::control::user_handler::new_token,
         crate::presentation::handler::control::user_handler::list_token,
+        crate::presentation::handler::control::user_handler::delete_token,
     ),
     components(
         schemas(crate::presentation::handler::control::model::datakey::dto::DataKeyDTO,
@@ -91,6 +92,7 @@ impl Modify for SecurityAddon {
                 crate::presentation::handler::control::model::datakey::dto::ImportDataKeyDTO,
                 crate::presentation::handler::control::model::datakey::dto::ExportKey,
                 crate::presentation::handler::control::model::token::dto::TokenDTO,
+                crate::presentation::handler::control::model::token::dto::CreateTokenDTO,
                 crate::presentation::handler::control::model::user::dto::UserIdentity,
                 crate::util::error::ErrorMessage)
     ),
@@ -229,7 +231,7 @@ impl ControlServer {
         let user = self.user_service.save(user).await?;
         self.user_service.generate_token(
             &UserIdentity::from(user.clone()),
-            TokenDTO::new("default admin token".to_owned())).await
+            CreateTokenDTO::new("default admin token".to_owned())).await
     }
 
     //used for control admin cmd

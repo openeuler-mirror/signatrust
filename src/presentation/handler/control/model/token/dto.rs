@@ -4,12 +4,17 @@
 
 use serde::{Deserialize, Serialize};
 use std::convert::From;
-use chrono::{DateTime, Utc};
+
 use crate::domain::token::entity::Token;
 use utoipa::{ToSchema};
 
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CreateTokenDTO {
+    pub description: String,
+}
 
-#[derive(Debug, Deserialize, Serialize, ToSchema)]
+
+#[derive(Debug, Serialize, ToSchema)]
 pub struct TokenDTO {
     #[serde(skip_deserializing)]
     pub id: i32,
@@ -19,35 +24,15 @@ pub struct TokenDTO {
     pub token: String,
     pub description: String,
     #[serde(skip_deserializing)]
-    pub create_at: DateTime<Utc>,
+    pub create_at: String,
     #[serde(skip_deserializing)]
-    pub expire_at: DateTime<Utc>
+    pub expire_at: String
 }
 
-impl TokenDTO {
-    pub fn new(description: String) -> TokenDTO {
-        TokenDTO {
-            id: 0,
-            user_id: 0,
-            //disable parse hash to dto
-            token: "".to_string(),
+impl CreateTokenDTO {
+    pub fn new(description: String) -> CreateTokenDTO {
+        CreateTokenDTO {
             description,
-            expire_at: Default::default(),
-            create_at: Default::default(),
-        }
-    }
-}
-
-
-impl From<TokenDTO> for Token {
-    fn from(token: TokenDTO) -> Self {
-        Token {
-            id: 0,
-            user_id: 0,
-            description: token.description.clone(),
-            token: Default::default(),
-            create_at: Default::default(),
-            expire_at: Default::default(),
         }
     }
 }
@@ -59,8 +44,8 @@ impl From<Token> for TokenDTO {
             user_id: token.user_id,
             token: token.token.clone(),
             description: token.description.clone(),
-            expire_at: token.expire_at,
-            create_at: token.create_at,
+            expire_at: token.expire_at.to_string(),
+            create_at: token.create_at.to_string(),
         }
     }
 }

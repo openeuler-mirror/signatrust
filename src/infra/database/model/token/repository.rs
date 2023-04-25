@@ -70,9 +70,10 @@ impl Repository for TokenRepository {
         Ok(Token::from(selected))
     }
 
-    async fn delete_by_id(&self, id: i32) -> Result<()> {
-        let _: Option<TokenDTO> = sqlx::query_as("DELETE FROM token where id = ?")
+    async fn delete_by_user_and_id(&self, id: i32, user_id: i32) -> Result<()> {
+        let _: Option<TokenDTO> = sqlx::query_as("DELETE FROM token where id = ? AND user_id = ?")
             .bind(id)
+            .bind(user_id)
             .fetch_optional(&self.db_pool)
             .await?;
         Ok(())
