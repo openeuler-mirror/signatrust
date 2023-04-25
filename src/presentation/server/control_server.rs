@@ -116,7 +116,7 @@ impl ControlServer {
         //initialize the service
         let user_service = Arc::new(
             DBUserService::new(
-                user_repo.clone(), token_repo,
+                user_repo, token_repo,
                 server_config.clone())?) as Arc<dyn UserService>;
         let key_service = Arc::new(
             DBKeyService::new(
@@ -157,10 +157,10 @@ impl ControlServer {
         let limiter = web::Data::new(
             Limiter::builder(&redis_connection)
                 .key_by(|req: &ServiceRequest| {
-                    if let Some(cookie) = req.cookie(&"Signatrust") {
+                    if let Some(cookie) = req.cookie("Signatrust") {
                         return Some(cookie.to_string());
                     }
-                    if let Some(value) = req.clone().headers().get("Authorization") {
+                    if let Some(value) = req.headers().get("Authorization") {
                         return Some(value.to_str().unwrap().to_string());
                     }
                     None

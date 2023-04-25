@@ -104,15 +104,15 @@ impl KernelModuleFileHandler {
             return Ok(raw_content)
         }
         //identify magic string and end of the file
-        file.seek(io::SeekFrom::End((MAGIC_NUMBER_SIZE as i64) * -1))?;
+        file.seek(io::SeekFrom::End(-(MAGIC_NUMBER_SIZE as i64)))?;
         let mut signature_ending: [u8; MAGIC_NUMBER_SIZE] = [0; MAGIC_NUMBER_SIZE];
-        file.read(&mut signature_ending)?;
-        return match str::from_utf8(&signature_ending.to_vec()) {
+        let _ = file.read(&mut signature_ending)?;
+        return match str::from_utf8(signature_ending.as_ref()) {
             Ok(ending) => {
                 return if ending == MAGIC_NUMBER {
-                    file.seek(io::SeekFrom::End((SIGNATURE_SIZE) as i64 * -1))?;
+                    file.seek(io::SeekFrom::End(-(SIGNATURE_SIZE as i64)))?;
                     let mut signature_meta: [u8; SIGNATURE_SIZE - MAGIC_NUMBER_SIZE] = [0; SIGNATURE_SIZE - MAGIC_NUMBER_SIZE];
-                    file.read(&mut signature_meta)?;
+                    let _ = file.read(&mut signature_meta)?;
                     //decode kernel module signature struct
                     let signature: ModuleSignature = bincode::decode_from_slice(
                         &signature_meta,

@@ -42,7 +42,7 @@ impl Repository for DataKeyRepository {
         let record : u64 = sqlx::query("INSERT INTO data_key(name, description, user, email, attributes, key_type, fingerprint, private_key, public_key, certificate, create_at, expire_at, key_state, soft_delete) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
             .bind(&dto.name)
             .bind(&dto.description)
-            .bind(&dto.user)
+            .bind(dto.user)
             .bind(dto.email)
             .bind(dto.attributes)
             .bind(dto.key_type)

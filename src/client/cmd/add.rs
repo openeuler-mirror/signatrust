@@ -129,7 +129,7 @@ impl CommandAddHandler {
 
     fn file_candidates(&self, extension: &str) -> Result<bool> {
         let collections = FILE_EXTENSION.get(
-            &self.file_type).ok_or(
+            &self.file_type).ok_or_else(||
             error::Error::FileNotSupportError(format!("{}", self.file_type)))?;
         if collections.contains(&extension) {
             return Ok(true)

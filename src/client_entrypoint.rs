@@ -72,7 +72,7 @@ fn main() -> Result<()> {
     //construct handler
     let command = match app.command {
         Some(Commands::Add(add_command)) => {
-            Some(add::CommandAddHandler::new(signal.clone(), Arc::new(RwLock::new(client)), add_command)?)
+            Some(add::CommandAddHandler::new(signal, Arc::new(RwLock::new(client)), add_command)?)
         }
         None => {None}
     };
