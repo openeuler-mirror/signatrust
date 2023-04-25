@@ -106,7 +106,7 @@ fn validate_utc_time(expire: &str) -> std::result::Result<(), ValidationError> {
 }
 
 fn validate_key_type(key_type: &str) -> std::result::Result<(), ValidationError> {
-    return match KeyType::from_str(key_type) {
+    match KeyType::from_str(key_type) {
         Ok(_) => {
             Ok(())
         }
@@ -134,7 +134,7 @@ impl DataKey {
             private_key: dto.private_key.into_bytes(),
             public_key: dto.public_key.into_bytes(),
             certificate: dto.certificate.into_bytes(),
-            create_at: now.clone(),
+            create_at: now,
             expire_at: now,
             soft_delete: false,
             key_state: KeyState::default()

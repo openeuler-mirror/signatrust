@@ -36,8 +36,8 @@ impl FromRequest for UserIdentity {
             match login {
                 //fetch valid token
                 None => {
-                    if let Some(value) = req.clone().headers().get("Authorization") {
-                        if let Some(user_service) = req.clone().app_data::<web::Data<dyn UserService>>() {
+                    if let Some(value) = req.headers().get("Authorization") {
+                        if let Some(user_service) = req.app_data::<web::Data<dyn UserService>>() {
                             if let Ok(token) = user_service.get_ref().get_valid_token(value.to_str().unwrap()).await {
                                 if let Ok(user) = user_service.get_ref().get_user_by_id(token.user_id).await {
                                     return Ok(UserIdentity::from(user));

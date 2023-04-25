@@ -81,7 +81,7 @@ impl PgpKeyGenerationParameter {
 }
 
 pub fn get_digest_algorithm(hash_digest: &str) -> Result<HashAlgorithm> {
-    return match hash_digest {
+    match hash_digest {
         "none" => Ok(HashAlgorithm::None),
         "md5" => Ok(HashAlgorithm::MD5),
         "sha1" => Ok(HashAlgorithm::SHA1),
@@ -94,7 +94,7 @@ pub fn get_digest_algorithm(hash_digest: &str) -> Result<HashAlgorithm> {
         _ => Err(Error::ParameterError(
             "invalid digest algorithm for openpgp".to_string(),
         )),
-    };
+    }
 }
 
 fn validate_key_type(key_type: &str) -> std::result::Result<(), ValidationError> {
@@ -138,27 +138,24 @@ impl OpenPGPPlugin {
 
 impl SignPlugins for OpenPGPPlugin {
     fn new(db: SecDataKey) -> Result<Self> {
-        let private = from_utf8(&db.private_key.unsecure()).map_err(|e| Error::KeyParseError(e.to_string()))?;
+        let private = from_utf8(db.private_key.unsecure()).map_err(|e| Error::KeyParseError(e.to_string()))?;
         let (secret_key, _) =
             SignedSecretKey::from_string(private).map_err(|e| Error::KeyParseError(e.to_string()))?;
-        let public = from_utf8(&db.public_key.unsecure()).map_err(|e| Error::KeyParseError(e.to_string()))?;
+        let public = from_utf8(db.public_key.unsecure()).map_err(|e| Error::KeyParseError(e.to_string()))?;
         let (public_key, _) =
             SignedPublicKey::from_string(public).map_err(|e| Error::KeyParseError(e.to_string()))?;
         Ok(Self {
             secret_key,
             public_key,
             identity: db.identity.clone(),
-            attributes: db.attributes.clone(),
+            attributes: db.attributes,
         })
     }
 
     fn validate_and_update(key: &mut DataKey) -> Result<()> where Self: Sized {
         //validate the digest
-        match key.attributes.get("digest_algorithm") {
-            Some(digest_str) => {
-                let _ = get_digest_algorithm(digest_str)?;
-            }
-            _ => {}
+        if let Some(digest_str) = key.attributes.get("digest_algorithm") {
+            let _ = get_digest_algorithm(digest_str)?;
         }
         //validate keys
         let private = from_utf8(&key.private_key).map_err(|e| Error::KeyParseError(e.to_string()))?;
@@ -206,7 +203,7 @@ impl SignPlugins for OpenPGPPlugin {
             .expiration(Some(duration));
         let secret_key_params = key_params.build()?;
         let secret_key = secret_key_params.generate()?;
-        let passwd_fn= || return match parameter.passphrase {
+        let passwd_fn= || match parameter.passphrase {
             None => {
                 String::new()
             }
@@ -227,11 +224,8 @@ impl SignPlugins for OpenPGPPlugin {
 
     fn sign(&self, content: Vec<u8>, options: HashMap<String, String>) -> Result<Vec<u8>> {
         let mut digest = HashAlgorithm::SHA2_256;
-        match options.get("digest_algorithm") {
-            Some(digest_str) => {
+        if let Some(digest_str) = options.get("digest_algorithm") {
                 digest = get_digest_algorithm(digest_str)?
-            }
-            _ => {}
         }
         let passwd_fn = || return match options.get("passphrase") {
             None => {

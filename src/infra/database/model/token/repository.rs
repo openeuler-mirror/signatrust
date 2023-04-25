@@ -44,11 +44,11 @@ impl Repository for TokenRepository {
     async fn create(&self, token: Token) -> Result<Token> {
         let dto = TokenDTO::from(token);
         let record : u64 = sqlx::query("INSERT INTO token(user_id, description, token, create_at, expire_at) VALUES (?, ?, ?, ?, ?)")
-            .bind(&dto.user_id)
+            .bind(dto.user_id)
             .bind(&dto.description)
             .bind(&dto.token)
-            .bind(&dto.create_at)
-            .bind(&dto.expire_at)
+            .bind(dto.create_at)
+            .bind(dto.expire_at)
             .execute(&self.db_pool)
             .await?.last_insert_id();
         self.get_token_by_id(record as i32).await

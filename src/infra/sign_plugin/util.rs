@@ -35,7 +35,7 @@ pub fn validate_utc_time(expire: &str) -> Result<(), ValidationError> {
             Ok(())
         },
         Err(_) => {
-            return Err(ValidationError::new("failed to parse time string to utc"));
+            Err(ValidationError::new("failed to parse time string to utc"))
         }
     }
 }

@@ -40,11 +40,11 @@ pub fn get_token_hash(real_token: &str) -> String {
     let mut hasher = Sha256::default();
     hasher.update(real_token);
     let digest = hasher.finalize();
-    return hex::encode(digest)
+    hex::encode(digest)
 }
 
 pub fn sorted_map<S: Serializer, K: Serialize + Ord, V: Serialize>(value: &HashMap<K, V>, serializer: S) -> Result<S::Ok, S::Error> {
     let mut items: Vec<(_, _)> = value.iter().collect();
-    items.sort_by(|a, b| a.0.cmp(&b.0));
+    items.sort_by(|a, b| a.0.cmp(b.0));
     BTreeMap::from_iter(items).serialize(serializer)
 }

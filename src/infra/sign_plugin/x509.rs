@@ -152,7 +152,7 @@ impl SignPlugins for X509Plugin {
             public_key: db.public_key.clone(),
             certificate: db.certificate.clone(),
             identity: db.identity.clone(),
-            attributes: db.attributes.clone()
+            attributes: db.attributes
         })
     }
 
@@ -166,7 +166,7 @@ impl SignPlugins for X509Plugin {
         let expire = SystemTime::UNIX_EPOCH + Duration::from_secs(unix_time.days as u64 * 86400 + unix_time.secs as u64);
         key.expire_at = expire.into();
         key.fingerprint = encode_u8_to_hex_string(
-            certificate.digest(MessageDigest::from_name("sha1").ok_or(Error::GeneratingKeyError("unable to generate digester".to_string()))?)?.as_ref());
+            certificate.digest(MessageDigest::from_name("sha1").ok_or_else(|| Error::GeneratingKeyError("unable to generate digester".to_string()))?)?.as_ref());
         Ok(())
     }
 

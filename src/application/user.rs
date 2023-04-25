@@ -209,7 +209,7 @@ where
     }
 
     async fn validate_user(&self, code: &str) -> Result<User> {
-        match self.get_access_token(&code).await {
+        match self.get_access_token(code).await {
             Ok(token_response) => {
                 let id: User = User::new(self.get_user_info(&token_response.access_token).await?.email)?;
                 return self.user_repository.create(id).await
