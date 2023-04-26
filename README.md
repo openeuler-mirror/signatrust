@@ -138,4 +138,24 @@ RUST_BACKTRACE=full RUST_LOG=info ./target/debug/client --config <client-config-
 Signatrust supports online openAPI documentation, once control server starts, navigate to `localhost:8080/swagger-ui/` and check the document. note you need to add correct `Authorization` 
 header to try the APIs.
 
+## Local cluster
+In order to build and run the project in a local cluster:
+1. You may need to install [kind](https://kind.sigs.k8s.io/docs/user/quick-start/) and [kustomize](https://kustomize.io/) first.
+2. Use our commands to build and push the images:
+```shell
+make client-image/make data-server-image/make control-server-image/make control-admin-image
+```
+3. We have prepared the kustomize yaml files in deploy folder, when your cluster and kube-config gets ready, simply run:
+```shell
+make deploy-local
+```
+and you will have these pods running:
+```shell
+signatrust-client-6cfddccc7-frl5r          ●  1/1          0 Running      0    0       0     n/a       0     n/a 10.10.1.120   10.0.0.56    14m
+signatrust-control-admin-665fccc4b-mhknb   ●  1/1          0 Running      0    3     n/a     n/a     n/a     n/a 10.10.1.31    10.0.0.134   10m
+signatrust-control-server-967f6d84f-lrbl9  ●  1/1          0 Running      2   13       0     n/a       0     n/a 10.10.0.28    10.0.0.175   17m
+signatrust-database-6cfdb54c58-5c2lr       ●  1/1          0 Running      3  491       0     n/a      12     n/a 10.10.0.229   10.0.0.237   6h37m
+signatrust-redis-9bcc87b46-88jbp           ●  1/1          0 Running      1   11       0     n/a       0     n/a 10.10.0.29    10.0.0.175   15m
+signatrust-server-6995c84749-zj2df         ●  1/1          0 Running      1    1       0     n/a       0     n/a 10.10.0.30    10.0.0.175   4h2m
+```
 # Contribute
