@@ -16,26 +16,59 @@ spec:
       initContainers:
         - name: init-mysql
           image: busybox:1.28
-          command: [ "sh", "-c", "until nslookup signatrust-database.signatrust.svc.cluster.local; do echo waiting for mysql service ; sleep 2; done;" ]
+          command: [ "sh", "-c", "until nslookup signatrust-database.signatrust-local-development.svc.cluster.local; do echo waiting for mysql service ; sleep 2; done;" ]
       containers:
-        - image: tommylike/signatrust-control-server:cc73e716d8a680301131788a3b8c4f6ef98b2e74
+        - image: tommylike/signatrust-control-server:f1e04f2fd37a92b04dfc9a4fd78cba1956654970
           imagePullPolicy: Always
           name: signatrust-server
           command: ["/app/control-server"]
           resources:
             requests:
-              cpu: 8000m
-              memory: 8000Mi
-            limits:
-              cpu: 8000m
-              memory: 8000Mi
+              cpu: 4000m
+              memory: 4000Mi
           ports:
-            - containerPort: 8088
+            - containerPort: 8080
               name: http
               protocol: TCP
           env:
             - name: RUST_LOG
-              value: info
+              value: debug
+          volumeMounts:
+            - mountPath: /app/config/server.toml
+              name: config-volume
+              subPath: server.toml
+      volumes:
+        - name: config-volume
+          configMap:
+            name: signatrust-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: signatrust-control-admin
+  namespace: signatrust
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: signatrust-control-admin
+  template:
+    metadata:
+      labels:
+        component: signatrust-control-admin
+    spec:
+      initContainers:
+        - name: init-mysql
+          image: busybox:1.28
+          command: [ "sh", "-c", "until nslookup signatrust-database.signatrust-local-development.svc.cluster.local; do echo waiting for mysql service ; sleep 2; done;" ]
+      containers:
+        - image: tommylike/signatrust-control-admin:f1e04f2fd37a92b04dfc9a4fd78cba1956654970
+          imagePullPolicy: Always
+          name: signatrust-control-admin
+          command: ["/bin/sleep", "10000"]
+          env:
+            - name: RUST_LOG
+              value: debug
           volumeMounts:
             - mountPath: /app/config/server.toml
               name: config-volume
@@ -50,7 +83,7 @@ kind: Deployment
 metadata:
   name: signatrust-server
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       component: signatrust-server
@@ -62,39 +95,37 @@ spec:
       initContainers:
         - name: init-mysql
           image: busybox:1.28
-          command: [ "sh", "-c", "until nslookup signatrust-database.signatrust.svc.cluster.local; do echo waiting for mysql service ; sleep 2; done;" ]
+          command: [ "sh", "-c", "until nslookup signatrust-database.signatrust-local-development.svc.cluster.local; do echo waiting for mysql service ; sleep 2; done;" ]
         - name: prepare-table
           image: tommylike/rust-sqlx
           env:
             - name: DATABASE_URL
-              value: mysql://test:test@signatrust-database.signatrust.svc.cluster.local/signatrust
+              value: mysql://test:test@signatrust-database.signatrust-local-development.svc.cluster.local:3306/signatrust
           command:
             - /bin/sh
             - -c
             - |
-              git clone https://github.com/TommyLike/signatrust
+              # TODO: Use commit it instead of latest master
+              git clone https://gitee.com/openeuler/signatrust
               cd signatrust
               sqlx database create
               sqlx migrate run
       containers:
-        - image: tommylike/signatrust-data-server:a32f381b1fd47463d94e0c6468e8e28213ba05f5
+        - image: tommylike/signatrust-data-server:f1e04f2fd37a92b04dfc9a4fd78cba1956654970
           imagePullPolicy: Always
           name: signatrust-server
           command: ["/app/data-server"]
           resources:
             requests:
-              cpu: 8000m
-              memory: 8000Mi
-            limits:
-              cpu: 8000m
-              memory: 8000Mi
+              cpu: 4000m
+              memory: 4000Mi
           ports:
-            - containerPort: 8080
+            - containerPort: 8088
               name: http
               protocol: TCP
           env:
             - name: RUST_LOG
-              value: info
+              value: debug
           volumeMounts:
             - mountPath: /app/config/server.toml
               name: config-volume
@@ -176,7 +207,7 @@ spec:
         component: signatrust-client
     spec:
       containers:
-        - image: tommylike/signatrust-client:a32f381b1fd47463d94e0c6468e8e28213ba05f5
+        - image: tommylike/signatrust-client:f1e04f2fd37a92b04dfc9a4fd78cba1956654970
           imagePullPolicy: Always
           name: signatrust-client
           env:
@@ -184,16 +215,13 @@ spec:
               value: debug
           resources:
             requests:
-              cpu: 8000m
-              memory: 8000Mi
-            limits:
-              cpu: 8000m
-              memory: 8000Mi
+              cpu: 2000m
+              memory: 2000Mi
           command:
             - /bin/sh
             - -c
             - |
-              sleep 10000000
+              sleep 100000000
           volumeMounts:
             - mountPath: /app/config/client.toml
               name: config-volume
@@ -207,3 +235,31 @@ spec:
         - name: client-volume
           persistentVolumeClaim:
             claimName: client-volume
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: signatrust-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: signatrust-redis
+  template:
+    metadata:
+      labels:
+        component: signatrust-redis
+    spec:
+      containers:
+        - image: redis:7.2-rc-alpine
+          imagePullPolicy: Always
+          name: signatrust-redis
+          resources:
+            requests:
+              cpu: 2000m
+              memory: 2000Mi
+          command:
+            - /bin/sh
+            - -c
+            - |
+              /usr/local/bin/redis-server --requirepass signatrust-redis
