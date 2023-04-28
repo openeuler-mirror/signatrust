@@ -89,7 +89,6 @@ impl KernelModuleFileHandler {
         signed.write_all(&bincode::encode_to_vec(
             &sig_struct,
             config::standard()
-                .skip_fixed_array_length()
                 .with_fixed_int_encoding()
                 .with_big_endian(),
         )?)?;
@@ -117,7 +116,6 @@ impl KernelModuleFileHandler {
                     let signature: ModuleSignature = bincode::decode_from_slice(
                         &signature_meta,
                         config::standard()
-                            .skip_fixed_array_length()
                             .with_fixed_int_encoding()
                             .with_big_endian(),
                     )?.0;
