@@ -135,7 +135,7 @@ curl -k --header "Authorization:XmUICsVV48EjfkWYv3ch1eutRJOQh7mp3bRfmQDL" -v htt
 RUST_BACKTRACE=full RUST_LOG=info ./target/debug/client --config <client-config-file-path> add --key-id default-pgp  --file-type rpm --key-type pgp .data/simple.rpm
 ```
 ## OpenAPI Documentation
-Signatrust supports online openAPI documentation, once control server starts, navigate to `localhost:8080/swagger-ui/` and check the document. note you need to add correct `Authorization` 
+Signatrust supports online openAPI documentation, once control server starts, navigate to `localhost:8080/api/swagger-ui/` and check the document. note you need to add correct `Authorization`
 header to try the APIs.
 
 ## Local cluster
