@@ -171,13 +171,15 @@ impl TryFrom<DataKey> for DataKeyDTO {
     type Error = Error;
 
     fn try_from(dto: DataKey) -> Result<Self> {
+        let mut attributes = dto.attributes.clone();
+        let _ = attributes.remove("passphrase");
         Ok(DataKeyDTO {
             id: dto.id,
             name: dto.name,
             description: dto.description,
             user: dto.user,
             email: dto.email,
-            attributes: dto.attributes,
+            attributes,
             key_type: dto.key_type.to_string(),
             fingerprint: dto.fingerprint,
             create_at: dto.create_at.to_string(),

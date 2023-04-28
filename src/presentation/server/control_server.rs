@@ -194,14 +194,14 @@ impl ControlServer {
                 .app_data(key_service.clone())
                 .app_data(user_service.clone())
                 .app_data(limiter.clone())
+                //open api document
+                .service(
+                    SwaggerUi::new("/api/swagger-ui/{_:.*}").url("/api-doc/openapi.json", openapi.clone()),
+                )
                 //session handler
                 .service(web::scope("/api/v1")
                     .service(user_handler::get_scope())
                     .service(datakey_handler::get_scope()))
-                //open api document
-                .service(
-                    SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-doc/openapi.json", openapi.clone()),
-                )
         });
         if self.server_config
             .read()?
