@@ -15,6 +15,7 @@
  */
 
 use super::rpm::RpmFileHandler;
+use super::efi::EfiFileHandler;
 use super::checksum::CheckSumFileHandler;
 use super::kernel_module::KernelModuleFileHandler;
 use crate::client::sign_identity::FileType;
@@ -34,7 +35,10 @@ impl FileHandlerFactory {
             },
             FileType::KernelModule => {
                 Box::new(KernelModuleFileHandler::new())
-            }
+            },
+            FileType::EfiImage => {
+                Box::new(EfiFileHandler::new())
+            },
         }
     }
 }

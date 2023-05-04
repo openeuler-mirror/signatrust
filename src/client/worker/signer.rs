@@ -24,7 +24,7 @@ pub mod signatrust {
 }
 
 use tonic::transport::Channel;
-use signatrust::{
+use self::signatrust::{
     signatrust_client::SignatrustClient, SignStreamRequest,
 };
 

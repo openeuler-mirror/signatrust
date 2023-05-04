@@ -41,6 +41,7 @@ use openidconnect::ConfigurationError;
 use openidconnect::UserInfoError;
 use anyhow::Error as AnyhowError;
 use utoipa::{ToSchema};
+use efi_signer::error::Error as EFIError;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -113,6 +114,8 @@ pub enum Error {
     BincodeError(String),
     #[error("failed to sign some of the files")]
     PartialSuccessError,
+    #[error("Error in sign or parse EFI image")]
+    EFIError(String),
 }
 
 #[derive(Deserialize, Serialize, ToSchema)]
@@ -332,4 +335,9 @@ impl From<UserInfoError<openidconnect::reqwest::Error<reqwest::Error>>> for Erro
 }
 
 
+impl From<EFIError> for Error {
+    fn from(error: EFIError) -> Self {
+        Error::EFIError(error.to_string())
+    }
+}
 

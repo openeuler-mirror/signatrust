@@ -29,14 +29,15 @@ pub struct ChannelFactory {
 impl ChannelFactory {
     pub async fn new(config: &HashMap<String, Value>) -> Result<Self> {
         let mut client_config :Option<ClientTlsConfig> = None;
-        let tls_cert = config.get("tls_cert").unwrap_or(&Value::default()).to_string();
-        let tls_key = config.get("tls_key").unwrap_or(&Value::default()).to_string();
-        let server_port = config.get("server_port").unwrap_or(&Value::default()).to_string();
+        let tls_cert = config.get("tls_cert").unwrap_or(&Value::new(Some(&String::new()), config::ValueKind::String(String::new()))).to_string();
+        let tls_key = config.get("tls_key").unwrap_or(&Value::new(Some(&String::new()), config::ValueKind::String(String::new()))).to_string();
+        let server_port = config.get("server_port").expect("server port not in client config").to_string();
         if tls_cert.is_empty() || tls_key.is_empty()
         {
             info!("tls client key and cert not configured, tls will be disabled");
         } else {
             info!("tls client key and cert configured, tls will be enabled");
+            debug!("tls cert:{}, tls key:{}", tls_cert, tls_key);
             let identity = Identity::from_pem(
                 tokio::fs::read(tls_cert).await?,
                 tokio::fs::read(tls_key).await?);

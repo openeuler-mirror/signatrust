@@ -1,4 +1,5 @@
 pub mod rpm;
+pub mod efi;
 pub mod traits;
 pub mod factory;
 pub mod checksum;

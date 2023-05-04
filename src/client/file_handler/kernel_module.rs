@@ -14,24 +14,23 @@
  *
  */
 
-use std::path::PathBuf;
-use std::str;
 use super::traits::FileHandler;
-use async_trait::async_trait;
 use crate::util::error::Result;
+use async_trait::async_trait;
 use std::fs;
 use std::io;
+use std::path::PathBuf;
+use std::str;
 
-use uuid::Uuid;
-use std::io::{Read, Seek, Write};
 use bincode::{config, Decode, Encode};
 use std::collections::HashMap;
+use std::io::{Read, Seek, Write};
 use std::os::raw::{c_uchar, c_uint};
+use uuid::Uuid;
 
 use crate::client::cmd::options;
-use crate::client::sign_identity::KeyType;
+use crate::client::sign_identity::{KeyType, SignType};
 use crate::util::error::Error;
-
 
 const FILE_EXTENSION: &str = "p7s";
 const PKEY_ID_PKCS7: c_uchar = 2;
@@ -66,9 +65,7 @@ impl ModuleSignature {
 }
 
 #[derive(Clone)]
-pub struct KernelModuleFileHandler {
-
-}
+pub struct KernelModuleFileHandler {}
 
 impl KernelModuleFileHandler {
     pub fn new() -> Self {
@@ -81,7 +78,12 @@ impl KernelModuleFileHandler {
         Ok(())
     }
 
-    pub fn append_inline_signature(&self, module: &PathBuf, tempfile: &PathBuf, signature: &[u8]) -> Result<()> {
+    pub fn append_inline_signature(
+        &self,
+        module: &PathBuf,
+        tempfile: &PathBuf,
+        signature: &[u8],
+    ) -> Result<()> {
         let mut signed = fs::File::create(tempfile)?;
         signed.write_all(&self.get_raw_content(module)?)?;
         signed.write_all(signature)?;
@@ -100,7 +102,7 @@ impl KernelModuleFileHandler {
         let raw_content = fs::read(path)?;
         let mut file = fs::File::open(path)?;
         if file.metadata()?.len() <= MAGIC_NUMBER_SIZE as u64 {
-            return Ok(raw_content)
+            return Ok(raw_content);
         }
         //identify magic string and end of the file
         file.seek(io::SeekFrom::End(-(MAGIC_NUMBER_SIZE as i64)))?;
@@ -118,56 +120,82 @@ impl KernelModuleFileHandler {
                         config::standard()
                             .with_fixed_int_encoding()
                             .with_big_endian(),
-                    )?.0;
+                    )?
+                    .0;
                     if raw_content.len() < SIGNATURE_SIZE + signature.sig_len as usize {
-                        return Err(Error::SplitFileError("invalid kernel module signature size found".to_owned()));
+                        return Err(Error::SplitFileError(
+                            "invalid kernel module signature size found".to_owned(),
+                        ));
                     }
                     //read raw content
-                    Ok(raw_content[0..(raw_content.len() - SIGNATURE_SIZE - signature.sig_len as usize)].to_owned())
+                    Ok(raw_content
+                        [0..(raw_content.len() - SIGNATURE_SIZE - signature.sig_len as usize)]
+                        .to_owned())
                 } else {
                     Ok(raw_content)
-                }
+                };
             }
             Err(_) => {
                 //try to read whole content
                 Ok(raw_content)
             }
-        }
+        };
     }
 }
 
 #[async_trait]
 impl FileHandler for KernelModuleFileHandler {
-
     fn validate_options(&self, sign_options: &HashMap<String, String>) -> Result<()> {
         if let Some(key_type) = sign_options.get(options::KEY_TYPE) {
             if key_type != KeyType::X509.to_string().as_str() {
-                return Err(Error::InvalidArgumentError("kernel module file only support x509 signature".to_string()))
+                return Err(Error::InvalidArgumentError(
+                    "kernel module file only support x509 signature".to_string(),
+                ));
+            }
+        }
+
+        if let Some(sign_type) = sign_options.get(options::SIGN_TYPE) {
+            if sign_type != SignType::CMS.to_string().as_str() {
+                return Err(Error::InvalidArgumentError(
+                    "kernel module file only support cms sign type".to_string(),
+                ));
             }
         }
         Ok(())
     }
 
     //NOTE: currently we don't support sign signed kernel module file
-    async fn split_data(&self, path: &PathBuf, _sign_options: &mut HashMap<String, String>) -> Result<Vec<Vec<u8>>> {
+    async fn split_data(
+        &self,
+        path: &PathBuf,
+        _sign_options: &mut HashMap<String, String>,
+    ) -> Result<Vec<Vec<u8>>> {
         Ok(vec![self.get_raw_content(path)?])
     }
 
     /* when assemble checksum signature when only create another .asc file separately */
-    async fn assemble_data(&self, path: &PathBuf, data: Vec<Vec<u8>>, temp_dir: &PathBuf, sign_options: &HashMap<String, String>) -> Result<(String, String)> {
+    async fn assemble_data(
+        &self,
+        path: &PathBuf,
+        data: Vec<Vec<u8>>,
+        temp_dir: &PathBuf,
+        sign_options: &HashMap<String, String>,
+    ) -> Result<(String, String)> {
         let temp_file = temp_dir.join(Uuid::new_v4().to_string());
         //convert bytes into string
         if let Some(detached) = sign_options.get("detached") {
             if detached == "true" {
                 self.generate_detached_signature(&temp_file.display().to_string(), &data[0])?;
-                return Ok((temp_file.as_path().display().to_string(),
-                           format!("{}.{}", path.display(), FILE_EXTENSION)))
+                return Ok((
+                    temp_file.as_path().display().to_string(),
+                    format!("{}.{}", path.display(), FILE_EXTENSION),
+                ));
             }
         }
         self.append_inline_signature(path, &temp_file, &data[0])?;
-        return Ok((temp_file.as_path().display().to_string(),
-                   path.display().to_string()))
-
+        return Ok((
+            temp_file.as_path().display().to_string(),
+            path.display().to_string(),
+        ));
     }
 }
-

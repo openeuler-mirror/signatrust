@@ -28,6 +28,7 @@ mod domain;
 mod presentation;
 mod util;
 mod application;
+mod client;
 
 #[macro_use]
 extern crate log;

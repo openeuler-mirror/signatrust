@@ -29,6 +29,8 @@ use secstr::SecVec;
 use serde::Deserialize;
 
 use validator::{Validate, ValidationError};
+use crate::client::options;
+use crate::client::sign_identity::SignType;
 use crate::domain::datakey::entity::{DataKey, DataKeyContent, SecDataKey};
 use crate::util::error::{Error, Result};
 use crate::domain::sign_plugin::SignPlugins;
@@ -204,6 +206,14 @@ impl SignPlugins for X509Plugin {
     fn sign(&self, content: Vec<u8>, _options: HashMap<String, String>) -> Result<Vec<u8>> {
         let private_key = PKey::private_key_from_pem(self.private_key.unsecure())?;
         let certificate = x509::X509::from_pem(self.certificate.unsecure())?;
+        if let Some(sign_type) = _options.get(options::SIGN_TYPE) {
+            if sign_type == SignType::Authenticode.to_string().as_str() {
+                // convert pem to p7b format
+                let p7b = efi_signer::EfiImage::pem_to_p7(self.certificate.unsecure())?;
+                return Ok(efi_signer::EfiImage::do_sign_signature(content, p7b, private_key.private_key_to_pem_pkcs8()?, None)?.encode()?);
+            }
+        } 
+
         //cms option reference: https://man.openbsd.org/CMS_sign.3
         let cms_signature = CmsContentInfo::sign(
             Some(&certificate),
@@ -216,6 +226,7 @@ impl SignPlugins for X509Plugin {
                 | CMSOptions::NOSMIMECAP
                 | CMSOptions::NOATTR,
         )?;
+    
         Ok(cms_signature.to_der()?)
     }
 }

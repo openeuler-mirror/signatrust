@@ -14,53 +14,69 @@
  *
  */
 
-use std::path::PathBuf;
 use super::traits::FileHandler;
-use async_trait::async_trait;
+use crate::client::sign_identity::{KeyType, SignType};
 use crate::util::error::Result;
+use async_trait::async_trait;
+use std::path::PathBuf;
 use tokio::fs;
 use uuid::Uuid;
 
-use std::collections::HashMap;
-use crate::util::error::Error;
 use crate::client::cmd::options;
-
+use crate::util::error::Error;
+use std::collections::HashMap;
 
 const FILE_EXTENSION: &str = "asc";
 
 #[derive(Clone)]
-pub struct CheckSumFileHandler {
-
-}
+pub struct CheckSumFileHandler {}
 
 impl CheckSumFileHandler {
     pub fn new() -> Self {
-        Self {
-
-        }
+        Self {}
     }
 }
 
 #[async_trait]
 impl FileHandler for CheckSumFileHandler {
-
     fn validate_options(&self, sign_options: &HashMap<String, String>) -> Result<()> {
         if let Some(detached) = sign_options.get(options::DETACHED) {
             if detached == "false" {
-                return Err(Error::InvalidArgumentError("checksum file only support detached signature".to_string()))
+                return Err(Error::InvalidArgumentError(
+                    "checksum file only support detached signature".to_string(),
+                ));
+            }
+        }
+
+        if let Some(key_type) = sign_options.get(options::KEY_TYPE) {
+            if let Some(sign_type) = sign_options.get(options::SIGN_TYPE) {
+                if sign_type != SignType::CMS.to_string().as_str()
+                    && key_type == KeyType::X509.to_string().as_str()
+                {
+                    return Err(Error::InvalidArgumentError(
+                        "checksum file only support x509 key with cms sign type".to_string(),
+                    ));
+                }
             }
         }
         Ok(())
     }
 
     /* when assemble checksum signature when only create another .asc file separately */
-    async fn assemble_data(&self, path: &PathBuf, data: Vec<Vec<u8>>, temp_dir: &PathBuf, _sign_options: &HashMap<String, String>) -> Result<(String, String)> {
+    async fn assemble_data(
+        &self,
+        path: &PathBuf,
+        data: Vec<Vec<u8>>,
+        temp_dir: &PathBuf,
+        _sign_options: &HashMap<String, String>,
+    ) -> Result<(String, String)> {
         let temp_file = temp_dir.join(Uuid::new_v4().to_string());
         //convert bytes into string
         let result = String::from_utf8_lossy(&data[0]);
         fs::write(temp_file.clone(), result.as_bytes()).await?;
-        Ok((temp_file.as_path().display().to_string(),
-            format!("{}.{}", path.as_path().display(), FILE_EXTENSION)))
+        Ok((
+            temp_file.as_path().display().to_string(),
+            format!("{}.{}", path.as_path().display(), FILE_EXTENSION),
+        ))
     }
 }
-
