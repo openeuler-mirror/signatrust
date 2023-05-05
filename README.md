@@ -41,7 +41,7 @@ We have observed several projects aiming to address these challenges.
    1. RPM/SRPM signature.
    2. Detached PGP signature including ISO checksum and repo metadata.
    3. Kernel module signature.
-   4. EFI(todo).
+   4. EFI.
    5. Container Image(todo).
    6. WSL Image(todo).
    7. AppImage(todo).
@@ -91,6 +91,11 @@ This project consists of several binaries:
 2. **control-server**: the control server used for handle administration requests and expose http requests for Web UI.
 3. **control-admin**: the control-admin is mainly used in develop environment for convenience, i.e. generate administrator and tokens without the integration of external OIDC server.
 4. **client**: the client is responsible for handle signing task locally and will exchange signature with data server.
+
+# Documents on sign/verify specific files
+1. [RPM/SRPM file]()
+2. [Kernel module file](./docs/how%20to%20sign%20kernelmodule%20file.md)
+3. [EFI file](./docs/how%20to%20sign&verify%20a%20EFI%20image.md)
 
 
 

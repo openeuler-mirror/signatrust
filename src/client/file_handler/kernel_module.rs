@@ -98,7 +98,7 @@ impl KernelModuleFileHandler {
         Ok(())
     }
 
-    pub fn get_raw_content(&self, path: &PathBuf) -> Result<Vec<u8>> {
+    pub fn get_raw_content(&self, path: &PathBuf, sign_options: &mut HashMap<String, String>) -> Result<Vec<u8>> {
         let raw_content = fs::read(path)?;
         let mut file = fs::File::open(path)?;
         if file.metadata()?.len() <= MAGIC_NUMBER_SIZE as u64 {
@@ -126,6 +126,12 @@ impl KernelModuleFileHandler {
                         return Err(Error::SplitFileError(
                             "invalid kernel module signature size found".to_owned(),
                         ));
+                    }
+                    if let Some(detached) = sign_options.get("detached") {
+                        if detached == "true" {
+                            return Err(Error::SplitFileError(
+                                "already signed kernel module file doesn't support detached signature".to_owned()));
+                        }
                     }
                     //read raw content
                     Ok(raw_content
@@ -164,13 +170,13 @@ impl FileHandler for KernelModuleFileHandler {
         Ok(())
     }
 
-    //NOTE: currently we don't support sign signed kernel module file
+    //NOTE: if it's a signed kernel module file, detached option will lead to the failure of verification.
     async fn split_data(
         &self,
         path: &PathBuf,
-        _sign_options: &mut HashMap<String, String>,
+        sign_options: &mut HashMap<String, String>,
     ) -> Result<Vec<Vec<u8>>> {
-        Ok(vec![self.get_raw_content(path)?])
+        Ok(vec![self.get_raw_content(path, sign_options)?])
     }
 
     /* when assemble checksum signature when only create another .asc file separately */
