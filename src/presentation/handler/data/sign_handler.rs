@@ -67,6 +67,7 @@ where
             key_type = inner_result.key_type;
             options = inner_result.options;
         }
+        debug!("begin to sign key_type :{} key_name: {}", key_type, key_name);
         match self.key_service.sign(key_type, key_name, &options, data).await {
             Ok(content) => {
                 Ok(Response::new(SignStreamResponse {

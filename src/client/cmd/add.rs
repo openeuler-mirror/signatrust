@@ -26,8 +26,8 @@ use std::collections::HashMap;
 
 use crate::util::error;
 use async_channel::{bounded};
-
-use crate::client::cmd::options;
+use crate::util::sign::{SignType, FileType, KeyType};
+use crate::util::options;
 use crate::client::file_handler::factory::FileHandlerFactory;
 
 use crate::client::load_balancer::factory::ChannelFactory;
@@ -38,10 +38,11 @@ use crate::client::worker::traits::SignHandler;
 use std::sync::atomic::{AtomicI32, Ordering};
 
 lazy_static! {
-    pub static ref FILE_EXTENSION: HashMap<sign_identity::FileType, Vec<&'static str>> = HashMap::from([
-        (sign_identity::FileType::RPM, vec!["rpm", "srpm"]),
-        (sign_identity::FileType::CheckSum, vec!["txt", "sha256sum"]),
-        (sign_identity::FileType::KernelModule, vec!["ko"]),
+    pub static ref FILE_EXTENSION: HashMap<FileType, Vec<&'static str>> = HashMap::from([
+        (FileType::RPM, vec!["rpm", "srpm"]),
+        (FileType::CheckSum, vec!["txt", "sha256sum"]),
+        (FileType::KernelModule, vec!["ko"]),
+        (FileType::EfiImage, vec!["efi"]),
     ]);
 }
 
@@ -49,15 +50,15 @@ lazy_static! {
 pub struct CommandAdd {
     #[arg(long)]
     #[arg(value_enum)]
-    #[arg(help = "specify the file type for signing, currently support checksum and rpm")]
-    file_type: sign_identity::FileType,
+    #[arg(help = "specify the file type for signing")]
+    file_type: FileType,
     #[arg(long)]
     #[arg(value_enum)]
-    #[arg(help = "specify the key type for signing, currently support pgp and x509")]
-    key_type: sign_identity::KeyType,
+    #[arg(help = "specify the key type for signing")]
+    key_type: KeyType,
     #[arg(long)]
-    #[arg(help = "specify the key id for signing")]
-    key_id: String,
+    #[arg(help = "specify the key name for signing")]
+    key_name: String,
     #[arg(long)]
     #[arg(help = "create detached signature")]
     detached: bool,
@@ -66,6 +67,10 @@ pub struct CommandAdd {
     skip_signed: bool,
     #[arg(help = "specify the path which will be used for signing file and directory are supported")]
     path: String,
+    #[arg(long)]
+    #[arg(value_enum, default_value_t=SignType::CMS)]
+    #[arg(help = "specify the signature type, meaningful when key type is x509")]
+    sign_type: SignType,
 }
 
 
@@ -73,16 +78,17 @@ pub struct CommandAdd {
 pub struct CommandAddHandler {
     worker_threads: usize,
     working_dir: String,
-    file_type: sign_identity::FileType,
-    key_type: sign_identity::KeyType,
-    key_id: String,
+    file_type: FileType,
+    key_type: KeyType,
+    key_name: String,
     path: PathBuf,
     buffer_size: usize,
     signal: Arc<AtomicBool>,
     config:  Arc<RwLock<Config>>,
     detached: bool,
     skip_signed: bool,
-    max_concurrency: usize
+    max_concurrency: usize,
+    sign_type: SignType,
 }
 
 impl CommandAddHandler {
@@ -91,7 +97,8 @@ impl CommandAddHandler {
         HashMap::from([
             (options::DETACHED.to_string(), self.detached.to_string()),
             (options::SKIP_SIGNED.to_string(), self.skip_signed.to_string()),
-            (options::KEY_TYPE.to_string(), self.key_type.to_string())])
+            (options::KEY_TYPE.to_string(), self.key_type.to_string()),
+            (options::SIGN_TYPE.to_string(), self.sign_type.to_string())])
     }
     fn collect_file_candidates(&self) -> Result<Vec<sign_identity::SignIdentity>> {
         if self.path.is_dir() {
@@ -109,7 +116,7 @@ impl CommandAddHandler {
                                         self.file_type.clone(),
                                         en.path().to_path_buf(),
                                         self.key_type.clone(),
-                                        self.key_id.clone(),
+                                        self.key_name.clone(),
                                         self.get_sign_options()));
                             }
                         }
@@ -122,7 +129,7 @@ impl CommandAddHandler {
             return Ok(container);
         } else if self.file_candidates(self.path.extension().unwrap().to_str().unwrap())? {
                 return Ok(vec![sign_identity::SignIdentity::new(
-                    self.file_type.clone(), self.path.clone(), self.key_type.clone(), self.key_id.clone(), self.get_sign_options())]);
+                    self.file_type.clone(), self.path.clone(), self.key_type.clone(), self.key_name.clone(), self.get_sign_options())]);
         }
         Err(error::Error::NoFileCandidateError)
     }
@@ -153,13 +160,14 @@ impl SignCommand for CommandAddHandler {
             working_dir: config.read()?.get_string("working_dir")?,
             file_type: command.file_type,
             key_type: command.key_type,
-            key_id: command.key_id,
+            key_name: command.key_name,
             path: std::path::PathBuf::from(&command.path),
             signal,
             config: config.clone(),
             detached: command.detached,
             skip_signed: command.skip_signed,
             max_concurrency: config.read()?.get_string("max_concurrency")?.parse()?,
+            sign_type: command.sign_type,
         })
     }
 

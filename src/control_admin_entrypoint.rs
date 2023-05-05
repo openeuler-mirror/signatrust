@@ -20,9 +20,9 @@ use std::collections::HashMap;
 use std::env;
 use chrono::{Duration, Utc};
 use crate::util::error::{Result};
+use crate::util::sign::KeyType;
 use clap::{Parser, Subcommand};
 use clap::{Args};
-use crate::client::sign_identity;
 use crate::domain::datakey::entity::{DataKey};
 use crate::domain::user::entity::User;
 use crate::presentation::handler::control::model::datakey::dto::{CreateDataKeyDTO};
@@ -120,7 +120,7 @@ pub struct CommandGenerateKeys {
     #[arg(long)]
     #[arg(value_enum)]
     #[arg(help = "specify th type of key")]
-    key_type: sign_identity::KeyType,
+    key_type: KeyType,
 }
 
 fn generate_keys_parameters(command: &CommandGenerateKeys) -> HashMap<String, String> {
@@ -128,10 +128,10 @@ fn generate_keys_parameters(command: &CommandGenerateKeys) -> HashMap<String, St
     attributes.insert("key_type".to_string(), command.param_key_type.clone());
     attributes.insert("key_length".to_string(), command.param_key_size.clone());
     attributes.insert("digest_algorithm".to_string(), command.digest_algorithm.clone());
-    if command.key_type == sign_identity::KeyType::PGP {
+    if command.key_type == KeyType::PGP {
         attributes.insert("email".to_string(), command.param_pgp_email.clone().unwrap());
         attributes.insert("passphrase".to_string(), command.param_pgp_passphrase.clone().unwrap());
-    } else if command.key_type == sign_identity::KeyType::X509 {
+    } else if command.key_type == KeyType::X509 {
         attributes.insert("common_name".to_string(), command.param_x509_common_name.clone().unwrap());
         attributes.insert("country_name".to_string(), command.param_x509_country_name.clone().unwrap());
         attributes.insert("locality".to_string(), command.param_x509_locality.clone().unwrap());

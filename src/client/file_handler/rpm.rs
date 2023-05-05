@@ -26,8 +26,8 @@ use rpm::{Header, IndexSignatureTag, RPMPackage};
 use super::sequential_cursor::SeqCursor;
 use uuid::Uuid;
 use sha1;
-use crate::client::cmd::options;
-use crate::client::sign_identity::KeyType;
+use crate::util::options;
+use crate::util::sign::KeyType;
 use crate::util::error::Error;
 
 #[derive(Clone)]

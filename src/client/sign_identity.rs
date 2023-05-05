@@ -15,43 +15,12 @@
  */
 
 use std::path::PathBuf;
-use std::fmt::{Display, Formatter, Result as fmtResult};
 
 use std::cell::{RefCell};
-use crate::util::error::Result;
+use crate::util::error::{Result};
+use crate::util::sign::{FileType, KeyType};
 use std::collections::HashMap;
 
-#[derive(clap::ValueEnum, Clone, Debug, PartialEq, Eq, Hash)]
-pub enum FileType {
-    RPM,
-    CheckSum,
-    KernelModule
-}
-
-impl Display for FileType {
-    fn fmt(&self, f: &mut Formatter) -> fmtResult {
-        match self {
-            FileType::RPM => write!(f, "rpm"),
-            FileType::CheckSum => write!(f, "checksum"),
-            FileType::KernelModule => write!(f, "ko")
-        }
-    }
-}
-
-#[derive(clap::ValueEnum, Clone, Debug, PartialEq)]
-pub enum KeyType {
-    PGP,
-    X509,
-}
-
-impl Display for KeyType {
-    fn fmt(&self, f: &mut Formatter) -> fmtResult {
-        match self {
-            KeyType::PGP => write!(f, "pgp"),
-            KeyType::X509 => write!(f, "x509"),
-        }
-    }
-}
 
 pub struct SignIdentity {
     //absolute file path
