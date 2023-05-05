@@ -1,10 +1,10 @@
-FROM clux/muslrust:stable as builder
+FROM clux/muslrust:nightly as builder
 ARG BINARY
 LABEL Author=TommyLike<tommylikehu@gmail.com>
 WORKDIR /app
 COPY . /app
 
-RUN cargo build --release --bin $BINARY --target x86_64-unknown-linux-musl
+RUN cargo +nightly build --release --bin $BINARY --target x86_64-unknown-linux-musl
 
 FROM alpine:latest
 ARG BINARY

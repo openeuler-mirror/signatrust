@@ -61,7 +61,7 @@ enum Commands {
     #[command(about = "Create default admin and admin token", long_about = None)]
     CreateAdmin(CommandAdmin),
     #[command(about = "Generate keys for signing", long_about = None)]
-    GenerateKeys(CommandGenerateKeys),
+    GenerateKeys(Box<CommandGenerateKeys>),
 }
 
 #[derive(Args)]
@@ -128,7 +128,7 @@ fn generate_keys_parameters(command: &CommandGenerateKeys) -> HashMap<String, St
     attributes.insert("key_type".to_string(), command.param_key_type.clone());
     attributes.insert("key_length".to_string(), command.param_key_size.clone());
     attributes.insert("digest_algorithm".to_string(), command.digest_algorithm.clone());
-    if command.key_type == KeyType::PGP {
+    if command.key_type == KeyType::Pgp {
         attributes.insert("email".to_string(), command.param_pgp_email.clone().unwrap());
         attributes.insert("passphrase".to_string(), command.param_pgp_passphrase.clone().unwrap());
     } else if command.key_type == KeyType::X509 {

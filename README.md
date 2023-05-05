@@ -93,7 +93,7 @@ This project consists of several binaries:
 4. **client**: the client is responsible for handle signing task locally and will exchange signature with data server.
 
 # Documents on sign/verify specific files
-1. [RPM/SRPM file]()
+1. [RPM/SRPM file](./docs/how%20to%20sign%20rpm&srpm%20file.md)
 2. [Kernel module file](./docs/how%20to%20sign%20kernelmodule%20file.md)
 3. [EFI file](./docs/how%20to%20sign&verify%20a%20EFI%20image.md)
 

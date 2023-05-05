@@ -39,7 +39,7 @@ use std::sync::atomic::{AtomicI32, Ordering};
 
 lazy_static! {
     pub static ref FILE_EXTENSION: HashMap<FileType, Vec<&'static str>> = HashMap::from([
-        (FileType::RPM, vec!["rpm", "srpm"]),
+        (FileType::Rpm, vec!["rpm", "srpm"]),
         (FileType::CheckSum, vec!["txt", "sha256sum"]),
         (FileType::KernelModule, vec!["ko"]),
         (FileType::EfiImage, vec!["efi"]),
@@ -62,13 +62,10 @@ pub struct CommandAdd {
     #[arg(long)]
     #[arg(help = "create detached signature")]
     detached: bool,
-    #[arg(long)]
-    #[arg(help = "skip signed file")]
-    skip_signed: bool,
     #[arg(help = "specify the path which will be used for signing file and directory are supported")]
     path: String,
     #[arg(long)]
-    #[arg(value_enum, default_value_t=SignType::CMS)]
+    #[arg(value_enum, default_value_t=SignType::Cms)]
     #[arg(help = "specify the signature type, meaningful when key type is x509")]
     sign_type: SignType,
 }
@@ -86,7 +83,6 @@ pub struct CommandAddHandler {
     signal: Arc<AtomicBool>,
     config:  Arc<RwLock<Config>>,
     detached: bool,
-    skip_signed: bool,
     max_concurrency: usize,
     sign_type: SignType,
 }
@@ -96,7 +92,6 @@ impl CommandAddHandler {
     fn get_sign_options(&self) -> HashMap<String, String> {
         HashMap::from([
             (options::DETACHED.to_string(), self.detached.to_string()),
-            (options::SKIP_SIGNED.to_string(), self.skip_signed.to_string()),
             (options::KEY_TYPE.to_string(), self.key_type.to_string()),
             (options::SIGN_TYPE.to_string(), self.sign_type.to_string())])
     }
@@ -152,7 +147,7 @@ impl SignCommand for CommandAddHandler {
     fn new(signal: Arc<AtomicBool>, config: Arc<RwLock<Config>>, command: Self::CommandValue) -> Result<Self> {
         let mut worker_threads = config.read()?.get_string("worker_threads")?.parse()?;
         if worker_threads == 0 {
-            worker_threads = num_cpus::get() as usize;
+            worker_threads = num_cpus::get();
         }
         Ok(CommandAddHandler{
             worker_threads,
@@ -165,7 +160,6 @@ impl SignCommand for CommandAddHandler {
             signal,
             config: config.clone(),
             detached: command.detached,
-            skip_signed: command.skip_signed,
             max_concurrency: config.read()?.get_string("max_concurrency")?.parse()?,
             sign_type: command.sign_type,
         })

@@ -75,7 +75,7 @@ impl FileHandler for EfiFileHandler {
         let mut signatures :Vec<efi_signer::Signature> = Vec::new();
 
         for d in data.iter() {
-            signatures.push(efi_signer::Signature::decode(&d)?);
+            signatures.push(efi_signer::Signature::decode(d)?);
         }
         let new_pe = pe.set_authenticode(signatures)?;
 

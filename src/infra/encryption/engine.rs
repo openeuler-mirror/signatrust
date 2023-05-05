@@ -69,7 +69,7 @@ where
                 .expect("encryption engine should configured")
                 .to_string()
                 .parse()?,
-            latest_cluster_key: Box::new(SecClusterKey::default()),
+            latest_cluster_key: Box::<SecClusterKey>::default(),
             kms_provider,
 
         })

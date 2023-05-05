@@ -50,7 +50,7 @@ impl FileHandler for CheckSumFileHandler {
 
         if let Some(key_type) = sign_options.get(options::KEY_TYPE) {
             if let Some(sign_type) = sign_options.get(options::SIGN_TYPE) {
-                if sign_type != SignType::CMS.to_string().as_str()
+                if sign_type != SignType::Cms.to_string().as_str()
                     && key_type == KeyType::X509.to_string().as_str()
                 {
                     return Err(Error::InvalidArgumentError(
