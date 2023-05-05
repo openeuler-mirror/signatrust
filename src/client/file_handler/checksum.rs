@@ -15,14 +15,14 @@
  */
 
 use super::traits::FileHandler;
-use crate::client::sign_identity::{KeyType, SignType};
+use crate::util::sign::{SignType, KeyType};
 use crate::util::error::Result;
 use async_trait::async_trait;
 use std::path::PathBuf;
 use tokio::fs;
 use uuid::Uuid;
 
-use crate::client::cmd::options;
+use crate::util::options;
 use crate::util::error::Error;
 use std::collections::HashMap;
 

@@ -1,6 +1,6 @@
 use super::traits::FileHandler;
-use crate::client::cmd::options;
-use crate::client::sign_identity::{KeyType, SignType};
+use crate::util::options;
+use crate::util::sign::{SignType, KeyType};
 use crate::util::error::{Error, Result};
 use async_trait::async_trait;
 use efi_signer::{DigestAlgorithm, EfiImage};

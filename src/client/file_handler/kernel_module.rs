@@ -28,8 +28,8 @@ use std::io::{Read, Seek, Write};
 use std::os::raw::{c_uchar, c_uint};
 use uuid::Uuid;
 
-use crate::client::cmd::options;
-use crate::client::sign_identity::{KeyType, SignType};
+use crate::util::options;
+use crate::util::sign::{SignType, KeyType};
 use crate::util::error::Error;
 
 const FILE_EXTENSION: &str = "p7s";

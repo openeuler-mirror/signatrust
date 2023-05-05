@@ -18,7 +18,7 @@ use super::rpm::RpmFileHandler;
 use super::efi::EfiFileHandler;
 use super::checksum::CheckSumFileHandler;
 use super::kernel_module::KernelModuleFileHandler;
-use crate::client::sign_identity::FileType;
+use crate::util::sign::FileType;
 use super::traits::FileHandler;
 
 pub struct FileHandlerFactory {

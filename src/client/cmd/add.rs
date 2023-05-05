@@ -26,8 +26,8 @@ use std::collections::HashMap;
 
 use crate::util::error;
 use async_channel::{bounded};
-
-use crate::client::cmd::options;
+use crate::util::sign::{SignType, FileType, KeyType};
+use crate::util::options;
 use crate::client::file_handler::factory::FileHandlerFactory;
 
 use crate::client::load_balancer::factory::ChannelFactory;
@@ -38,11 +38,11 @@ use crate::client::worker::traits::SignHandler;
 use std::sync::atomic::{AtomicI32, Ordering};
 
 lazy_static! {
-    pub static ref FILE_EXTENSION: HashMap<sign_identity::FileType, Vec<&'static str>> = HashMap::from([
-        (sign_identity::FileType::RPM, vec!["rpm", "srpm"]),
-        (sign_identity::FileType::CheckSum, vec!["txt", "sha256sum"]),
-        (sign_identity::FileType::KernelModule, vec!["ko"]),
-        (sign_identity::FileType::EfiImage, vec!["efi"]),
+    pub static ref FILE_EXTENSION: HashMap<FileType, Vec<&'static str>> = HashMap::from([
+        (FileType::RPM, vec!["rpm", "srpm"]),
+        (FileType::CheckSum, vec!["txt", "sha256sum"]),
+        (FileType::KernelModule, vec!["ko"]),
+        (FileType::EfiImage, vec!["efi"]),
     ]);
 }
 
@@ -51,11 +51,11 @@ pub struct CommandAdd {
     #[arg(long)]
     #[arg(value_enum)]
     #[arg(help = "specify the file type for signing")]
-    file_type: sign_identity::FileType,
+    file_type: FileType,
     #[arg(long)]
     #[arg(value_enum)]
     #[arg(help = "specify the key type for signing")]
-    key_type: sign_identity::KeyType,
+    key_type: KeyType,
     #[arg(long)]
     #[arg(help = "specify the key name for signing")]
     key_name: String,
@@ -68,9 +68,9 @@ pub struct CommandAdd {
     #[arg(help = "specify the path which will be used for signing file and directory are supported")]
     path: String,
     #[arg(long)]
-    #[arg(value_enum, default_value_t=sign_identity::SignType::CMS)]
+    #[arg(value_enum, default_value_t=SignType::CMS)]
     #[arg(help = "specify the signature type, meaningful when key type is x509")]
-    sign_type: sign_identity::SignType,
+    sign_type: SignType,
 }
 
 
@@ -78,8 +78,8 @@ pub struct CommandAdd {
 pub struct CommandAddHandler {
     worker_threads: usize,
     working_dir: String,
-    file_type: sign_identity::FileType,
-    key_type: sign_identity::KeyType,
+    file_type: FileType,
+    key_type: KeyType,
     key_name: String,
     path: PathBuf,
     buffer_size: usize,
@@ -88,7 +88,7 @@ pub struct CommandAddHandler {
     detached: bool,
     skip_signed: bool,
     max_concurrency: usize,
-    sign_type: sign_identity::SignType,
+    sign_type: SignType,
 }
 
 impl CommandAddHandler {

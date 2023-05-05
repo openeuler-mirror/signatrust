@@ -17,6 +17,7 @@
 use crate::domain::sign_plugin::SignPlugins;
 
 use crate::util::error::{Error, Result};
+use crate::util::options;
 use chrono::{DateTime, Utc};
 use pgp::composed::signed_key::{SignedSecretKey, SignedPublicKey};
 use pgp::composed::{key::SecretKeyParamsBuilder, KeyType};
@@ -42,7 +43,6 @@ use crate::domain::datakey::entity::{DataKey, DataKeyContent, SecDataKey};
 use crate::util::key::encode_u8_to_hex_string;
 use super::util::{validate_utc_time_not_expire, validate_utc_time};
 
-const DETACHED_SIGNATURE: &str = "detached";
 
 #[derive(Debug, Validate, Deserialize)]
 pub struct PgpKeyGenerationParameter {
@@ -256,7 +256,7 @@ impl SignPlugins for OpenPGPPlugin {
 
 
         //detached signature
-        if let Some(detached) = options.get(DETACHED_SIGNATURE) {
+        if let Some(detached) = options.get(options::DETACHED) {
             if detached == "true" {
                 let standard_signature = StandaloneSignature::new(signature_packet);
                 return Ok(standard_signature.to_armored_bytes(None)?)
