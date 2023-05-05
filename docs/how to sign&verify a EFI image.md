@@ -1,5 +1,7 @@
-# prerequisite
-- create a x509 key in data server if you do not have one
+# Background
+For the background of EFI signature, please refer to [this](how%20to%20sign%20EFI%20file.md) document.
+# Prerequisite
+- Create a x509 key in data server if you do not have one
     ```bash
     curl -X 'POST' \
     'http://10.0.0.139:8080/api/v1/keys/' \
@@ -24,7 +26,7 @@
     "name": "my-x509"
     }'
     ```
-- export the x509 certificate into PEM format
+- Export the x509 certificate into PEM format
     - get the key id
     ```
     curl -X 'GET' \
@@ -123,12 +125,12 @@
     -----END CERTIFICATE-----
     ```
 
-# sign a EFI file
+# Sign a EFI file
 ```
 RUST_BACKTRACE=1 RUST_LOG=debug ./target/debug/client -c client.toml add --file-type efi-image --key-type x509 --key-name my-x509 --sign-type authenticode  `pwd`/shimx64.efi
 ```
 
-# verify the EFI file
+# Verify the EFI file
 - first we should compile `sbsigntools`
 ```
 git clone https://git.kernel.org/pub/scm/linux/kernel/git/jejb/sbsigntools.git
