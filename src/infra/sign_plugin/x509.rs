@@ -154,7 +154,7 @@ impl SignPlugins for X509Plugin {
             public_key: db.public_key.clone(),
             certificate: db.certificate.clone(),
             identity: db.identity.clone(),
-            attributes: db.attributes.clone()
+            attributes: db.attributes
         })
     }
 

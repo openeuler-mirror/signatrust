@@ -85,11 +85,11 @@ impl KernelModuleFileHandler {
         signature: &[u8],
     ) -> Result<()> {
         let mut signed = fs::File::create(tempfile)?;
-        signed.write_all(&self.get_raw_content(module)?)?;
+        signed.write_all(&self.get_raw_content(module, &mut HashMap::new())?)?;
         signed.write_all(signature)?;
         let sig_struct = ModuleSignature::new(signature.len() as c_uint);
         signed.write_all(&bincode::encode_to_vec(
-            &sig_struct,
+            sig_struct,
             config::standard()
                 .with_fixed_int_encoding()
                 .with_big_endian(),
@@ -161,7 +161,7 @@ impl FileHandler for KernelModuleFileHandler {
         }
 
         if let Some(sign_type) = sign_options.get(options::SIGN_TYPE) {
-            if sign_type != SignType::CMS.to_string().as_str() {
+            if sign_type != SignType::Cms.to_string().as_str() {
                 return Err(Error::InvalidArgumentError(
                     "kernel module file only support cms sign type".to_string(),
                 ));

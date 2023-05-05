@@ -55,7 +55,7 @@ impl FileHandler for RpmFileHandler {
             }
         }
         if let Some(key_type) = sign_options.get(options::KEY_TYPE) {
-            if key_type != KeyType::PGP.to_string().as_str() {
+            if key_type != KeyType::Pgp.to_string().as_str() {
                 return Err(Error::InvalidArgumentError("rpm file only support pgp signature".to_string()))
             }
         }
@@ -77,7 +77,13 @@ impl FileHandler for RpmFileHandler {
         Ok(vec![header_bytes, header_and_content])
 
     }
-    async fn assemble_data(&self, path: &PathBuf, data: Vec<Vec<u8>>, temp_dir: &PathBuf, _sign_options: &HashMap<String, String>) -> Result<(String, String)> {
+    async fn assemble_data(
+        &self,
+        path: & PathBuf,
+        data: Vec<Vec<u8>>,
+        temp_dir: &PathBuf,
+        _sign_options: &HashMap<String, String>,
+    ) -> Result<(String, String)> {
         let temp_rpm = temp_dir.join(Uuid::new_v4().to_string());
         let file = File::open(path)?;
         let mut package = RPMPackage::parse(&mut BufReader::new(file))?;

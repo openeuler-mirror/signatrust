@@ -27,7 +27,7 @@ impl AlgorithmFactory {
         let algorithm = Algorithm::from_str(algo)?;
         info!("encryption algorithm configured with {:?}", algorithm);
         match algorithm {
-            Algorithm::Aes256GSM => Ok(Box::new(Aes256GcmEncryptor::default())),
+            Algorithm::Aes256GSM => Ok(Box::<Aes256GcmEncryptor>::default()),
         }
     }
 }

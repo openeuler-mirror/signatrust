@@ -28,16 +28,11 @@ use crate::domain::encryption_engine::EncryptionEngine;
 
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub enum KeyState {
     Enabled,
+    #[default]
     Disabled,
-}
-
-impl Default for KeyState {
-    fn default() -> Self {
-        KeyState::Disabled
-    }
 }
 
 impl FromStr for KeyState {
