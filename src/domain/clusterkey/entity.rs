@@ -70,6 +70,7 @@ impl ClusterKey {
     }
 }
 
+#[derive(Clone)]
 pub struct SecClusterKey {
     pub id: i32,
     pub data: SecVec<u8>,

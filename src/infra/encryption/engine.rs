@@ -23,6 +23,8 @@ use crate::util::key;
 use async_trait::async_trait;
 use config::Value;
 use std::collections::HashMap;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 
 use crate::domain::kms_provider::KMSProvider;
 
@@ -40,6 +42,7 @@ where
     encryptor: Box<E>,
     keep_in_days: i64,
     latest_cluster_key: Box<SecClusterKey>,
+    cluster_key_container: Arc<RwLock<HashMap<i32, SecClusterKey>>> // cluster key id -> cluster key
 }
 
 /// considering we have rotated cluster key for safety concern
@@ -71,7 +74,7 @@ where
                 .parse()?,
             latest_cluster_key: Box::<SecClusterKey>::default(),
             kms_provider,
-
+            cluster_key_container: Arc::new(RwLock::new(HashMap::new()))
         })
     }
     fn append_cluster_key_hex(&self, data: &mut Vec<u8>) -> Vec<u8> {
@@ -87,7 +90,12 @@ where
     async fn get_used_sec_cluster_key(&self, data: &[u8]) -> Result<SecClusterKey> {
         //convert the cluster back and obtain from database, hard code here.
         let cluster_id: i32 = (data[0] as i32) * 256 + data[1] as i32;
-        SecClusterKey::load( self.cluster_repository.get_by_id(cluster_id).await?, &self.kms_provider).await
+        if let Some(cluster_key) = self.cluster_key_container.read().await.get(&cluster_id) {
+            return Ok((*cluster_key).clone())
+        }
+        let cluster_key = SecClusterKey::load( self.cluster_repository.get_by_id(cluster_id).await?, &self.kms_provider).await?;
+        self.cluster_key_container.write().await.insert(cluster_id, cluster_key.clone());
+        Ok(cluster_key)
     }
 }
 
