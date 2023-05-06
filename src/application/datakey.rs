@@ -19,9 +19,13 @@ use crate::domain::sign_service::SignBackend;
 use crate::util::error::{Result};
 use async_trait::async_trait;
 use crate::domain::datakey::entity::{DataKey, KeyState};
+use std::sync::{Arc, atomic::AtomicBool};
+
+use tokio::time::{Duration, sleep};
 
 use crate::util::signer_container::DataKeyContainer;
 use std::collections::HashMap;
+use std::sync::atomic::Ordering;
 
 #[async_trait]
 pub trait KeyService: Send + Sync{
@@ -34,13 +38,16 @@ pub trait KeyService: Send + Sync{
     async fn enable(&self, id: i32) -> Result<()>;
     async fn disable(&self, id: i32) -> Result<()>;
     async fn sign(&self, key_type: String, key_name: String, options: &HashMap<String, String>, data: Vec<u8>) ->Result<Vec<u8>>;
+
+    //method below used for maintenance
+    fn start_loop(&self, signal: Arc<AtomicBool>) -> Result<()>;
 }
 
 
 
 pub struct DBKeyService<R, S>
 where
-    R: DatakeyRepository + Clone,
+    R: DatakeyRepository + Clone + 'static,
     S: SignBackend + ?Sized
 {
     repository: R,
@@ -50,7 +57,7 @@ where
 
 impl<R, S> DBKeyService<R, S>
     where
-        R: DatakeyRepository + Clone,
+        R: DatakeyRepository + Clone + 'static,
         S: SignBackend + ?Sized
 {
     pub fn new(repository: R, sign_service: Box<S>) -> Self {
@@ -110,5 +117,17 @@ where
     async fn sign(&self, key_type: String, key_name: String, options: &HashMap<String, String>, data: Vec<u8>) -> Result<Vec<u8>> {
         self.sign_service.sign(
             &self.container.get_data_key(key_type, key_name).await?, data, options.clone()).await
+    }
+
+    fn start_loop(&self, signal: Arc<AtomicBool>) -> Result<()> {
+        let container = self.container.clone();
+        tokio::spawn(async move {
+            while !signal.load(Ordering::Relaxed) {
+                debug!("start to clear the container keys");
+                sleep(Duration::from_secs(60)).await;
+                container.clear_keys().await;
+            }
+        });
+        Ok(())
     }
 }

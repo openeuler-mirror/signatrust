@@ -21,6 +21,7 @@ use crate::util::error::Result;
 use crate::domain::datakey::repository::Repository;
 use crate::domain::datakey::entity::DataKey;
 
+#[derive(Clone)]
 pub struct DataKeyContainer<R>
 where
     R: Repository
@@ -52,5 +53,9 @@ where
 
     fn get_identity(&self, key_type: &str, key_name: &str) -> String {
         format!("{}-{}",key_type, key_name)
+    }
+
+    pub async fn clear_keys(&self) {
+        self.containers.write().await.clear();
     }
 }
