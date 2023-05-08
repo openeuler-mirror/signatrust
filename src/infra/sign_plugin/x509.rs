@@ -15,6 +15,7 @@
  */
 
 use std::collections::HashMap;
+use std::str::FromStr;
 use std::time::{SystemTime, Duration};
 
 use chrono::{DateTime, Utc};
@@ -22,8 +23,10 @@ use openssl::asn1::Asn1Time;
 use openssl::cms::{CmsContentInfo, CMSOptions};
 use openssl::dsa::Dsa;
 use openssl::hash::MessageDigest;
+use openssl::pkcs7::{Pkcs7, Pkcs7Flags};
 use openssl::pkey::{PKey, Private};
 use openssl::rsa::Rsa;
+use openssl::stack::Stack;
 use openssl::x509;
 use secstr::SecVec;
 use serde::Deserialize;
@@ -203,30 +206,46 @@ impl SignPlugins for X509Plugin {
         })
     }
 
-    fn sign(&self, content: Vec<u8>, _options: HashMap<String, String>) -> Result<Vec<u8>> {
+    fn sign(&self, content: Vec<u8>, options: HashMap<String, String>) -> Result<Vec<u8>> {
         let private_key = PKey::private_key_from_pem(self.private_key.unsecure())?;
         let certificate = x509::X509::from_pem(self.certificate.unsecure())?;
-        if let Some(sign_type) = _options.get(options::SIGN_TYPE) {
-            if sign_type == SignType::Authenticode.to_string().as_str() {
-                // convert pem to p7b format
+        match SignType::from_str(options.get(options::SIGN_TYPE).unwrap_or(&SignType::Cms.to_string()))? {
+            SignType::Authenticode => {
                 let p7b = efi_signer::EfiImage::pem_to_p7(self.certificate.unsecure())?;
-                return Ok(efi_signer::EfiImage::do_sign_signature(content, p7b, private_key.private_key_to_pem_pkcs8()?, None)?.encode()?);
+                Ok(efi_signer::EfiImage::do_sign_signature(
+                    content,
+                    p7b,
+                    private_key.private_key_to_pem_pkcs8()?,
+                    None)?.encode()?)
             }
-        } 
-
-        //cms option reference: https://man.openbsd.org/CMS_sign.3
-        let cms_signature = CmsContentInfo::sign(
-            Some(&certificate),
-            Some(&private_key),
-            None,
-            Some(&content),
-            CMSOptions::DETACHED
-                | CMSOptions::CMS_NOCERTS
-                | CMSOptions::BINARY
-                | CMSOptions::NOSMIMECAP
-                | CMSOptions::NOATTR,
-        )?;
-    
-        Ok(cms_signature.to_der()?)
+            SignType::PKCS7 => {
+                let pkcs7 = Pkcs7::sign(
+                    &certificate,
+                    &private_key,
+                    Stack::new().as_ref()?,
+                    &content,
+                    Pkcs7Flags::DETACHED
+                        | Pkcs7Flags::NOCERTS
+                        | Pkcs7Flags::BINARY
+                        | Pkcs7Flags::NOSMIMECAP
+                        | Pkcs7Flags::NOATTR)?;
+                Ok(pkcs7.to_der()?)
+            }
+            SignType::Cms => {
+                //cms option reference: https://man.openbsd.org/CMS_sign.3
+                let cms_signature = CmsContentInfo::sign(
+                    Some(&certificate),
+                    Some(&private_key),
+                    None,
+                    Some(&content),
+                    CMSOptions::DETACHED
+                        | CMSOptions::CMS_NOCERTS
+                        | CMSOptions::BINARY
+                        | CMSOptions::NOSMIMECAP
+                        | CMSOptions::NOATTR,
+                )?;
+                Ok(cms_signature.to_der()?)
+            }
+        }
     }
 }
