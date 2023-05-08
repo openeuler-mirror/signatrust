@@ -31,6 +31,7 @@ use uuid::Uuid;
 use crate::util::options;
 use crate::util::sign::{SignType, KeyType};
 use crate::util::error::Error;
+use crate::util::options::DETACHED;
 
 const FILE_EXTENSION: &str = "p7s";
 const PKEY_ID_PKCS7: c_uchar = 2;
@@ -127,7 +128,7 @@ impl KernelModuleFileHandler {
                             "invalid kernel module signature size found".to_owned(),
                         ));
                     }
-                    if let Some(detached) = sign_options.get("detached") {
+                    if let Some(detached) = sign_options.get(DETACHED) {
                         if detached == "true" {
                             return Err(Error::SplitFileError(
                                 "already signed kernel module file doesn't support detached signature".to_owned()));
@@ -161,9 +162,10 @@ impl FileHandler for KernelModuleFileHandler {
         }
 
         if let Some(sign_type) = sign_options.get(options::SIGN_TYPE) {
-            if sign_type != SignType::Cms.to_string().as_str() {
+            if sign_type != SignType::Cms.to_string().as_str() &&
+                sign_type != SignType::PKCS7.to_string().as_str() {
                 return Err(Error::InvalidArgumentError(
-                    "kernel module file only support cms sign type".to_string(),
+                    "kernel module file only support cms or pkcs7 sign type".to_string(),
                 ));
             }
         }
@@ -189,7 +191,7 @@ impl FileHandler for KernelModuleFileHandler {
     ) -> Result<(String, String)> {
         let temp_file = temp_dir.join(Uuid::new_v4().to_string());
         //convert bytes into string
-        if let Some(detached) = sign_options.get("detached") {
+        if let Some(detached) = sign_options.get(DETACHED) {
             if detached == "true" {
                 self.generate_detached_signature(&temp_file.display().to_string(), &data[0])?;
                 return Ok((

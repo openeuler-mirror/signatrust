@@ -66,7 +66,7 @@ pub struct CommandAdd {
     path: String,
     #[arg(long)]
     #[arg(value_enum, default_value_t=SignType::Cms)]
-    #[arg(help = "specify the signature type, meaningful when key type is x509")]
+    #[arg(help = "specify the signature type, meaningful when key type is x509, EFI file supports `authenticode` only and KO file supports `cms` and `pkcs7`")]
     sign_type: SignType,
 }
 

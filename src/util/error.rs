@@ -303,6 +303,12 @@ impl From<ErrorStack> for Error {
     }
 }
 
+impl From<&ErrorStack> for Error {
+    fn from(err: &ErrorStack) -> Self {
+        Error::X509InvokeError(format!("{:?}", err.errors()))
+    }
+}
+
 impl From<KeyError> for Error {
     fn from(_: KeyError) -> Self {
         Error::InvalidCookieKeyError
