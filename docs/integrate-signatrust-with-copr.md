@@ -132,6 +132,7 @@ def ping():
     return Response("pong\n", content_type="text/plain;charset=UTF-8")
 ```
 6. Delete user related key pairs. it's missing in COPR project currently, but also needs to be considered.
+7. Prolong the expiring key pairs, this is an administrative tool used in COPR  [code](https://github.com/fedora-copr/copr/blob/main/keygen/run/gpg-copr-prolong)
 
 # Requirements for Signatrust
 
@@ -140,7 +141,8 @@ To support COPR signing scenarios, Signatrust need to support the following feat
 can be managed by users(clients) themselves. in the meantime the public keys will be managed by admin group with much caution.
 2. Add liveness/readiness endpoint for signatrust control server.
 3. **Optional**: Support to delete rpm signature in client.
-4. Support to specify different digest method in signing request.
+4. **No need**: We don't need to support to specify different digest method in signing request, cause now all the signature in COPR is calculated in sha256. see [here](https://github.com/fedora-copr/copr/issues/2705)
+5. **Optional**: Support to prolong the expiring key pairs.
 
 # Possible changes for COPR
 
