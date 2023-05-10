@@ -2,15 +2,14 @@ def giteeCommentHeader = "| Check Name | Build Result | Build Details |\n| --- |
 pipeline {
     agent { node { label 'build-docker-x86' } }
     environment {
-        GITEE_TOKEN = credentials('$token_id')
+        GITEE_TOKEN = credentials('${token_id}')
     }
-
+    
     // stages 
     stages {
-        stage('prepare') {
+        stage('prepare') {     
             steps {
-                sh '''#!/bin/bash -e
-                
+                sh '''#!/bin/bash 
                 test -f ci_tags.py && rm ci_tags.py*
                 wget https://gitee.com/openeuler/infrastructure/raw/master/ci/tools/ci_tags.py
                 python3 ci_tags.py $giteeTargetNamespace $giteeTargetRepoName $giteePullRequestIid $GITEE_TOKEN ATP
