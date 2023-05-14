@@ -31,8 +31,8 @@ impl TryFrom<DataKey> for ExportKey {
 
 #[derive(Debug, Validate, Deserialize, ToSchema)]
 pub struct CreateDataKeyDTO {
-    /// Key Name, should be identical, length between 4 and 20
-    #[validate(length(min = 4, max = 20))]
+    /// Key Name, should be identical, length between 4 and 20, not contains any colon symbol.
+    #[validate(length(min = 4, max = 20), custom = "validate_invalid_character")]
     pub name: String,
     /// Description, length between 0 and 100
     #[validate(length(min = 0, max = 100))]
@@ -53,8 +53,8 @@ pub struct CreateDataKeyDTO {
 
 #[derive(Debug, Validate, Deserialize, ToSchema)]
 pub struct ImportDataKeyDTO {
-    /// Key Name, should be identical, length between 4 and 20
-    #[validate(length(min = 4, max = 20))]
+    /// Key Name, should be identical, length between 4 and 20, not contains any colon symbol.
+    #[validate(length(min = 4, max = 20), custom = "validate_invalid_character")]
     pub name: String,
     /// Description, length between 0 and 100
     #[validate(length(min = 0, max = 100))]
@@ -132,6 +132,13 @@ fn validate_key_visibility(visibility: &str) -> std::result::Result<(), Validati
             Err(ValidationError::new("unsupported key visibility"))
         }
     }
+}
+
+fn validate_invalid_character(name: &str) -> std::result::Result<(), ValidationError> {
+    if name.contains(":") {
+        return Err(ValidationError::new("invalid character(':') in name"));
+    }
+    Ok(())
 }
 
 impl DataKey {

@@ -18,6 +18,7 @@
 
 use std::collections::HashMap;
 use std::env;
+use validator::Validate;
 use chrono::{Duration, Utc};
 use crate::util::error::{Result};
 use crate::util::sign::KeyType;
@@ -169,6 +170,7 @@ async fn main() -> Result<()> {
                 key_type: generate_keys.key_type.to_string(),
                 expire_at: format!("{}", now + Duration::days(30)),
             };
+            key.validate()?;
 
             let keys = control_server.create_keys(&mut DataKey::create_from(key, UserIdentity::from(user))?).await?;
             info!("[Result]: Keys {} type {} has been successfully generated", &keys.name, &generate_keys.key_type)

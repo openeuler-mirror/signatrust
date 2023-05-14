@@ -22,6 +22,7 @@ use crate::util::error::{Result};
 use async_trait::async_trait;
 use std::boxed::Box;
 use chrono::{Utc};
+use sqlx::{MySql, Transaction};
 use crate::infra::database::model::request_delete::dto::RequestDeleteDTO;
 
 const DELETE_THRESHOLD: i32 = 3;
@@ -38,21 +39,21 @@ impl DataKeyRepository {
         }
     }
 
-    async fn create_request_delete(&self, user_id: i32, id: i32) -> Result<()> {
+    async fn create_request_delete(&self, user_id: i32, id: i32, tx: &mut Transaction<'_, MySql>) -> Result<()> {
         let _ : Option<RequestDeleteDTO> = sqlx::query_as("INSERT IGNORE INTO request_delete(user_id, key_id, create_at) VALUES (?, ?, ?)")
             .bind(user_id)
             .bind(id)
             .bind(Utc::now())
-            .fetch_optional(&self.db_pool)
+            .fetch_optional(tx)
             .await?;
         Ok(())
     }
 
-    async fn delete_request_delete(&self, user_id: i32, id: i32) -> Result<()> {
+    async fn delete_request_delete(&self, user_id: i32, id: i32,  tx: &mut Transaction<'_, MySql>) -> Result<()> {
         let _ : Option<RequestDeleteDTO> = sqlx::query_as("DELETE FROM request_delete WHERE user_id = ? AND key_id = ?")
             .bind(user_id)
             .bind(id)
-            .fetch_optional(&self.db_pool)
+            .fetch_optional(tx)
             .await?;
         Ok(())
     }
@@ -149,7 +150,8 @@ impl Repository for DataKeyRepository {
     }
 
     async fn request_delete_public_key(&self, user_id: i32, id: i32) -> Result<()> {
-        //use transaction here?
+        let mut tx = self.db_pool.begin().await?;
+        //1. update key state to pending delete if needed.
         let _: Option<DataKeyDTO> = sqlx::query_as(
             "UPDATE data_key SET key_state = ? \
             WHERE id = ? AND visibility = ? AND key_state != ?")
@@ -157,9 +159,11 @@ impl Repository for DataKeyRepository {
             .bind(id)
             .bind(Visibility::Public.to_string())
             .bind(KeyState::PendingDelete.to_string())
-            .fetch_optional(&self.db_pool)
+            .fetch_optional(&mut tx)
             .await?;
-        self.create_request_delete(user_id, id).await?;
+        //2. add request delete record
+        self.create_request_delete(user_id, id, &mut tx).await?;
+        //3. delete datakey if pending delete count >= threshold
         let _: Option<DataKeyDTO> = sqlx::query_as(
             "UPDATE data_key SET key_state = ? \
             WHERE id = ? AND visibility = ? AND ( \
@@ -169,13 +173,17 @@ impl Repository for DataKeyRepository {
             .bind(Visibility::Public.to_string())
             .bind(id)
             .bind(DELETE_THRESHOLD)
-            .fetch_optional(&self.db_pool)
+            .fetch_optional(&mut tx)
             .await?;
+        tx.commit().await?;
         Ok(())
     }
 
     async fn cancel_delete_public_key(&self, user_id: i32, id: i32) -> Result<()> {
-        self.delete_request_delete(user_id, id).await?;
+        let mut tx = self.db_pool.begin().await?;
+        //1. delete pending delete record
+        self.delete_request_delete(user_id, id, &mut tx).await?;
+        //2. update status if there is not any pending delete record.
         let _: Option<DataKeyDTO> = sqlx::query_as(
             "UPDATE data_key SET key_state = ? \
             WHERE id = ? AND visibility = ? AND ( \
@@ -185,8 +193,9 @@ impl Repository for DataKeyRepository {
             .bind(Visibility::Public.to_string())
             .bind(id)
             .bind(0)
-            .fetch_optional(&self.db_pool)
+            .fetch_optional(&mut tx)
             .await?;
+        tx.commit().await?;
         Ok(())
     }
 }

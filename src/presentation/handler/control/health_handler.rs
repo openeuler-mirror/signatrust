@@ -30,11 +30,11 @@ struct Code {
 /// ## Example
 /// Call the api endpoint with following curl.
 /// ```text
-/// curl https://domain:port/api/v1/health/
+/// curl https://domain:port/api/health/
 /// ```
 #[utoipa::path(
     get,
-    path = "/api/v1/health",
+    path = "/api/health/",
     responses(
         (status = 200, description = "Server is healthy"),
         (status = 500, description = "Server is Unhealthy", body = ErrorMessage)
