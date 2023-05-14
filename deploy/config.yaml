@@ -14,7 +14,7 @@ data:
     tls_cert = ""
     tls_key = ""
     type = "dns"
-    server_name = "signatrust-server-headless.signatrust-local-development.svc.cluster.local"
+    server_address = "signatrust-server-headless.signatrust-local-development.svc.cluster.local"
     server_port = "8088"
 
   server.toml: |

@@ -54,7 +54,7 @@ impl ChannelFactory {
         } else if lb_type == "dns" {
             return Ok(Self {
                 lb: Box::new(DNSLoadBalancer::new(
-                    config.get("server_name").unwrap_or(&Value::default()).to_string(),
+                    config.get("server_address").unwrap_or(&Value::default()).to_string(),
                     server_port, client_config)?)
             })
         }

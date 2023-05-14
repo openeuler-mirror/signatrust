@@ -14,7 +14,7 @@
  *
  */
 
-use crate::domain::datakey::entity::{DataKey, KeyState};
+use crate::domain::datakey::entity::{DataKey, KeyState, Visibility};
 use crate::domain::datakey::entity::KeyType;
 use crate::domain::datakey::traits::ExtendableAttributes;
 use crate::util::error::{Error};
@@ -29,8 +29,8 @@ pub(super) struct DataKeyDTO {
     pub id: i32,
     pub name: String,
     pub description: String,
+    pub visibility: String,
     pub user: i32,
-    pub email: String,
     pub attributes: String,
     pub key_type: String,
     pub fingerprint: String,
@@ -39,7 +39,6 @@ pub(super) struct DataKeyDTO {
     pub certificate: String,
     pub create_at: DateTime<Utc>,
     pub expire_at: DateTime<Utc>,
-    pub soft_delete: bool,
     pub key_state: String
 }
 
@@ -51,9 +50,9 @@ impl TryFrom<DataKeyDTO> for DataKey {
         Ok(DataKey {
             id: dto.id,
             name: dto.name.clone(),
+            visibility: Visibility::from_str(dto.visibility.as_str())?,
             description: dto.description.clone(),
             user: dto.user,
-            email: dto.email.clone(),
             attributes: serde_json::from_str(dto.attributes.as_str())?,
             key_type: KeyType::from_str(&dto.key_type)?,
             fingerprint: dto.fingerprint.clone(),
@@ -62,7 +61,6 @@ impl TryFrom<DataKeyDTO> for DataKey {
             certificate: key::decode_hex_string_to_u8(&dto.certificate),
             create_at: dto.create_at,
             expire_at: dto.expire_at,
-            soft_delete: dto.soft_delete,
             key_state: KeyState::from_str(&dto.key_state)?,
         })
     }
@@ -76,8 +74,8 @@ impl TryFrom<DataKey> for DataKeyDTO {
             id: data_key.id,
             name: data_key.name.clone(),
             description: data_key.description.clone(),
+            visibility: data_key.visibility.to_string(),
             user: data_key.user,
-            email: data_key.email.clone(),
             attributes: data_key.serialize_attributes()?,
             key_type: data_key.key_type.to_string(),
             fingerprint: data_key.fingerprint.clone(),
@@ -92,7 +90,6 @@ impl TryFrom<DataKey> for DataKeyDTO {
             ),
             create_at: data_key.create_at,
             expire_at: data_key.expire_at,
-            soft_delete: data_key.soft_delete,
             key_state: data_key.key_state.to_string(),
         })
     }

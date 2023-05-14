@@ -164,6 +164,7 @@ async fn main() -> Result<()> {
             let key = CreateDataKeyDTO {
                 name: generate_keys.name.clone(),
                 description: generate_keys.description.clone(),
+                visibility: "public".to_string(),
                 attributes: generate_keys_parameters(&generate_keys),
                 key_type: generate_keys.key_type.to_string(),
                 expire_at: format!("{}", now + Duration::days(30)),

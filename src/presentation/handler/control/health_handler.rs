@@ -14,14 +14,11 @@
  *
  */
 
-use actix_web::{HttpResponse, Responder, Result, web, Scope, HttpRequest, HttpMessage};
+use actix_web::{HttpResponse, Responder, Result, web, Scope};
 use serde::{Deserialize};
 use crate::util::error::Error;
-use super::model::user::dto::UserIdentity;
-use actix_identity::Identity;
 
 use crate::application::user::UserService;
-use crate::presentation::handler::control::model::token::dto::{CreateTokenDTO, TokenDTO};
 
 #[derive(Deserialize)]
 struct Code {
@@ -43,8 +40,8 @@ struct Code {
         (status = 500, description = "Server is Unhealthy", body = ErrorMessage)
     )
 )]
-async fn health(user_service: web::Data<dyn UserService>) -> Result<impl Responder, Error> {
-    Ok(HttpResponse::Found().insert_header(("Location", user_service.into_inner().get_login_url().await?.as_str())).finish())
+async fn health(_user_service: web::Data<dyn UserService>) -> Result<impl Responder, Error> {
+    Ok(HttpResponse::Ok())
 }
 
 pub fn get_scope() -> Scope {

@@ -1,4 +1,4 @@
-use crate::domain::datakey::entity::{DataKey, KeyState};
+use crate::domain::datakey::entity::{DataKey, KeyState, Visibility};
 use crate::domain::datakey::entity::KeyType;
 use crate::util::error::Result;
 use chrono::{DateTime, Utc};
@@ -37,6 +37,9 @@ pub struct CreateDataKeyDTO {
     /// Description, length between 0 and 100
     #[validate(length(min = 0, max = 100))]
     pub description: String,
+    /// The key's visibility
+    #[validate(custom = "validate_key_visibility")]
+    pub visibility: String,
     /// Attributes in map
     #[serde(serialize_with = "sorted_map")]
     pub attributes: HashMap<String, String>,
@@ -56,6 +59,9 @@ pub struct ImportDataKeyDTO {
     /// Description, length between 0 and 100
     #[validate(length(min = 0, max = 100))]
     pub description: String,
+    /// The key's visibility
+    #[validate(custom = "validate_key_visibility")]
+    pub visibility: String,
     /// Attributes in map
     pub attributes: HashMap<String, String>,
     /// Key type current support pgp and x509
@@ -76,11 +82,12 @@ pub struct DataKeyDTO {
     /// Key Name
     #[validate(length(min = 4, max = 20))]
     pub name: String,
-    /// User email
-    pub email: String,
     /// Description
     #[validate(length(min = 0, max = 100))]
     pub description: String,
+    /// The key's visibility
+    #[validate(custom = "validate_key_visibility")]
+    pub visibility: String,
     /// User ID
     pub user: i32,
     /// Attributes in map
@@ -116,6 +123,17 @@ fn validate_key_type(key_type: &str) -> std::result::Result<(), ValidationError>
     }
 }
 
+fn validate_key_visibility(visibility: &str) -> std::result::Result<(), ValidationError> {
+    match Visibility::from_str(visibility) {
+        Ok(_) => {
+            Ok(())
+        }
+        Err(_) => {
+            Err(ValidationError::new("unsupported key visibility"))
+        }
+    }
+}
+
 impl DataKey {
     pub fn import_from(dto: ImportDataKeyDTO, identity: UserIdentity) -> Result<Self> {
         let now = Utc::now();
@@ -125,9 +143,9 @@ impl DataKey {
         Ok(DataKey {
             id: 0,
             name: dto.name,
+            visibility: Visibility::from_str(dto.visibility.as_str())?,
             description: dto.description,
             user: identity.id,
-            email: identity.email,
             attributes: combined_attributes,
             key_type: KeyType::from_str(dto.key_type.as_str())?,
             fingerprint: "".to_string(),
@@ -136,7 +154,6 @@ impl DataKey {
             certificate: dto.certificate.into_bytes(),
             create_at: now,
             expire_at: now,
-            soft_delete: false,
             key_state: KeyState::default()
         })
     }
@@ -147,12 +164,17 @@ impl DataKey {
         combined_attributes.insert("name".to_string(), dto.name.clone());
         combined_attributes.insert("create_at".to_string(), now.clone().to_string());
         combined_attributes.insert("expire_at".to_string(), dto.expire_at.clone());
+        let visibility = Visibility::from_str(dto.visibility.as_str())?;
+        let mut key_name = dto.name;
+        if visibility == Visibility::Private {
+            key_name = format!("{}:{}", identity.email, key_name);
+        }
         Ok(DataKey {
             id: 0,
-            name: dto.name,
+            name: key_name,
+            visibility,
             description: dto.description,
             user: identity.id,
-            email: identity.email,
             attributes: combined_attributes,
             key_type: KeyType::from_str(dto.key_type.as_str())?,
             fingerprint: "".to_string(),
@@ -161,7 +183,6 @@ impl DataKey {
             certificate: vec![],
             create_at: now,
             expire_at: dto.expire_at.parse()?,
-            soft_delete: false,
             key_state: KeyState::default()
         })
     }
@@ -177,8 +198,8 @@ impl TryFrom<DataKey> for DataKeyDTO {
             id: dto.id,
             name: dto.name,
             description: dto.description,
+            visibility: dto.visibility.to_string(),
             user: dto.user,
-            email: dto.email,
             attributes,
             key_type: dto.key_type.to_string(),
             fingerprint: dto.fingerprint,
