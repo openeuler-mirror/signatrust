@@ -1,3 +1,4 @@
+-- Add down migration script here
 CREATE TABLE user (
                       id INT AUTO_INCREMENT,
                       email VARCHAR(60) UNIQUE,

@@ -73,6 +73,7 @@ impl Modify for SecurityAddon {
         crate::presentation::handler::control::datakey_handler::show_data_key,
         crate::presentation::handler::control::datakey_handler::create_data_key,
         crate::presentation::handler::control::datakey_handler::delete_data_key,
+        crate::presentation::handler::control::datakey_handler::cancel_delete_data_key,
         crate::presentation::handler::control::datakey_handler::export_data_key,
         crate::presentation::handler::control::datakey_handler::enable_data_key,
         crate::presentation::handler::control::datakey_handler::disable_data_key,
@@ -94,6 +95,8 @@ impl Modify for SecurityAddon {
                 crate::presentation::handler::control::model::token::dto::TokenDTO,
                 crate::presentation::handler::control::model::token::dto::CreateTokenDTO,
                 crate::presentation::handler::control::model::user::dto::UserIdentity,
+                crate::presentation::handler::control::user_handler::Code,
+                crate::presentation::handler::control::datakey_handler::KeyQuery,
                 crate::util::error::ErrorMessage)
     ),
     modifiers(&SecurityAddon)
@@ -198,10 +201,11 @@ impl ControlServer {
                 .service(
                     SwaggerUi::new("/api/swagger-ui/{_:.*}").url("/api-doc/openapi.json", openapi.clone()),
                 )
-                //session handler
                 .service(web::scope("/api/v1")
                     .service(user_handler::get_scope())
                     .service(datakey_handler::get_scope()))
+                .service(web::scope("/api")
+                    .service(health_handler::get_scope()))
         });
         if self.server_config
             .read()?
@@ -237,7 +241,7 @@ impl ControlServer {
     //used for control admin cmd
     pub async fn create_keys(&self, data: &mut DataKey) -> Result<DataKey> {
         let key = self.key_service.create(data).await?;
-        self.key_service.enable(key.id).await?;
+        self.key_service.enable(None, key.id).await?;
         Ok(key)
     }
 

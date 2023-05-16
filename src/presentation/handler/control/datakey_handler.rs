@@ -14,6 +14,7 @@
  *
  */
 
+use std::str::FromStr;
 use actix_web::{
     HttpResponse, Responder, Result, web, Scope
 };
@@ -22,13 +23,23 @@ use actix_web::{
 use crate::presentation::handler::control::model::datakey::dto::{CreateDataKeyDTO, DataKeyDTO, ExportKey, ImportDataKeyDTO};
 use crate::util::error::Error;
 use validator::Validate;
+use serde::{Deserialize};
 use crate::application::datakey::KeyService;
-use crate::domain::datakey::entity::DataKey;
+use crate::domain::datakey::entity::{DataKey, Visibility};
 use super::model::user::dto::UserIdentity;
+use utoipa::{IntoParams, ToSchema};
+
+#[derive(Deserialize, IntoParams, ToSchema)]
+pub struct KeyQuery {
+    pub visibility: String,
+}
 
 /// Create new key
 ///
 /// This will generate either a pgp private/public key pairs or a x509 private/public/cert keys.
+/// ## Naming convention
+/// The name of the key should be unique, and if you want to create a private key, the name will be prefixed with your email address automatically,
+/// for example you will get `youremail@address.com:some-private-key-name` when you specify the private key named `some-private-key-name`.
 /// ## Generate pgp key
 /// To generate a pgp key the required parameters in `attributes` are:
 /// 1. **digest_algorithm**: the digest algorithm used for pgp, for example: sha2_256
@@ -42,6 +53,7 @@ use super::model::user::dto::UserIdentity;
 ///   "name": "test-pgp",
 ///   "description": "hello world",
 ///   "key_type": "pgp",
+///   "visibility": "public",
 ///   "attributes": {
 ///     "digest_algorithm": "sha2_256",
 ///     "key_type": "rsa",
@@ -71,6 +83,7 @@ use super::model::user::dto::UserIdentity;
 ///   "name": "test-x509",
 ///   "description": "hello world",
 ///   "key_type": "x509",
+///   "visibility": "public",
 ///   "attributes": {
 ///     "digest_algorithm": "sha2_256",
 ///     "key_type": "rsa",
@@ -121,6 +134,9 @@ async fn create_data_key(user: UserIdentity, key_service: web::Data<dyn KeyServi
 #[utoipa::path(
     get,
     path = "/api/v1/keys/",
+    params(
+        KeyQuery
+    ),
     security(
     ("Authorization" = [])
     ),
@@ -130,8 +146,9 @@ async fn create_data_key(user: UserIdentity, key_service: web::Data<dyn KeyServi
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn list_data_key(_user: UserIdentity, key_service: web::Data<dyn KeyService>) -> Result<impl Responder, Error> {
-    let keys = key_service.into_inner().get_all().await?;
+async fn list_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, key_query: web::Query<KeyQuery>) -> Result<impl Responder, Error> {
+    let key_visibility = Visibility::from_str(key_query.visibility.as_str())?;
+    let keys = key_service.into_inner().get_all(Some(user), key_visibility).await?;
     let mut results = vec![];
     for k in keys {
         results.push(DataKeyDTO::try_from(k)?)
@@ -159,25 +176,26 @@ async fn list_data_key(_user: UserIdentity, key_service: web::Data<dyn KeyServic
         (status = 200, description = "List available keys", body = DataKeyDTO),
         (status = 400, description = "Bad request", body = ErrorMessage),
         (status = 401, description = "Unauthorized", body = ErrorMessage),
+        (status = 403, description = "Forbidden", body = ErrorMessage),
         (status = 404, description = "Key not found", body = ErrorMessage),
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn show_data_key(_user: UserIdentity, key_service: web::Data<dyn KeyService>, id: web::Path<String>) -> Result<impl Responder, Error> {
-    let key = key_service.into_inner().get_one(id.parse::<i32>()?).await?;
+async fn show_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, id: web::Path<String>) -> Result<impl Responder, Error> {
+    let key = key_service.into_inner().get_one(Some(user), id.parse::<i32>()?).await?;
     Ok(HttpResponse::Ok().json(DataKeyDTO::try_from(key)?))
 }
 
-/// Delete specific key by id from database
+/// Delete specific key by id from database, only **disabled** key can be deleted.
 ///
 /// ## Example
 /// Call the api endpoint with following curl.
 /// ```text
-/// curl -X DELETE https://domain:port/api/v1/keys/{id}
+/// curl -X POST https://domain:port/api/v1/keys/{id}/request_delete
 /// ```
 #[utoipa::path(
-    delete,
-    path = "/api/v1/keys/{id}",
+    post,
+    path = "/api/v1/keys/{id}/request_delete",
     params(
         ("id" = i32, Path, description = "Key id"),
     ),
@@ -188,12 +206,43 @@ async fn show_data_key(_user: UserIdentity, key_service: web::Data<dyn KeyServic
         (status = 200, description = "Key successfully deleted"),
         (status = 400, description = "Bad request", body = ErrorMessage),
         (status = 401, description = "Unauthorized", body = ErrorMessage),
+        (status = 403, description = "Forbidden", body = ErrorMessage),
         (status = 404, description = "Key not found", body = ErrorMessage),
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn delete_data_key(_user: UserIdentity, key_service: web::Data<dyn KeyService>, id: web::Path<String>) -> Result<impl Responder, Error> {
-    key_service.into_inner().delete_one(id.parse::<i32>()?).await?;
+async fn delete_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, id: web::Path<String>) -> Result<impl Responder, Error> {
+    key_service.into_inner().request_delete(user, id.parse::<i32>()?).await?;
+    Ok(HttpResponse::Ok())
+}
+
+/// Cancel deletion of specific key by id from database, it only works for **public key**.
+///
+/// ## Example
+/// Call the api endpoint with following curl.
+/// ```text
+/// curl -X POST https://domain:port/api/v1/keys/{id}/cancel_delete
+/// ```
+#[utoipa::path(
+post,
+path = "/api/v1/keys/{id}/cancel_delete",
+    params(
+        ("id" = i32, Path, description = "Key id"),
+        ),
+    security(
+        ("Authorization" = [])
+        ),
+    responses(
+        (status = 200, description = "Key deletion canceled successfully"),
+        (status = 400, description = "Bad request", body = ErrorMessage),
+        (status = 401, description = "Unauthorized", body = ErrorMessage),
+        (status = 403, description = "Forbidden", body = ErrorMessage),
+        (status = 404, description = "Key not found", body = ErrorMessage),
+        (status = 500, description = "Server internal error", body = ErrorMessage)
+)
+)]
+async fn cancel_delete_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, id: web::Path<String>) -> Result<impl Responder, Error> {
+    key_service.into_inner().cancel_delete(user, id.parse::<i32>()?).await?;
     Ok(HttpResponse::Ok())
 }
 
@@ -217,12 +266,13 @@ async fn delete_data_key(_user: UserIdentity, key_service: web::Data<dyn KeyServ
         (status = 200, description = "Key successfully exported", body = ExportKey),
         (status = 400, description = "Bad request", body = ErrorMessage),
         (status = 401, description = "Unauthorized", body = ErrorMessage),
+        (status = 403, description = "Forbidden", body = ErrorMessage),
         (status = 404, description = "Key not found", body = ErrorMessage),
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn export_data_key(_user: UserIdentity, key_service: web::Data<dyn KeyService>, id: web::Path<String>) -> Result<impl Responder, Error> {
-    Ok(HttpResponse::Ok().json(ExportKey::try_from(key_service.export_one(id.parse::<i32>()?).await?)?))
+async fn export_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, id: web::Path<String>) -> Result<impl Responder, Error> {
+    Ok(HttpResponse::Ok().json(ExportKey::try_from(key_service.export_one(Some(user), id.parse::<i32>()?).await?)?))
 }
 
 /// Enable specific key
@@ -245,12 +295,13 @@ async fn export_data_key(_user: UserIdentity, key_service: web::Data<dyn KeyServ
         (status = 200, description = "Key successfully enabled"),
         (status = 400, description = "Bad request", body = ErrorMessage),
         (status = 401, description = "Unauthorized", body = ErrorMessage),
+        (status = 403, description = "Forbidden", body = ErrorMessage),
         (status = 404, description = "Key not found", body = ErrorMessage),
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn enable_data_key(_user: UserIdentity, key_service: web::Data<dyn KeyService>, id: web::Path<String>) -> Result<impl Responder, Error> {
-    key_service.enable(id.parse::<i32>()?).await?;
+async fn enable_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, id: web::Path<String>) -> Result<impl Responder, Error> {
+    key_service.enable(Some(user), id.parse::<i32>()?).await?;
     Ok(HttpResponse::Ok())
 }
 
@@ -274,12 +325,13 @@ async fn enable_data_key(_user: UserIdentity, key_service: web::Data<dyn KeyServ
         (status = 200, description = "Key successfully disabled"),
         (status = 400, description = "Bad request", body = ErrorMessage),
         (status = 401, description = "Unauthorized", body = ErrorMessage),
+        (status = 403, description = "Forbidden", body = ErrorMessage),
         (status = 404, description = "Key not found", body = ErrorMessage),
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn disable_data_key(_user: UserIdentity, key_service: web::Data<dyn KeyService>, id: web::Path<String>) -> Result<impl Responder, Error> {
-    key_service.disable(id.parse::<i32>()?).await?;
+async fn disable_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, id: web::Path<String>) -> Result<impl Responder, Error> {
+    key_service.disable(Some(user), id.parse::<i32>()?).await?;
     Ok(HttpResponse::Ok())
 }
 
@@ -352,9 +404,10 @@ pub fn get_scope() -> Scope {
                 .route(web::post().to(create_data_key)))
         .service( web::resource("/import").route(web::post().to(import_data_key)))
         .service( web::resource("/{id}")
-            .route(web::get().to(show_data_key))
-            .route(web::delete().to(delete_data_key)))
+            .route(web::get().to(show_data_key)))
         .service( web::resource("/{id}/export").route(web::post().to(export_data_key)))
         .service( web::resource("/{id}/enable").route(web::post().to(enable_data_key)))
         .service( web::resource("/{id}/disable").route(web::post().to(disable_data_key)))
+        .service( web::resource("/{id}/request_delete").route(web::post().to(delete_data_key)))
+        .service( web::resource("/{id}/cancel_delete").route(web::post().to(cancel_delete_data_key)))
 }

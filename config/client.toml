@@ -13,5 +13,5 @@ server_port = "8088"
 # ==========================================================================================
 # type dns used for client round robin when multiple ip addresses are bound to single domain
 #type = "dns"
-#server_name = "a.svc.cluster"
+#server_address = "a.svc.cluster"
 #server_port = "8080"

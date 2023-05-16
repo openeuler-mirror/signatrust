@@ -16,9 +16,9 @@
 
 use crate::domain::datakey::repository::Repository as DatakeyRepository;
 use crate::domain::sign_service::SignBackend;
-use crate::util::error::{Result};
+use crate::util::error::{Error, Result};
 use async_trait::async_trait;
-use crate::domain::datakey::entity::{DataKey, KeyState};
+use crate::domain::datakey::entity::{DataKey, KeyState, Visibility};
 use std::sync::{Arc, atomic::AtomicBool};
 
 use tokio::time::{Duration, sleep};
@@ -26,17 +26,19 @@ use tokio::time::{Duration, sleep};
 use crate::util::signer_container::DataKeyContainer;
 use std::collections::HashMap;
 use std::sync::atomic::Ordering;
+use crate::presentation::handler::control::model::user::dto::UserIdentity;
 
 #[async_trait]
 pub trait KeyService: Send + Sync{
     async fn create(&self, data: &mut DataKey) -> Result<DataKey>;
     async fn import(&self, data: &mut DataKey) -> Result<DataKey>;
-    async fn get_all(&self) -> Result<Vec<DataKey>>;
-    async fn get_one(&self, id: i32) -> Result<DataKey>;
-    async fn delete_one(&self, id: i32) -> Result<()>;
-    async fn export_one(&self, id: i32) -> Result<DataKey>;
-    async fn enable(&self, id: i32) -> Result<()>;
-    async fn disable(&self, id: i32) -> Result<()>;
+    async fn get_all(&self, user: Option<UserIdentity>,  visibility: Visibility) -> Result<Vec<DataKey>>;
+    async fn get_one(&self, user: Option<UserIdentity>, id: i32) -> Result<DataKey>;
+    async fn request_delete(&self, user: UserIdentity, id: i32) -> Result<()>;
+    async fn cancel_delete(&self, user: UserIdentity, id: i32) -> Result<()>;
+    async fn export_one(&self, user: Option<UserIdentity>, id: i32) -> Result<DataKey>;
+    async fn enable(&self, user: Option<UserIdentity>, id: i32) -> Result<()>;
+    async fn disable(&self, user: Option<UserIdentity>, id: i32) -> Result<()>;
     async fn sign(&self, key_type: String, key_name: String, options: &HashMap<String, String>, data: Vec<u8>) ->Result<Vec<u8>>;
 
     //method below used for maintenance
@@ -67,6 +69,17 @@ impl<R, S> DBKeyService<R, S>
             container: DataKeyContainer::new(repository)
         }
     }
+
+    async fn get_and_check_permission(&self, user: Option<UserIdentity>, id: i32) -> Result<DataKey> {
+        let key = self.repository.get_by_id(id).await?;
+        if key.visibility == Visibility::Public {
+            return Ok(key);
+        }
+        if user.is_none() || key.user != user.unwrap().id {
+            return Err(Error::UnprivilegedError);
+        }
+        Ok(key)
+    }
 }
 
 #[async_trait]
@@ -85,32 +98,58 @@ where
         self.repository.create(data.clone()).await
     }
 
-    async fn get_all(&self) -> Result<Vec<DataKey>> {
-        self.repository.get_all().await
+    async fn get_all(&self, user: Option<UserIdentity>, visibility: Visibility) -> Result<Vec<DataKey>> {
+        if visibility == Visibility::Private {
+            if user.is_none() {
+                return Err(Error::UnprivilegedError);
+            }
+            return self.repository.get_private_keys(user.unwrap().id).await;
+        }
+        self.repository.get_public_keys().await
     }
 
-    async fn get_one(&self, id: i32) -> Result<DataKey> {
-        self.repository.get_by_id(id).await
+    async fn get_one(&self, user: Option<UserIdentity>,  id: i32) -> Result<DataKey> {
+        self.get_and_check_permission(user, id).await
     }
 
-    async fn delete_one(&self, id: i32) -> Result<()> {
-        let key = self.repository.get_by_id(id).await?;
-        self.repository.delete_by_id(key.id).await
+    async fn request_delete(&self, user: UserIdentity, id: i32) -> Result<()> {
+        let user_id = user.id;
+        let key = self.get_and_check_permission(Some(user), id).await?;
+        if key.key_state == KeyState::Enabled {
+            return Err(Error::ParameterError("enabled key does not support delete".to_string()));
+        }
+        match key.visibility {
+            Visibility::Public => {
+                self.repository.request_delete_public_key(user_id, key.id).await
+            }
+            Visibility::Private => {
+                self.repository.delete_private_key(key.id, user_id).await
+            }
+        }
     }
 
-    async fn export_one(&self, id: i32) -> Result<DataKey> {
-        let mut key = self.repository.get_by_id(id).await?;
+    async fn cancel_delete(&self, user: UserIdentity, id: i32) -> Result<()> {
+        let user_id = user.id;
+        let key = self.get_and_check_permission(Some(user), id).await?;
+        if key.visibility == Visibility::Private {
+            return Err(Error::ParameterError("private key does not support cancel delete".to_string()));
+        }
+        self.repository.cancel_delete_public_key(user_id, key.id).await
+    }
+
+    async fn export_one(&self, user: Option<UserIdentity>, id: i32) -> Result<DataKey> {
+        let mut key = self.get_and_check_permission(user, id).await?;
         self.sign_service.decode_public_keys(&mut key).await?;
         Ok(key)
     }
 
-    async fn enable(&self, id: i32) -> Result<()> {
-        let key = self.repository.get_by_id(id).await?;
+    async fn enable(&self, user: Option<UserIdentity>, id: i32) -> Result<()> {
+        let key = self.get_and_check_permission(user, id).await?;
         self.repository.update_state(key.id, KeyState::Enabled).await
     }
 
-    async fn disable(&self, id: i32) -> Result<()> {
-        let key = self.repository.get_by_id(id).await?;
+    async fn disable(&self, user: Option<UserIdentity>, id: i32) -> Result<()> {
+        let key = self.get_and_check_permission(user, id).await?;
         self.repository.update_state(key.id, KeyState::Disabled).await
     }
 

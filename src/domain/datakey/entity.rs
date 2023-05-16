@@ -28,11 +28,13 @@ use crate::domain::encryption_engine::EncryptionEngine;
 
 
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub enum KeyState {
     Enabled,
     #[default]
     Disabled,
+    PendingDelete,
+    Deleted
 }
 
 impl FromStr for KeyState {
@@ -42,6 +44,8 @@ impl FromStr for KeyState {
         match s {
             "enabled" => Ok(KeyState::Enabled),
             "disabled" => Ok(KeyState::Disabled),
+            "pending" => Ok(KeyState::PendingDelete),
+            "deleted" => Ok(KeyState::Deleted),
             _ => Err(Error::UnsupportedTypeError(format!("unsupported data key state {}", s))),
         }
     }
@@ -52,6 +56,8 @@ impl Display for KeyState {
         match self {
             KeyState::Enabled => write!(f, "enabled"),
             KeyState::Disabled => write!(f, "disabled"),
+            KeyState::PendingDelete => write!(f, "pending"),
+            KeyState::Deleted => write!(f, "deleted"),
         }
     }
 }
@@ -87,9 +93,9 @@ impl Display for KeyType {
 pub struct DataKey {
     pub id: i32,
     pub name: String,
+    pub visibility: Visibility,
     pub description: String,
     pub user: i32,
-    pub email: String,
     pub attributes: HashMap<String, String>,
     pub key_type: KeyType,
     pub fingerprint: String,
@@ -98,7 +104,6 @@ pub struct DataKey {
     pub certificate: Vec<u8>,
     pub create_at: DateTime<Utc>,
     pub expire_at: DateTime<Utc>,
-    pub soft_delete: bool,
     pub key_state: KeyState
 }
 
@@ -117,10 +122,9 @@ impl ExtendableAttributes for DataKey {
 impl Identity for DataKey {
     fn get_identity(&self) -> String {
         format!(
-            "<ID:{},Name:{}, Email:{},User:{},Type:{},Fingerprint:{}>",
+            "<ID:{},Name:{},User:{},Type:{},Fingerprint:{}>",
             self.id,
             self.name,
-            self.email,
             self.user,
             self.key_type,
             self.fingerprint
@@ -155,3 +159,30 @@ pub struct DataKeyContent {
     pub fingerprint: String,
 }
 
+#[derive(Debug, Clone, Default, PartialEq)]
+pub enum Visibility {
+    #[default]
+    Public,
+    Private,
+}
+
+impl FromStr for Visibility {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        match s {
+            "public" => Ok(Visibility::Public),
+            "private" => Ok(Visibility::Private),
+            _ => Err(Error::UnsupportedTypeError(format!("unsupported data key visibility {}", s))),
+        }
+    }
+}
+
+impl Display for Visibility {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self {
+            Visibility::Public => write!(f, "public"),
+            Visibility::Private => write!(f, "private"),
+        }
+    }
+}

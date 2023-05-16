@@ -19,12 +19,13 @@ use serde::{Deserialize};
 use crate::util::error::Error;
 use super::model::user::dto::UserIdentity;
 use actix_identity::Identity;
+use utoipa::{IntoParams, ToSchema};
 
 use crate::application::user::UserService;
 use crate::presentation::handler::control::model::token::dto::{CreateTokenDTO, TokenDTO};
 
-#[derive(Deserialize)]
-struct Code {
+#[derive(Deserialize, IntoParams, ToSchema)]
+pub struct Code {
     pub code: String,
 }
 
@@ -99,6 +100,9 @@ async fn logout(id: Identity) -> Result<impl Responder, Error> {
 #[utoipa::path(
     get,
     path = "/api/v1/users/callback",
+    params(
+        Code
+    ),
     responses(
     (status = 302, description = "logout succeed, redirect to index"),
     (status = 500, description = "Server internal error", body = ErrorMessage)

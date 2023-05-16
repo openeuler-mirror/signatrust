@@ -92,6 +92,8 @@ pub enum Error {
     TokenExpiredError(String),
     #[error("failed to generate keys: {0}")]
     GeneratingKeyError(String),
+    #[error("not enough privileges")]
+    UnprivilegedError,
 
     //client error
     #[error("file type not supported {0}")]
@@ -139,8 +141,14 @@ impl ResponseError for Error {
                 })
             }
             Error::UnauthorizedError => {
-                warn!("authorized: {}", self.to_string());
+                warn!("unauthorized: {}", self.to_string());
                 HttpResponse::Unauthorized().json(ErrorMessage{
+                    detail: self.to_string()
+                })
+            }
+            Error::UnprivilegedError => {
+                warn!("unprivileged: {}", self.to_string());
+                HttpResponse::Forbidden().json(ErrorMessage{
                     detail: self.to_string()
                 })
             }
