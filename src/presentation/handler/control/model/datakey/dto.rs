@@ -135,7 +135,7 @@ fn validate_key_visibility(visibility: &str) -> std::result::Result<(), Validati
 }
 
 fn validate_invalid_character(name: &str) -> std::result::Result<(), ValidationError> {
-    if name.contains(":") {
+    if name.contains(':') {
         return Err(ValidationError::new("invalid character(':') in name"));
     }
     Ok(())
