@@ -75,6 +75,9 @@ efi_signer = "0.2.0"
 [build-dependencies]
 tonic-build = "0.8.4"
 
+[dev-dependencies]
+mockito = "1.0.2"
+
 [[bin]]
 name = "client"
 path = "src/client_entrypoint.rs"
