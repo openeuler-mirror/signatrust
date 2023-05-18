@@ -48,3 +48,38 @@ pub fn sorted_map<S: Serializer, K: Serialize + Ord, V: Serialize>(value: &HashM
     items.sort_by(|a, b| a.0.cmp(b.0));
     BTreeMap::from_iter(items).serialize(serializer)
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_generate_random_tokens() {
+        let token_a = generate_api_token();
+        let token_b = generate_api_token();
+        let token_c = generate_api_token();
+        assert_ne!(token_a, token_b);
+        assert_ne!(token_b, token_c);
+    }
+
+    #[test]
+    fn test_compute_token_hash_unique() {
+        let token_a = generate_api_token();
+        let token_b = generate_api_token();
+        let hash_a = get_token_hash(&token_a);
+        let hash_b = get_token_hash(&token_b);
+        let hash_c = get_token_hash(&token_a);
+        assert_eq!(hash_a, hash_c);
+        assert_ne!(hash_a, hash_b);
+        assert_eq!(hash_a.len(), hash_b.len());
+    }
+
+    #[test]
+    fn test_encode_decode_hex_string_to_u8() {
+        let content = "AD12FF00".to_string();
+        let decoded = decode_hex_string_to_u8(&content);
+        assert_eq!(decoded, vec![173, 18, 255, 00]);
+        let content_a = encode_u8_to_hex_string(&decoded);
+        assert_eq!(content, content_a);
+    }
+}
