@@ -27,8 +27,11 @@ use tonic::{
     },
 };
 use crate::application::datakey::{DBKeyService, KeyService};
+use crate::application::user::{DBUserService, UserService};
 
 use crate::infra::database::model::datakey::repository;
+use crate::infra::database::model::token::repository::TokenRepository;
+use crate::infra::database::model::user::repository::UserRepository;
 use crate::infra::database::pool::{create_pool, get_db_pool};
 use crate::infra::sign_backend::factory::SignBackendFactory;
 
@@ -109,17 +112,21 @@ impl DataServer {
         let data_repository = repository::DataKeyRepository::new(
             get_db_pool()?);
         let key_service = DBKeyService::new(data_repository, sign_backend);
+        let user_repo = UserRepository::new(get_db_pool()?);
+        let token_repo = TokenRepository::new(get_db_pool()?);
+        let user_service = DBUserService::new(user_repo, token_repo, self.server_config.clone())?;
 
         key_service.start_loop(self.signal.clone())?;
+        user_service.start_loop(self.signal.clone())?;
         if let Some(identity) = self.server_identity.clone() {
             server
                 .tls_config(ServerTlsConfig::new().identity(identity).client_ca_root(self.ca_cert.clone().unwrap()))?
-                .add_service(get_grpc_handler(key_service))
+                .add_service(get_grpc_handler(key_service, user_service))
                 .serve_with_shutdown(addr, self.shutdown_signal())
                 .await?
         } else {
             server
-                .add_service(get_grpc_handler(key_service))
+                .add_service(get_grpc_handler(key_service, user_service))
                 .serve_with_shutdown(addr, self.shutdown_signal())
                 .await?
         }

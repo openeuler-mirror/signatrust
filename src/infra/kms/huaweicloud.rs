@@ -415,7 +415,7 @@ mod test {
         //create kms client
         let kms_client = HuaweiCloudKMS::new(&config).expect("create huaweicloud client should be successful");
         let request_url = format!("{}/kms/fake_endpoint", url);
-        let result = kms_client.do_request(&request_url, &fake_request).await.expect_err("always failed to invoke request");
+        let _result = kms_client.do_request(&request_url, &fake_request).await.expect_err("always failed to invoke request");
 
         //auth and request should be invoked twice.
         mock_auth.expect_at_least(2).assert();
