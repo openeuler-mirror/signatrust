@@ -14,6 +14,7 @@
  *
  */
 
+use std::collections::HashMap;
 use crate::domain::user::entity::User;
 use crate::domain::token::entity::Token;
 use crate::domain::user::repository::Repository as UserRepository;
@@ -22,6 +23,8 @@ use crate::util::error::{Result, Error};
 use async_trait::async_trait;
 use std::sync::Arc;
 use std::sync::RwLock;
+use std::sync::atomic::{AtomicBool, Ordering};
+use tokio::sync::RwLock as AsyncRwLock;
 use chrono::Utc;
 use serde::{Deserialize};
 use config::Config;
@@ -34,6 +37,7 @@ use openidconnect::{
 };
 use openidconnect::{JsonWebKeySet, ClientId, AuthUrl, UserInfoUrl, TokenUrl, RedirectUrl, ClientSecret, IssuerUrl};
 use url::Url;
+use tokio::time::{Duration, sleep};
 use crate::presentation::handler::control::model::token::dto::{CreateTokenDTO};
 use crate::util::key::{generate_api_token};
 
@@ -48,6 +52,9 @@ pub trait UserService: Send + Sync{
     async fn generate_token(&self, u: &UserIdentity, token: CreateTokenDTO) -> Result<Token>;
     async fn get_login_url(&self) -> Result<Url>;
     async fn validate_user(&self, code: &str) -> Result<User>;
+    async fn validate_token_and_email(&self, email: &str, token: &str) -> Result<bool>;
+    //method below used for maintenance
+    fn start_loop(&self, signal: Arc<AtomicBool>) -> Result<()>;
 }
 
 #[derive(Deserialize, Debug)]
@@ -78,7 +85,8 @@ where
     user_repository: R,
     token_repository: T,
     oidc_config: OIDCConfig,
-    client: CoreClient
+    client: CoreClient,
+    tokens: Arc<AsyncRwLock<HashMap<String, String>>>,
 }
 
 impl<R, T> DBUserService<R, T>
@@ -110,7 +118,8 @@ impl<R, T> DBUserService<R, T>
             user_repository,
             token_repository,
             oidc_config,
-            client
+            client,
+            tokens: Arc::new(AsyncRwLock::new(HashMap::new()))
         })
     }
 
@@ -218,5 +227,27 @@ where
                 Err(Error::AuthError(format!("failed to get access token {}", err)))
             }
         }
+    }
+
+    async fn validate_token_and_email(&self, email: &str, token: &str) -> Result<bool> {
+        if let Some(e) = self.tokens.read().await.get(token) {
+            return Ok(e == email)
+        }
+        let tk = self.get_valid_token(token).await?;
+        let user = self.user_repository.get_by_id(tk.user_id).await?;
+        self.tokens.write().await.insert(token.to_string(), user.email.clone());
+        Ok(email == user.email)
+    }
+
+    fn start_loop(&self, signal: Arc<AtomicBool>) -> Result<()> {
+        let tokens = self.tokens.clone();
+        tokio::spawn(async move {
+            while !signal.load(Ordering::Relaxed) {
+                debug!("start to clear the container tokens");
+                sleep(Duration::from_secs(120)).await;
+                tokens.write().await.clear();
+            }
+        });
+        Ok(())
     }
 }

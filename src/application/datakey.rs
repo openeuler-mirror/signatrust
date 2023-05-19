@@ -163,7 +163,7 @@ where
         tokio::spawn(async move {
             while !signal.load(Ordering::Relaxed) {
                 debug!("start to clear the container keys");
-                sleep(Duration::from_secs(60)).await;
+                sleep(Duration::from_secs(120)).await;
                 container.clear_keys().await;
             }
         });

@@ -27,29 +27,48 @@ use signatrust::{
 };
 use tonic::{Request, Response, Status, Streaming};
 use crate::application::datakey::KeyService;
+use crate::application::user::UserService;
+use crate::util::error::Error;
+use crate::util::error::Result as SignatrustResult;
 
-pub struct SignHandler<K>
+pub struct SignHandler<K, U>
 where
     K: KeyService + 'static,
+    U: UserService + 'static,
 {
     key_service: K,
+    user_service: U,
 }
 
-impl<K> SignHandler<K>
+impl<K, U> SignHandler<K, U>
 where
     K: KeyService + 'static,
+    U: UserService + 'static,
 {
-    pub fn new(key_service: K) -> Self {
+    pub fn new(key_service: K, user_service: U) -> Self {
         SignHandler {
-            key_service
+            key_service,
+            user_service
         }
+    }
+
+    async fn validate_private_key_token(&self, token: &str, name: &str) -> SignatrustResult<()> {
+        let names: Vec<_> = name.split(':').collect();
+        if names.len() <= 1 {
+            return Ok(())
+        }
+        if token.is_empty() || !self.user_service.validate_token_and_email(names[0], token).await? {
+            return Err(Error::AuthError("user token and email unmatched".to_string()))
+        }
+        Ok(())
     }
 }
 
 #[tonic::async_trait]
-impl<K> Signatrust for SignHandler<K>
+impl<K, U> Signatrust for SignHandler<K, U>
 where
     K: KeyService + 'static,
+    U: UserService + 'static,
 {
     async fn sign_stream(
         &self,
@@ -59,6 +78,7 @@ where
         let mut data: Vec<u8> = vec![];
         let mut key_name: String = "".to_string();
         let mut key_type: String = "".to_string();
+        let mut token: String = "".to_string();
         let mut options: HashMap<String, String> = HashMap::new();
         while let Some(content) = binaries.next().await {
             let mut inner_result = content.unwrap();
@@ -66,8 +86,16 @@ where
             key_name = inner_result.key_id;
             key_type = inner_result.key_type;
             options = inner_result.options;
+            token = inner_result.token;
         }
         debug!("begin to sign key_type :{} key_name: {}", key_type, key_name);
+        //perform token validation on private keys
+        if let  Err(err) = self.validate_private_key_token(&token, &key_name).await {
+            return Ok(Response::new(SignStreamResponse {
+                signature: vec![],
+                error: err.to_string(),
+            }))
+        }
         match self.key_service.sign(key_type, key_name, &options, data).await {
             Ok(content) => {
                 Ok(Response::new(SignStreamResponse {
@@ -85,10 +113,11 @@ where
     }
 }
 
-pub fn get_grpc_handler<K>(key_service: K) -> SignatrustServer<SignHandler<K>>
+pub fn get_grpc_handler<K, U>(key_service: K, user_service: U) -> SignatrustServer<SignHandler<K, U>>
 where
-    K: KeyService + 'static
+    K: KeyService + 'static,
+    U: UserService + 'static
 {
-    let app = SignHandler::new(key_service);
+    let app = SignHandler::new(key_service, user_service);
     SignatrustServer::new(app)
 }
