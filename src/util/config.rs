@@ -16,12 +16,12 @@
 
 use crate::util::error::Result;
 use config::{Config, File, FileFormat};
-use notify::{Event, RecommendedWatcher, RecursiveMode, Watcher};
+use notify::{Event, RecommendedWatcher, RecursiveMode, Watcher, Error};
 use std::path::Path;
-use std::sync::mpsc::channel;
-use std::sync::{atomic::AtomicBool, atomic::Ordering, Arc, RwLock};
-use std::thread;
+use tokio::sync::mpsc;
+use std::sync::{Arc, RwLock};
 use std::time::Duration;
+use tokio_util::sync::CancellationToken;
 
 pub struct ServerConfig {
     pub config: Arc<RwLock<Config>>,
@@ -41,38 +41,42 @@ impl ServerConfig {
             path,
         }
     }
-    pub fn watch(&self, signal: Arc<AtomicBool>) -> Result<()> {
-        let (tx, rx) = channel();
+    pub fn watch(&self, cancel_token: CancellationToken) -> Result<()> {
+        let (tx, mut rx) = mpsc::channel(10);
         let watch_file = self.path.clone();
         let config = self.config.clone();
-        let mut watcher: RecommendedWatcher = Watcher::new(
-            tx,
+        let mut watcher: RecommendedWatcher = RecommendedWatcher::new(
+            move |result: std::result::Result<Event, Error>| {
+                tx.blocking_send(result).expect("Failed to send event");
+            },
             notify::Config::default().with_poll_interval(Duration::from_secs(5)),
         )
         .expect("configure file watch failed to setup");
-        thread::spawn(move || {
-            watcher
-                .watch(Path::new(watch_file.as_str()), RecursiveMode::NonRecursive)
-                .expect("failed to watch configuration file");
-            //TODO: handle signal correctly
-            while !signal.load(Ordering::Relaxed) {
-                match rx.recv() {
-                    Ok(Ok(Event {
-                        kind: notify::event::EventKind::Modify(_),
-                        ..
-                    })) => {
-                        info!("server configuration changed ...");
-                        config
-                            .write()
-                            .unwrap()
-                            .refresh()
-                            .expect("failed to write configuration file");
+        watcher
+            .watch(Path::new(watch_file.as_str()), RecursiveMode::NonRecursive)
+            .expect("failed to watch configuration file");
+        tokio::spawn(async move {
+            loop {
+                tokio::select! {
+                    _ = cancel_token.cancelled() => {
+                        info!("cancel token received, will quit configuration watcher");
+                        break;
                     }
-                    Err(e) => error!("watch error: {:?}", e),
-                    _ => {}
+                    event = rx.recv() => {
+                        match event {
+                            Some(Ok(Event {
+                                kind: notify::event::EventKind::Modify(_),
+                                ..
+                            })) => {
+                                info!("server configuration changed ...");
+                                config.write().unwrap().refresh().expect("failed to write configuration file");
+                            }
+                            Some(Err(e)) => error!("watch error: {:?}", e),
+                            _ => {}
+                        }
+                    }
                 }
             }
-            info!("signal received, will quit");
         });
         Ok(())
     }

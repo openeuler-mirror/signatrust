@@ -23,7 +23,6 @@ use crate::util::error::{Result, Error};
 use async_trait::async_trait;
 use std::sync::Arc;
 use std::sync::RwLock;
-use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::sync::RwLock as AsyncRwLock;
 use chrono::Utc;
 use serde::{Deserialize};
@@ -37,7 +36,8 @@ use openidconnect::{
 };
 use openidconnect::{JsonWebKeySet, ClientId, AuthUrl, UserInfoUrl, TokenUrl, RedirectUrl, ClientSecret, IssuerUrl};
 use url::Url;
-use tokio::time::{Duration, sleep};
+use tokio::time::{Duration, self};
+use tokio_util::sync::CancellationToken;
 use crate::presentation::handler::control::model::token::dto::{CreateTokenDTO};
 use crate::util::key::{generate_api_token};
 
@@ -54,7 +54,7 @@ pub trait UserService: Send + Sync{
     async fn validate_user(&self, code: &str) -> Result<User>;
     async fn validate_token_and_email(&self, email: &str, token: &str) -> Result<bool>;
     //method below used for maintenance
-    fn start_loop(&self, signal: Arc<AtomicBool>) -> Result<()>;
+    fn start_loop(&self, cancel_token: CancellationToken) -> Result<()>;
 }
 
 #[derive(Deserialize, Debug)]
@@ -239,14 +239,23 @@ where
         Ok(email == user.email)
     }
 
-    fn start_loop(&self, signal: Arc<AtomicBool>) -> Result<()> {
+    fn start_loop(&self, cancel_token: CancellationToken) -> Result<()> {
         let tokens = self.tokens.clone();
+        let mut interval = time::interval(Duration::from_secs(120));
         tokio::spawn(async move {
-            while !signal.load(Ordering::Relaxed) {
-                debug!("start to clear the container tokens");
-                sleep(Duration::from_secs(120)).await;
-                tokens.write().await.clear();
+            loop {
+                tokio::select! {
+                    _ = interval.tick() => {
+                        info!("start to clear the container tokens");
+                        tokens.write().await.clear();
+                    }
+                    _ = cancel_token.cancelled() => {
+                        info!("cancel token received, will quit user token refresher");
+                        break;
+                    }
+                }
             }
+
         });
         Ok(())
     }

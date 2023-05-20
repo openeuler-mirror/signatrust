@@ -15,11 +15,10 @@
  */
 
 use std::net::SocketAddr;
-use std::sync::{Arc, atomic::AtomicBool, RwLock};
-use std::sync::atomic::Ordering;
+use std::sync::{Arc, RwLock};
 use config::Config;
 use tokio::fs;
-use tokio::time::{Duration, sleep};
+use tokio_util::sync::CancellationToken;
 use tonic::{
     transport::{
         Certificate,
@@ -42,18 +41,18 @@ use crate::util::error::Result;
 pub struct DataServer
 {
     server_config: Arc<RwLock<Config>>,
-    signal: Arc<AtomicBool>,
+    cancel_token: CancellationToken,
     server_identity: Option<Identity>,
     ca_cert: Option<Certificate>,
 }
 
 impl DataServer {
-    pub async fn new(server_config: Arc<RwLock<Config>>, signal: Arc<AtomicBool>) -> Result<Self> {
+    pub async fn new(server_config: Arc<RwLock<Config>>, cancel_token: CancellationToken) -> Result<Self> {
         let database = server_config.read()?.get_table("database")?;
         create_pool(&database).await?;
         let mut server = DataServer {
             server_config,
-            signal,
+            cancel_token,
             server_identity: None,
             ca_cert: None,
         };
@@ -86,10 +85,14 @@ impl DataServer {
     }
 
     async fn shutdown_signal(&self) {
-        while !self.signal.load(Ordering::Relaxed) {
-            sleep(Duration::from_secs(1)).await;
+        loop {
+            tokio::select! {
+                _ = self.cancel_token.cancelled() => {
+                    info!("cancel token received, will quit data server");
+                     break;
+                }
+            }
         }
-        info!("quit signal received...")
     }
 
     pub async fn run(&self) -> Result<()> {
@@ -116,8 +119,8 @@ impl DataServer {
         let token_repo = TokenRepository::new(get_db_pool()?);
         let user_service = DBUserService::new(user_repo, token_repo, self.server_config.clone())?;
 
-        key_service.start_loop(self.signal.clone())?;
-        user_service.start_loop(self.signal.clone())?;
+        key_service.start_loop(self.cancel_token.clone())?;
+        user_service.start_loop(self.cancel_token.clone())?;
         if let Some(identity) = self.server_identity.clone() {
             server
                 .tls_config(ServerTlsConfig::new().identity(identity).client_ca_root(self.ca_cert.clone().unwrap()))?

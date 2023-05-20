@@ -19,7 +19,12 @@ use crate::util::error::Result;
 use clap::Parser;
 use config::Config;
 use std::env;
-use std::sync::{atomic::AtomicBool, Arc, RwLock};
+use std::sync::{Arc, RwLock};
+use tokio_util::sync::CancellationToken;
+use tokio::{
+    select,
+    signal::unix::{signal, SignalKind},
+};
 
 use crate::presentation::server::data_server::DataServer;
 
@@ -48,19 +53,30 @@ pub struct App {
 }
 
 lazy_static! {
-    pub static ref SIGNAL: Arc<AtomicBool> = {
-        let signal = Arc::new(AtomicBool::new(false));
+    pub static ref CANCEL_TOKEN: CancellationToken = {
+        let cancel_token = CancellationToken::new();
+        let cancel_token_handler = cancel_token.clone();
         //setup up signal handler
-        signal_hook::flag::register(signal_hook::consts::SIGTERM, Arc::clone(&signal)).expect("failed to register sigterm signal");
-        signal_hook::flag::register(signal_hook::consts::SIGINT, Arc::clone(&signal)).expect("failed to register sigint signal");
-        signal
+        tokio::spawn(async move {
+            let mut sigterm = signal(SignalKind::terminate()).unwrap();
+            let mut sigint = signal(SignalKind::interrupt()).unwrap();
+            loop {
+                select! {
+                    _ = sigterm.recv() => {},
+                    _ = sigint.recv() => {},
+                };
+                info!("received quit signal, canceling all sub tasks");
+                cancel_token_handler.cancel();
+            }
+        });
+        cancel_token
     };
     pub static ref SERVERCONFIG: Arc<RwLock<Config>> = {
         let app = App::parse();
         let path = app.config.unwrap_or(format!("{}/{}", env::current_dir().expect("current dir not found").display(),
             "config/server.toml"));
         let server_config = util::config::ServerConfig::new(path);
-        server_config.watch(Arc::clone(&SIGNAL)).expect("failed to watch configure file");
+        server_config.watch(CANCEL_TOKEN.clone()).expect("failed to watch configure file");
         server_config.config
     };
 }
@@ -70,7 +86,7 @@ async fn main() -> Result<()> {
     //prepare config and logger
     env_logger::init();
     //data server starts
-    let data_server: DataServer = DataServer::new(SERVERCONFIG.clone(), SIGNAL.clone()).await?;
+    let data_server: DataServer = DataServer::new(SERVERCONFIG.clone(), CANCEL_TOKEN.clone()).await?;
     data_server.run().await?;
     Ok(())
 }
