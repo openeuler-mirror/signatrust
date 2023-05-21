@@ -19,13 +19,11 @@ use crate::domain::sign_service::SignBackend;
 use crate::util::error::{Error, Result};
 use async_trait::async_trait;
 use crate::domain::datakey::entity::{DataKey, KeyState, Visibility};
-use std::sync::{Arc, atomic::AtomicBool};
-
-use tokio::time::{Duration, sleep};
+use tokio::time::{Duration, self};
 
 use crate::util::signer_container::DataKeyContainer;
 use std::collections::HashMap;
-use std::sync::atomic::Ordering;
+use tokio_util::sync::CancellationToken;
 use crate::presentation::handler::control::model::user::dto::UserIdentity;
 
 #[async_trait]
@@ -42,7 +40,7 @@ pub trait KeyService: Send + Sync{
     async fn sign(&self, key_type: String, key_name: String, options: &HashMap<String, String>, data: Vec<u8>) ->Result<Vec<u8>>;
 
     //method below used for maintenance
-    fn start_loop(&self, signal: Arc<AtomicBool>) -> Result<()>;
+    fn start_loop(&self, cancel_token: CancellationToken) -> Result<()>;
 }
 
 
@@ -158,14 +156,23 @@ where
             &self.container.get_data_key(key_type, key_name).await?, data, options.clone()).await
     }
 
-    fn start_loop(&self, signal: Arc<AtomicBool>) -> Result<()> {
+    fn start_loop(&self, cancel_token: CancellationToken) -> Result<()> {
         let container = self.container.clone();
+        let mut interval = time::interval(Duration::from_secs(120));
         tokio::spawn(async move {
-            while !signal.load(Ordering::Relaxed) {
-                debug!("start to clear the container keys");
-                sleep(Duration::from_secs(120)).await;
-                container.clear_keys().await;
+            loop {
+                tokio::select! {
+                    _ = interval.tick() => {
+                        info!("start to clear the container keys");
+                        container.clear_keys().await;
+                    }
+                    _ = cancel_token.cancelled() => {
+                        info!("cancel token received, will quit datakey refresher");
+                        break;
+                    }
+                }
             }
+
         });
         Ok(())
     }

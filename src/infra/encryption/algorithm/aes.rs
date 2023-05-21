@@ -22,7 +22,6 @@ use aes_gcm_siv::{
 };
 use generic_array::GenericArray;
 use rand::{thread_rng, Rng};
-use crate::util::error;
 use crate::util::error::Result;
 
 pub const NONCE_LENGTH: usize = 12;
