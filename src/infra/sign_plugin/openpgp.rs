@@ -41,7 +41,22 @@ use validator::{Validate, ValidationError};
 use pgp::composed::StandaloneSignature;
 use crate::domain::datakey::entity::{DataKey, DataKeyContent, SecDataKey};
 use crate::util::key::encode_u8_to_hex_string;
-use super::util::{validate_utc_time_not_expire, validate_utc_time};
+use super::util::{validate_utc_time_not_expire, validate_utc_time, attributes_validate};
+
+#[derive(Debug, Validate, Deserialize)]
+pub struct PgpKeyImportParameter {
+    #[validate(custom( function = "validate_key_type", message="invalid openpgp attribute 'key_type'"))]
+    key_type: String,
+    #[validate(custom(function = "validate_key_size", message="invalid openpgp attribute 'key_length'"))]
+    key_length: String,
+    #[validate(custom(function= "validate_digest_algorithm_type", message="invalid digest algorithm"))]
+    digest_algorithm: String,
+    #[validate(custom(function = "validate_utc_time", message="invalid openpgp attribute 'create_at'"))]
+    create_at: String,
+    #[validate(custom(function= "validate_utc_time_not_expire", message="invalid openpgp attribute 'expire_at'"))]
+    expire_at: String,
+    passphrase: Option<String>
+}
 
 
 #[derive(Debug, Validate, Deserialize)]
@@ -153,6 +168,7 @@ impl SignPlugins for OpenPGPPlugin {
     }
 
     fn validate_and_update(key: &mut DataKey) -> Result<()> where Self: Sized {
+        let _ = attributes_validate::<PgpKeyImportParameter>(&key.attributes)?;
         //validate the digest
         if let Some(digest_str) = key.attributes.get("digest_algorithm") {
             let _ = get_digest_algorithm(digest_str)?;
@@ -186,7 +202,7 @@ impl SignPlugins for OpenPGPPlugin {
     fn generate_keys(
         attributes: &HashMap<String, String>,
     ) -> Result<DataKeyContent> {
-        let parameter = OpenPGPPlugin::attributes_validate(attributes)?;
+        let parameter = attributes_validate::<PgpKeyGenerationParameter>(attributes)?;
         let mut key_params = SecretKeyParamsBuilder::default();
         let create_at = parameter.create_at.parse()?;
         let expire :DateTime<Utc> = parameter.expire_at.parse()?;

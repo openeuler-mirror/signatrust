@@ -38,7 +38,7 @@ use crate::domain::datakey::entity::{DataKey, DataKeyContent, SecDataKey};
 use crate::util::error::{Error, Result};
 use crate::domain::sign_plugin::SignPlugins;
 use crate::util::key::encode_u8_to_hex_string;
-use super::util::{validate_utc_time_not_expire, validate_utc_time};
+use super::util::{validate_utc_time_not_expire, validate_utc_time, attributes_validate};
 
 #[derive(Debug, Validate, Deserialize)]
 pub struct X509KeyGenerationParameter {
@@ -65,6 +65,21 @@ pub struct X509KeyGenerationParameter {
     #[validate(custom(function= "validate_utc_time_not_expire", message="invalid x509 attribute 'expire_at'"))]
     expire_at: String,
 }
+
+#[derive(Debug, Validate, Deserialize)]
+pub struct X509KeyImportParameter {
+    key_type: String,
+    #[validate(custom(function = "validate_x509_key_size", message="invalid x509 attribute 'key_length'"))]
+    key_length: String,
+    #[validate(custom(function= "validate_x509_digest_algorithm_type", message="invalid digest algorithm"))]
+    digest_algorithm: String,
+    #[validate(custom(function = "validate_utc_time", message="invalid x509 attribute 'create_at'"))]
+    create_at: String,
+    #[validate(custom(function= "validate_utc_time_not_expire", message="invalid x509 attribute 'expire_at'"))]
+    expire_at: String,
+}
+
+
 
 impl X509KeyGenerationParameter {
     pub fn get_key(&self) -> Result<PKey<Private>> {
@@ -139,17 +154,6 @@ pub struct X509Plugin {
     attributes: HashMap<String, String>
 }
 
-impl X509Plugin {
-    pub fn attributes_validate(attr: &HashMap<String, String>) -> Result<X509KeyGenerationParameter> {
-        let parameter: X509KeyGenerationParameter =
-            serde_json::from_str(serde_json::to_string(&attr)?.as_str())?;
-        match parameter.validate() {
-            Ok(_) => Ok(parameter),
-            Err(e) => Err(Error::ParameterError(format!("{:?}", e))),
-        }
-    }
-}
-
 impl SignPlugins for X509Plugin {
     fn new(db: SecDataKey) -> Result<Self> {
         Ok(Self {
@@ -162,6 +166,7 @@ impl SignPlugins for X509Plugin {
     }
 
     fn validate_and_update(key: &mut DataKey) -> Result<()> where Self: Sized {
+        let _ = attributes_validate::<X509KeyImportParameter>(&key.attributes)?;
         let _private_key = PKey::private_key_from_pem(&key.private_key)?;
         let certificate = x509::X509::from_pem(&key.certificate)?;
         if !key.public_key.is_empty() {
@@ -186,7 +191,7 @@ impl SignPlugins for X509Plugin {
     fn generate_keys(
         attributes: &HashMap<String, String>,
     ) -> Result<DataKeyContent> {
-        let parameter = X509Plugin::attributes_validate(attributes)?;
+        let parameter = attributes_validate::<X509KeyGenerationParameter>(attributes)?;
         let keys = parameter.get_key()?;
         let mut generator = x509::X509Builder::new()?;
         generator.set_subject_name(parameter.get_subject_name()?.as_ref())?;

@@ -351,12 +351,15 @@ async fn disable_data_key(user: UserIdentity, key_service: web::Data<dyn KeyServ
 ///  =c1i2
 /// -----END PGP PUBLIC KEY BLOCK-----
 /// ```
-/// you can specify the digest algorithm as well in the `attributes`, leave it blank will lead to the usage of 'sha2_256' as default.
-/// passphrase **MUST** be specified for accessing the imported keys when do signing.
+/// you need to specify the `digest_algorithm`, `key_type`, `expire` and `key_length` in the `attributes` as well,
+/// passphrase **MUST** be specified for accessing the imported keys which specified passphrase when generating.
 /// ```json
 /// "attributes": {
 ///     "digest_algorithm": "sha2_256"
 ///     "passphrase": "husheng@1234"
+///     "key_type": "rsa",
+///     "key_length": "2048",
+///     "expire_at": "2024-07-12 22:10:57+08:00"
 /// }
 /// ```
 /// ## Import openSSL x509 keys
@@ -370,6 +373,14 @@ async fn disable_data_key(user: UserIdentity, key_service: web::Data<dyn KeyServ
 /// IHehlWfHhjCxtw5Kzl3ncrHA
 /// -----END PRIVATE KEY-----
 /// ```
+/// you need to specify the `digest_algorithm`, `key_type`, `expire` and `key_length` in the `attributes` as well,
+/// ```json
+/// "attributes": {
+///     "digest_algorithm": "sha2_256"
+///     "key_type": "rsa",
+///     "key_length": "2048",
+///     "expire_at": "2024-07-12 22:10:57+08:00"
+/// }
 /// ## Example
 /// Call the api endpoint with following curl.
 /// ```text
