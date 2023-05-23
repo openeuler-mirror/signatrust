@@ -78,6 +78,7 @@ impl Modify for SecurityAddon {
         crate::presentation::handler::control::datakey_handler::enable_data_key,
         crate::presentation::handler::control::datakey_handler::disable_data_key,
         crate::presentation::handler::control::datakey_handler::import_data_key,
+        crate::presentation::handler::control::datakey_handler::key_name_identical,
 
         crate::presentation::handler::control::user_handler::login,
         crate::presentation::handler::control::user_handler::callback,
@@ -92,11 +93,12 @@ impl Modify for SecurityAddon {
                 crate::presentation::handler::control::model::datakey::dto::CreateDataKeyDTO,
                 crate::presentation::handler::control::model::datakey::dto::ImportDataKeyDTO,
                 crate::presentation::handler::control::model::datakey::dto::ExportKey,
+                crate::presentation::handler::control::model::datakey::dto::KeyQuery,
+                crate::presentation::handler::control::model::datakey::dto::NameIdenticalQuery,
                 crate::presentation::handler::control::model::token::dto::TokenDTO,
                 crate::presentation::handler::control::model::token::dto::CreateTokenDTO,
                 crate::presentation::handler::control::model::user::dto::UserIdentity,
-                crate::presentation::handler::control::user_handler::Code,
-                crate::presentation::handler::control::datakey_handler::KeyQuery,
+                crate::presentation::handler::control::model::user::dto::Code,
                 crate::util::error::ErrorMessage)
     ),
     modifiers(&SecurityAddon)

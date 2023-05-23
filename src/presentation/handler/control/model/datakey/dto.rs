@@ -9,7 +9,7 @@ use validator::{Validate, ValidationError};
 use std::collections::HashMap;
 use crate::util::error::Error;
 use serde::{Deserialize, Serialize};
-use utoipa::{ToSchema};
+use utoipa::{IntoParams, ToSchema};
 use crate::presentation::handler::control::model::user::dto::UserIdentity;
 
 #[derive(Deserialize, Serialize, ToSchema)]
@@ -26,6 +26,34 @@ impl TryFrom<DataKey> for ExportKey {
             public_key: String::from_utf8_lossy(&value.public_key).to_string(),
             certificate: String::from_utf8_lossy(&value.certificate).to_string()
         })
+    }
+}
+
+#[derive(Deserialize, IntoParams, Validate, ToSchema)]
+pub struct KeyQuery {
+    /// The key's visibility
+    #[validate(custom = "validate_key_visibility")]
+    pub visibility: String,
+}
+
+#[derive(Deserialize, IntoParams, Validate, ToSchema)]
+pub struct NameIdenticalQuery {
+    /// The key's visibility
+    #[validate(custom = "validate_key_visibility")]
+    pub visibility: String,
+    /// Key Name, should be identical, length between 4 and 20, not contains any colon symbol.
+    #[validate(length(min = 4, max = 20), custom = "validate_invalid_character")]
+    pub name: String,
+}
+
+impl NameIdenticalQuery {
+    pub fn get_key_name(&self, user_id: &UserIdentity) -> String {
+        if self.visibility == Visibility::Public.to_string() {
+            self.name.clone()
+        } else {
+            format!("{}:{}", user_id.email, self.name)
+        }
+
     }
 }
 

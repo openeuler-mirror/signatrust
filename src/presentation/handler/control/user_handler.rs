@@ -15,19 +15,14 @@
  */
 
 use actix_web::{HttpResponse, Responder, Result, web, Scope, HttpRequest, HttpMessage};
-use serde::{Deserialize};
 use crate::util::error::Error;
 use super::model::user::dto::UserIdentity;
 use actix_identity::Identity;
-use utoipa::{IntoParams, ToSchema};
+use validator::Validate;
 
 use crate::application::user::UserService;
 use crate::presentation::handler::control::model::token::dto::{CreateTokenDTO, TokenDTO};
-
-#[derive(Deserialize, IntoParams, ToSchema)]
-pub struct Code {
-    pub code: String,
-}
+use crate::presentation::handler::control::model::user::dto::Code;
 
 /// Start the login OIDC login process
 ///
@@ -109,6 +104,7 @@ async fn logout(id: Identity) -> Result<impl Responder, Error> {
     )
 )]
 async fn callback(req: HttpRequest, user_service: web::Data<dyn UserService>, code: web::Query<Code>) -> Result<impl Responder, Error> {
+    code.validate()?;
     let user_entity:UserIdentity = UserIdentity::from(user_service.into_inner().validate_user(&code.code).await?);
     match Identity::login(&req.extensions(), serde_json::to_string(&user_entity)?) {
         Ok(_) => {
