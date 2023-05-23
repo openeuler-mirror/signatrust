@@ -117,6 +117,15 @@ impl Repository for DataKeyRepository {
         Ok(DataKey::try_from(dto)?)
     }
 
+    async fn get_by_name(&self, name: &String) -> Result<DataKey> {
+        let dto: DataKeyDTO = sqlx::query_as("SELECT * FROM data_key WHERE name = ? AND key_state != ?")
+            .bind(name)
+            .bind(KeyState::Deleted.to_string())
+            .fetch_one(&self.db_pool)
+            .await?;
+        Ok(DataKey::try_from(dto)?)
+    }
+
     async fn update_state(&self, id: i32, state: KeyState) -> Result<()> {
         //Note: if the key in deleted status, it cannot be updated to other states
         let _: Option<DataKeyDTO>  = sqlx::query_as("UPDATE data_key SET key_state = ? WHERE id = ? AND key_state != ?")

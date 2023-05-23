@@ -30,6 +30,7 @@ use crate::presentation::handler::control::model::user::dto::UserIdentity;
 pub trait KeyService: Send + Sync{
     async fn create(&self, data: &mut DataKey) -> Result<DataKey>;
     async fn import(&self, data: &mut DataKey) -> Result<DataKey>;
+    async fn key_name_exists(&self, name: &String) -> Result<bool>;
     async fn get_all(&self, user: Option<UserIdentity>,  visibility: Visibility) -> Result<Vec<DataKey>>;
     async fn get_one(&self, user: Option<UserIdentity>, id: i32) -> Result<DataKey>;
     async fn request_delete(&self, user: UserIdentity, id: i32) -> Result<()>;
@@ -94,6 +95,13 @@ where
     async fn import(&self, data: &mut DataKey) -> Result<DataKey> {
         self.sign_service.validate_and_update(data).await?;
         self.repository.create(data.clone()).await
+    }
+
+    async fn key_name_exists(&self, name: &String) -> Result<bool> {
+        if self.repository.get_by_name(name).await.is_ok() {
+            return Ok(true);
+        }
+        Ok(false)
     }
 
     async fn get_all(&self, user: Option<UserIdentity>, visibility: Visibility) -> Result<Vec<DataKey>> {

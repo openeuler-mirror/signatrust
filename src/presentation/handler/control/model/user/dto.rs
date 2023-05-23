@@ -9,7 +9,8 @@ use serde::{Deserialize, Serialize};
 use std::convert::From;
 use crate::application::user::UserService;
 use crate::domain::user::entity::User;
-use utoipa::{ToSchema};
+use utoipa::{IntoParams, ToSchema};
+use validator::Validate;
 
 #[derive(Debug, Deserialize, Serialize, ToSchema)]
 pub struct UserIdentity {
@@ -66,6 +67,12 @@ impl From<UserIdentity> for User {
             email: id.email
         }
     }
+}
+
+#[derive(Deserialize, IntoParams, Validate, ToSchema)]
+pub struct Code {
+    #[validate(length(min = 1))]
+    pub code: String,
 }
 
 impl From<User> for UserIdentity {

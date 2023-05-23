@@ -20,19 +20,12 @@ use actix_web::{
 };
 
 
-use crate::presentation::handler::control::model::datakey::dto::{CreateDataKeyDTO, DataKeyDTO, ExportKey, ImportDataKeyDTO};
+use crate::presentation::handler::control::model::datakey::dto::{CreateDataKeyDTO, DataKeyDTO, ExportKey, ImportDataKeyDTO, KeyQuery, NameIdenticalQuery};
 use crate::util::error::Error;
 use validator::Validate;
-use serde::{Deserialize};
 use crate::application::datakey::KeyService;
 use crate::domain::datakey::entity::{DataKey, Visibility};
 use super::model::user::dto::UserIdentity;
-use utoipa::{IntoParams, ToSchema};
-
-#[derive(Deserialize, IntoParams, ToSchema)]
-pub struct KeyQuery {
-    pub visibility: String,
-}
 
 /// Create new key
 ///
@@ -335,6 +328,38 @@ async fn disable_data_key(user: UserIdentity, key_service: web::Data<dyn KeyServ
     Ok(HttpResponse::Ok())
 }
 
+/// Check whether a key name already exists
+///
+/// Use this API to check whether the key name exists in database.
+/// `name` and `visibility` are required
+/// ## Example
+/// Call the api endpoint with following curl.
+/// ```text
+/// curl -X POST https://domain:port/api/v1/keys/name_identical?name=xxx&visibility=xxx
+/// ```
+#[utoipa::path(
+    head,
+    path = "/api/v1/keys/name_identical",
+    params(
+        NameIdenticalQuery
+    ),
+    security(
+        ("Authorization" = [])
+    ),
+    responses(
+        (status = 200, description = "Name does not exist"),
+        (status = 400, description = "Bad request", body = ErrorMessage),
+        (status = 409, description = "Conflict in name")
+    )
+)]
+async fn key_name_identical(user: UserIdentity, key_service: web::Data<dyn KeyService>, name_exist: web::Query<NameIdenticalQuery>,) -> Result<impl Responder, Error> {
+    name_exist.validate()?;
+    match key_service.into_inner().key_name_exists(&name_exist.get_key_name(&user)).await? {
+        true => Ok(HttpResponse::Conflict()),
+        false => Ok(HttpResponse::Ok()),
+    }
+}
+
 /// Import key
 ///
 /// Use this API to import openpgp or x509 keys
@@ -414,8 +439,8 @@ pub fn get_scope() -> Scope {
                 .route(web::get().to(list_data_key))
                 .route(web::post().to(create_data_key)))
         .service( web::resource("/import").route(web::post().to(import_data_key)))
-        .service( web::resource("/{id}")
-            .route(web::get().to(show_data_key)))
+        .service( web::resource("/name_identical").route(web::head().to(key_name_identical)))
+        .service( web::resource("/{id}").route(web::get().to(show_data_key)))
         .service( web::resource("/{id}/export").route(web::post().to(export_data_key)))
         .service( web::resource("/{id}/enable").route(web::post().to(enable_data_key)))
         .service( web::resource("/{id}/disable").route(web::post().to(disable_data_key)))

@@ -15,15 +15,9 @@
  */
 
 use actix_web::{HttpResponse, Responder, Result, web, Scope};
-use serde::{Deserialize};
 use crate::util::error::Error;
 
 use crate::application::user::UserService;
-
-#[derive(Deserialize)]
-struct Code {
-    pub code: String,
-}
 
 /// Get the server health status
 ///
