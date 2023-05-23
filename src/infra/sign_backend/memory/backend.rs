@@ -31,7 +31,7 @@ use crate::domain::encryption_engine::EncryptionEngine;
 use crate::domain::datakey::entity::SecDataKey;
 use crate::infra::sign_plugin::signers::Signers;
 use crate::domain::datakey::entity::DataKey;
-use crate::util::error::Result;
+use crate::util::error::{Error, Result};
 use async_trait::async_trait;
 use crate::infra::encryption::algorithm::factory::AlgorithmFactory;
 
@@ -80,7 +80,9 @@ impl MemorySignBackend {
 #[async_trait]
 impl SignBackend for MemorySignBackend {
     async fn validate_and_update(&self, data_key: &mut DataKey) -> Result<()> {
-        let _ = Signers::validate_and_update(data_key)?;
+        if let Err(err) = Signers::validate_and_update(data_key) {
+            return Err(Error::ParameterError(format!("failed to validate imported key content: {}", err)));
+        }
         data_key.private_key = self.engine.encode(data_key.private_key.clone()).await?;
         data_key.public_key = self.engine.encode(data_key.public_key.clone()).await?;
         data_key.certificate = self.engine.encode(data_key.certificate.clone()).await?;
