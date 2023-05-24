@@ -1,46 +1,61 @@
 <script setup lang="ts">
-import {
-    ref, onMounted ,reactive, watch
-} from 'vue';
-
-import { useRouter } from 'vue-router';
+import { ref, onMounted, reactive, watch } from "vue";
+import { showGuard, logout, useStoreData, getUserAuth } from "@/shared/utils/login";
+import { useRouter } from "vue-router";
 const router = useRouter();
-  const isLogin = ref(false);
-  const name = ref('Admin');
-  const dropdownCommand = (type: string) => {
-    if (type === 'logout') {
-        isLogin.value = false;
-    }
+const isLogin = ref(false);
+const name = ref("Admin");
+const dropdownCommand = (type: string) => {
+  if (type === "logout") {
+    isLogin.value = false;
+  }
+};
+const toTokens = () => {
+  router.push({
+    path: "/apiTokens",
+  });
 };
 </script>
 <template>
   <div class="common-content-bg-color common-level-one-color app-header">
     <div class="app-header-logo">
-         <div class="title">
-
-         </div>
-         Signature | OpenEuler
+      Signatrust
+      <img src="../assets/Black-horizontal.png" alt="" class="title" />
     </div>
     <div class="app-header-opt">
-
       <div class="app-header-opt-control">
         <el-dropdown trigger="click" @command="dropdownCommand">
           <span class="construction-user-name">
             {{ name }}
-
           </span>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item class="construction-quit" command="logout">
-                退出
+              <el-dropdown-item
+                class="construction-quit"
+                command="logout"
+                @click="toTokens"
+              >
+                API tokens
+              </el-dropdown-item>
+              <el-dropdown-item
+                class="construction-quit"
+                command="logout"
+                @click="showGuard"
+              >
+                Login
+              </el-dropdown-item>
+              <el-dropdown-item
+                class="construction-quit"
+                command="logout"
+                @click="logout"
+              >
+                Sign out
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
-
       </div>
-      </div>
-
+    </div>
   </div>
 </template>
 <style scoped lang="scss">
@@ -50,23 +65,21 @@ const router = useRouter();
   align-items: center;
   justify-content: space-between;
   box-shadow: 0px 20px 70px 0px rgba(0, 0, 0, 0.25);
+  background: #fff;
 }
 .app-header-logo {
-  height: 80px;
   display: flex;
   align-items: center;
-  margin-left: 40px;
-  font-size: 18px;
-font-family: PingFangSC-Regular, PingFang SC;
-font-weight: 400;
-color: #000000;
-line-height: 26px;
-  .title{
-    width: 30px;
-    height: 34px;
-    margin-right: 12px;
-    // background-image: url('../assets/openEuler／logo／new.png');
-
+  margin-left: 120px;
+  font-size: 20px;
+  font-family: HuaweiSans-Bold, HuaweiSans;
+  font-weight: 400;
+  color: #000000;
+  line-height: 24px;
+  .title {
+    margin-left: 8px;
+    border-left: 1px solid #000000;
+    padding-left: 12px;
   }
 }
 .app-header-opt {
@@ -76,7 +89,7 @@ line-height: 26px;
   &-control {
     cursor: pointer;
     &:hover {
-      color: #002FA7;
+      color: #002fa7;
     }
   }
   &-git {

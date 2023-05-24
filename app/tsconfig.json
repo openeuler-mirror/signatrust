@@ -12,7 +12,7 @@
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "noEmit": true,
+    // "noEmit": true,
     "lib": ["esnext", "dom"],
     "baseUrl": "./",
     "paths": {
