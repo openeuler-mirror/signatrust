@@ -25,5 +25,8 @@ control-server-image:
 control-admin-image:
 	docker build -t tommylike/signatrust-control-admin:$(GIT_COMMIT) --build-arg BINARY=control-admin -f Dockerfile .
 
+app-image:
+	docker build -t tommylike/signatrust-app:$(GIT_COMMIT) -f app/Dockerfile ./app
+
 deploy-local:
 	kustomize build ./deploy | kubectl apply -f -

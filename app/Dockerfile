@@ -1,21 +1,15 @@
 FROM gplane/pnpm as Builder
 
-RUN mkdir -p /home/openeuler-certificate/web
-WORKDIR /home/openeuler-certificate/web
-COPY . /home/openeuler-certificate/web
-
+RUN mkdir -p /home/signatrust/app
+WORKDIR /home/signatrust/app
+COPY . /home/signatrust/app
 RUN pnpm install
-
 RUN pnpm build
 
-# FROM nginx:1.20.0
-
-# COPY ./deploy/test-login.html /usr/share/nginx/html/test-login.html
 FROM swr.cn-north-4.myhuaweicloud.com/opensourceway/openeuler/nginx:1.22.0-22.03-lts
-COPY --from=Builder /home/openeuler-certificate/web/dist/ /usr/share/nginx/html/
+COPY --from=Builder /home/signatrust/app/dist/ /usr/share/nginx/html/
 RUN chmod -R 755 /usr/share/nginx/html
 COPY ./deploy/nginx/nginx.conf /etc/nginx/nginx.conf
-
 
 ENV RUN_USER nginx
 ENV RUN_GROUP nginx

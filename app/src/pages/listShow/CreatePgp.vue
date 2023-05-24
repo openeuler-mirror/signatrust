@@ -391,7 +391,4 @@ const getChange = () => {
     margin-left: 2px;
   }
 }
-// element.style {
-//     width: auto;
-// }
 </style>
