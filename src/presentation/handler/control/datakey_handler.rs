@@ -335,7 +335,7 @@ async fn disable_data_key(user: UserIdentity, key_service: web::Data<dyn KeyServ
 /// ## Example
 /// Call the api endpoint with following curl.
 /// ```text
-/// curl -X POST https://domain:port/api/v1/keys/name_identical?name=xxx&visibility=xxx
+/// curl -X HEAD https://domain:port/api/v1/keys/name_identical?name=xxx&visibility=xxx
 /// ```
 #[utoipa::path(
     head,

@@ -175,9 +175,14 @@ impl DataKey {
         let mut combined_attributes = dto.attributes.clone();
         combined_attributes.insert("name".to_string(), dto.name.clone());
         combined_attributes.insert("create_at".to_string(), now.clone().to_string());
+        let visibility = Visibility::from_str(dto.visibility.as_str())?;
+        let mut key_name = dto.name;
+        if visibility == Visibility::Private {
+            key_name = format!("{}:{}", identity.email, key_name);
+        }
         Ok(DataKey {
             id: 0,
-            name: dto.name,
+            name: key_name,
             visibility: Visibility::from_str(dto.visibility.as_str())?,
             description: dto.description,
             user: identity.id,
