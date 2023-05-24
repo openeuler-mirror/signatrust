@@ -7,10 +7,9 @@ import vueJsx from '@vitejs/plugin-vue-jsx';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  // envDir: './viteEnv',
   base: '/',
   build: {
-    outDir: path.resolve(__dirname, '../../dist/euler'),
+    outDir: path.resolve(__dirname, './dist'),
   },
   resolve: {
     alias: {

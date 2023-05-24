@@ -11,12 +11,6 @@ export const routes: RouteRecordRaw[] = [
       return import('@/pages/apiTokens/ApiTokens.vue');
     },
   },
-  // {
-  //   path: '/login',
-  //   component: () => {
-  //     return import('@/pages/AppLogin.vue');
-  //   },
-  // },
 ];
 
 export const router = createRouter({
