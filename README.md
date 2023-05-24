@@ -91,6 +91,7 @@ This project consists of several binaries:
 2. **control-server**: the control server used for handle administration requests and expose http requests for Web UI.
 3. **control-admin**: the control-admin is mainly used in develop environment for convenience, i.e. generate administrator and tokens without the integration of external OIDC server.
 4. **client**: the client is responsible for handle signing task locally and will exchange signature with data server.
+5. **app**: the app used for administrator to manage keys and tokens.
 
 # Documents on sign/verify specific files
 1. [RPM/SRPM file](./docs/how%20to%20sign%20rpm&srpm%20file.md)
