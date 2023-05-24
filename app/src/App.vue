@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import AppFooter from "@/components/AppFooter.vue";
-import AppHeader from '@/components/AppHeader.vue'
+import AppHeader from "@/components/AppHeader.vue";
+import { useRoute } from 'vue-router';
+const route = useRoute();
 </script>
 
 <template>
-  <header><app-header></app-header></header>
-  <div>
+  <header ><app-header v-if="route.path !=='/login'"></app-header></header>
+  <container>
     <router-view />
-  </div>
-  <footer><app-footer></app-footer></footer>
+  </container>
 </template>
 
 <style lang="scss">
@@ -43,12 +43,7 @@ import AppHeader from '@/components/AppHeader.vue'
   }
 }
 body {
-  background: #fff;
-}
-footer {
-  background: #060612;
-  position: absolute;
-  bottom: 0;
-  width: 100%;
+  background: #f5f6f8;
 }
 </style>
+

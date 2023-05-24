@@ -2,7 +2,7 @@ import axios from 'axios';
 import type { AxiosRequestConfig, AxiosPromise } from 'axios';
 import { ElMessage } from 'element-plus';
 import { baseUrls } from './baseUrl';
-// import { getUserAuth, tokenFailIndicateLogin } from '../shared/utils/login';
+import { getUserAuth, tokenFailIndicateLogin } from '@/shared/utils/login';
 
 // 创建一个 axios 实例
 const service = axios.create({
@@ -17,10 +17,11 @@ service.interceptors.request.use(
   // 在发送请求之前做些什么
 
   (config: any) => {
-    // const { token } = getUserAuth();
-    //   if (token) {
+    // const { Authorization} = getUserAuth();
+    // const Authorization = 'LzPvbFaBQO45oqoXv8m31I2g0eO5WvkF67k7J515'
+    //   if (Authorization) {
     //     const to = {
-    //       token,
+    //       Authorization,
     //     };
     //     Object.assign(config.headers, to);
     //   }

@@ -7,7 +7,7 @@ import vueJsx from '@vitejs/plugin-vue-jsx';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  envDir: './viteEnv',
+  // envDir: './viteEnv',
   base: '/',
   build: {
     outDir: path.resolve(__dirname, '../../dist/euler'),
@@ -31,8 +31,13 @@ export default defineConfig({
   ],
   server: {
     proxy: {
-      '/oneid/': {
-        target: 'https://omapi.test.osinfra.cn/',
+      '/api': {
+        target: 'https://signatrust.test.osinfra.cn/',
+        secure: false,
+        changeOrigin: true,
+      },
+      '/oneid': {
+        target: 'https://omapi.osinfra.cn/',
         secure: false,
         changeOrigin: true,
       },
