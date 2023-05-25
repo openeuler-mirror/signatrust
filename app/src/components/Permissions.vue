@@ -2,10 +2,10 @@
   <div class="container">
     <div class="title">State and Permissions</div>
     <el-table :data="tableData" style="width: 50%">
-      <el-table-column prop="state" label="State/permission" width="180" />
-      <el-table-column prop="sign" label="Sign" width="180" />
-      <el-table-column prop="display" label="Display" />
-      <el-table-column prop="keys" label="Export Keys" />
+      <el-table-column prop="state" label="State/Permission" width="120" />
+      <el-table-column prop="sign" label="Sign" width="100" />
+      <el-table-column prop="display" label="Display" width="100" />
+      <el-table-column prop="keys" label="Export Public Keys" width="100" />
       <el-table-column prop="note" label="Note" width="300" />
     </el-table>
   </div>
@@ -18,21 +18,21 @@ const tableData = [
     sign: "NOK",
     display: "OK",
     keys:'OK',
-    note:'default state when key created Pending'
+    note:'Default state when key created'
   },
   {
     state: "Enabled",
     sign: "OK",
     display: "OK",
     keys:'OK',
-    note:'single administratr is permitted'
+    note:'Public key can be enabled by any administrator, while private key can be enabled by the creator'
   },
   {
-    state: "Panding Delete",
+    state: "Pending Delete",
     sign: "NOK",
     display: "OK",
     keys:'OK',
-    note:'enabled key requires multiple administrators to delete（>=3）'
+    note:'Public Key requires multiple administrators to request deleting（>=3), while private key can be deleted by the creator directly'
   },
   {
     state: "Deleted",
