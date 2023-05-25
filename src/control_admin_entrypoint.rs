@@ -24,13 +24,13 @@ use crate::util::error::{Result};
 use crate::util::sign::KeyType;
 use clap::{Parser, Subcommand};
 use clap::{Args};
+use tokio_util::sync::CancellationToken;
 use crate::domain::datakey::entity::{DataKey};
 use crate::domain::user::entity::User;
 use crate::presentation::handler::control::model::datakey::dto::{CreateDataKeyDTO};
 use crate::presentation::handler::control::model::user::dto::UserIdentity;
 
 mod util;
-mod client;
 mod infra;
 mod domain;
 mod application;
@@ -151,7 +151,8 @@ async fn main() -> Result<()> {
     let path = app.config.unwrap_or(format!("{}/{}", env::current_dir().expect("current dir not found").display(),
                                             "config/server.toml"));
     let server_config = util::config::ServerConfig::new(path);
-    let control_server = presentation::server::control_server::ControlServer::new(server_config.config).await?;
+    //cancel token will never been used/canceled here cause it's only used for background threads in control server instance.
+    let control_server = presentation::server::control_server::ControlServer::new(server_config.config, CancellationToken::new()).await?;
     //handle commands
     match app.command {
         Some(Commands::CreateAdmin(create_admin)) => {

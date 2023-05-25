@@ -31,7 +31,7 @@ username = "freesky-edward"
 password = ""
 domain="freesky-edward"
 [memory.encryption-engine]
-keep_in_days = 180
+rotate_in_days = 90
 algorithm = "aes256gsm"
 [database]
 connection_url = "mysql://test:test@127.0.0.1:3306/signatrust"

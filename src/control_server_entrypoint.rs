@@ -84,7 +84,7 @@ async fn main() -> Result<()> {
     //prepare config and logger
     env_logger::init();
     //control server starts
-    let control_server = presentation::server::control_server::ControlServer::new(SERVERCONFIG.clone()).await?;
+    let control_server = presentation::server::control_server::ControlServer::new(SERVERCONFIG.clone(), CANCEL_TOKEN.clone()).await?;
     control_server.run().await?;
     Ok(())
 }

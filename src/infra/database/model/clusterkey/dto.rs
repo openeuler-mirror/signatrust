@@ -27,7 +27,6 @@ pub(super) struct ClusterKeyDTO {
     pub algorithm: String,
     pub identity: String,
     pub create_at: chrono::DateTime<chrono::Utc>,
-    pub expire_at: chrono::DateTime<chrono::Utc>,
 }
 
 impl From<ClusterKeyDTO> for ClusterKey {
@@ -38,7 +37,6 @@ impl From<ClusterKeyDTO> for ClusterKey {
             algorithm: dto.algorithm,
             identity: dto.identity,
             create_at: dto.create_at,
-            expire_at: dto.expire_at,
         }
     }
 }
@@ -51,7 +49,6 @@ impl From<ClusterKey> for ClusterKeyDTO {
             algorithm: cluster_key.algorithm,
             identity: cluster_key.identity,
             create_at: cluster_key.create_at,
-            expire_at: cluster_key.expire_at,
         }
     }
 }

@@ -54,7 +54,7 @@ pub trait UserService: Send + Sync{
     async fn validate_user(&self, code: &str) -> Result<User>;
     async fn validate_token_and_email(&self, email: &str, token: &str) -> Result<bool>;
     //method below used for maintenance
-    fn start_loop(&self, cancel_token: CancellationToken) -> Result<()>;
+    fn start_cache_cleanup_loop(&self, cancel_token: CancellationToken) -> Result<()>;
 }
 
 #[derive(Deserialize, Debug)]
@@ -239,7 +239,7 @@ where
         Ok(email == user.email)
     }
 
-    fn start_loop(&self, cancel_token: CancellationToken) -> Result<()> {
+    fn start_cache_cleanup_loop(&self, cancel_token: CancellationToken) -> Result<()> {
         let tokens = self.tokens.clone();
         let mut interval = time::interval(Duration::from_secs(120));
         tokio::spawn(async move {
