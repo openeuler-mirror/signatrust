@@ -48,17 +48,17 @@ async fn login(user_service: web::Data<dyn UserService>) -> Result<impl Responde
 /// ## Example
 /// Call the api endpoint with following curl.
 /// ```text
-/// curl https://domain:port/api/v1/users/
+/// curl https://domain:port/api/v1/users/info
 /// ```
 #[utoipa::path(
     get,
-    path = "/api/v1/users/",
+    path = "/api/v1/users/info",
     security(
         ("Authorization" = [])
     ),
     responses(
         (status = 200, description = "get login user information", body = UserIdentity),
-        (status = 500, description = "Server internal error", body = ErrorMessage)
+        (status = 401, description = "Unauthorized", body = ErrorMessage),
     )
 )]
 async fn info(id: UserIdentity) -> Result<impl Responder, Error> {
@@ -199,7 +199,7 @@ async fn list_token(user: UserIdentity, user_service: web::Data<dyn UserService>
 
 pub fn get_scope() -> Scope {
     web::scope("/users")
-        .service(web::resource("/").route(web::get().to(info)))
+        .service(web::resource("/info").route(web::get().to(info)))
         .service(web::resource("/login").route(web::get().to(login)))
         .service(web::resource("/logout").route(web::post().to(logout)))
         .service(web::resource("/callback").route(web::get().to(callback)))
