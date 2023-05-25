@@ -87,7 +87,7 @@
     />
     <el-table-column
       prop="attributes.digest_algorithm"
-      label="Digest_algorithm"
+      label="Digest Algorithm"
       align="left"
       width="140"
       show-overflow-tooltip

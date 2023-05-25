@@ -1,11 +1,20 @@
 <script setup lang="ts">
 import AppHeader from "@/components/AppHeader.vue";
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from "vue-router";
+import { getToken } from "@/api/show";
+import { showGuard } from "@/shared/utils/login";
+const router = useRouter();
 const route = useRoute();
+const queryToken = () => {
+  getToken()
+    .then(() => router.push("./"))
+    .catch(() => showGuard());
+};
+queryToken()
 </script>
 
 <template>
-  <header ><app-header v-if="route.path !=='/login'"></app-header></header>
+  <header><app-header v-if="route.path !== '/login'"></app-header></header>
   <container>
     <router-view />
   </container>
@@ -46,4 +55,3 @@ body {
   background: #f5f6f8;
 }
 </style>
-

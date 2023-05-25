@@ -2,7 +2,7 @@ import axios from 'axios';
 import type { AxiosRequestConfig, AxiosPromise } from 'axios';
 import { ElMessage } from 'element-plus';
 import { baseUrls } from './baseUrl';
-import { getUserAuth, tokenFailIndicateLogin } from '@/shared/utils/login';
+import { getUserAuth, tokenFailIndicateLogin,showGuard } from '@/shared/utils/login';
 
 // 创建一个 axios 实例
 const service = axios.create({
@@ -50,6 +50,7 @@ service.interceptors.response.use(
     if (error.response.status === 401) {
       // ElMessage.error('Please log in again');
       // tokenFailIndicateLogin();
+      showGuard();
     }
     if (error.response.status === 403) {
       // router.replace({path:'/'});

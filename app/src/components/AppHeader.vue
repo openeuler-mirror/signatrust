@@ -13,7 +13,7 @@ const dropdownCommand = (type: string) => {
 const toTokens = () => {
   router.push({
     path: "/apiTokens",
-  });
+  }); 
 };
 </script>
 <template>
@@ -36,13 +36,6 @@ const toTokens = () => {
                 @click="toTokens"
               >
                 API tokens
-              </el-dropdown-item>
-              <el-dropdown-item
-                class="construction-quit"
-                command="logout"
-                @click="showGuard"
-              >
-                Login
               </el-dropdown-item>
               <el-dropdown-item
                 class="construction-quit"
