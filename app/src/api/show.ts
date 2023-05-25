@@ -12,10 +12,9 @@ import http from './request';
 // });
 
 // 换取token
-export const getToken = (param:any) => http({
+export const getToken = () => http({
     method:'get',
-    url:'/api/v1/users/callback',
-    params:param
+    url:'/api/v1/users/info',
 
 });
 

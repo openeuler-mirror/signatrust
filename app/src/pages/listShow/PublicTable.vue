@@ -6,7 +6,7 @@
   <div class="search">
     <el-input
       v-model="searchInput"
-      placeholder="请输入Name"
+      placeholder="Search by Name"
       :prefix-icon="Search"
       @change="querySearch"
       @clear="clearSearchInput"
@@ -68,7 +68,7 @@
     />
     <el-table-column
       prop="attributes.digest_algorithm"
-      label="Digest_algorithm"
+      label="Digest Algorithm"
       align="left"
       width="140"
       show-overflow-tooltip
