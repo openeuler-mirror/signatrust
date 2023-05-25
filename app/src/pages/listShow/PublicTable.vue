@@ -6,7 +6,7 @@
   <div class="search">
     <el-input
       v-model="searchInput"
-      placeholder="请输入Name"
+      placeholder="Search by Name"
       :prefix-icon="Search"
       @change="querySearch"
       @clear="clearSearchInput"

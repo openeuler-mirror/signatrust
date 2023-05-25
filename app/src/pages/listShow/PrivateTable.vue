@@ -1,12 +1,12 @@
 <template>
-  <div class="title">Private Keys</div>
+  <div class="title">Personal Keys</div>
   <div class="smalltitle">
     ({{ useData.pgpPriData }} openPGP keys,{{ useData.x509PriData }} X509 keys)
   </div>
   <div class="search">
     <el-input
       v-model="searchInput"
-      placeholder="请输入Name"
+      placeholder="Search by Name"
       :prefix-icon="Search"
       @change="querySearch"
       @clear="clearSearchInput"
