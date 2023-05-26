@@ -81,7 +81,7 @@ username = ""
 password = ""
 domain=""
 [memory.encryption-engine]
-keep_in_days = 180
+rotate_in_days = 90
 algorithm = "aes256gsm"
 ```
 

@@ -75,12 +75,13 @@ impl DataServer {
             info!("tls key and cert not configured, data server tls will be disabled");
             return Ok(());
         }
+        let ca_root = self.server_config.read()?.get_string("ca_root").expect("ca_root not configured");
+        let tls_cert = self.server_config.read()?.get_string("tls_cert")?;
+        let tls_key = self.server_config.read()?.get_string("tls_key")?;
         self.ca_cert = Some(
-            Certificate::from_pem(
-                fs::read(self.server_config.read()?.get_string("ca_root")?).await?));
-        self.server_identity = Some(Identity::from_pem(
-            fs::read(self.server_config.read()?.get_string("tls_cert")?).await?,
-            fs::read(self.server_config.read()?.get_string("tls_key")?).await?));
+            Certificate::from_pem(fs::read(ca_root).await?));
+        self.server_identity = Some(Identity::from_pem(fs::read(tls_cert).await?,
+                                                       fs::read(tls_key).await?));
         Ok(())
     }
 
@@ -119,8 +120,8 @@ impl DataServer {
         let token_repo = TokenRepository::new(get_db_pool()?);
         let user_service = DBUserService::new(user_repo, token_repo, self.server_config.clone())?;
 
-        key_service.start_loop(self.cancel_token.clone())?;
-        user_service.start_loop(self.cancel_token.clone())?;
+        key_service.start_cache_cleanup_loop(self.cancel_token.clone())?;
+        user_service.start_cache_cleanup_loop(self.cancel_token.clone())?;
         if let Some(identity) = self.server_identity.clone() {
             server
                 .tls_config(ServerTlsConfig::new().identity(identity).client_ca_root(self.ca_cert.clone().unwrap()))?

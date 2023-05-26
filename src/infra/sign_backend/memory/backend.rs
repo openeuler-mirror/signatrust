@@ -98,6 +98,10 @@ impl SignBackend for MemorySignBackend {
         Ok(())
     }
 
+    async fn rotate_key(&mut self) -> Result<bool> {
+        self.engine.rotate_key().await
+    }
+
     async fn sign(&self, data_key: &DataKey, content: Vec<u8>, options: HashMap<String, String>) -> Result<Vec<u8>> {
         let sec_key = SecDataKey::load(data_key, &self.engine).await?;
         Signers::load_from_data_key(&data_key.key_type, sec_key)?.sign(content, options)

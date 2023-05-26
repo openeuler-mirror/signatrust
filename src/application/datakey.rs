@@ -23,6 +23,8 @@ use tokio::time::{Duration, self};
 
 use crate::util::signer_container::DataKeyContainer;
 use std::collections::HashMap;
+use std::sync::{Arc};
+use tokio::sync::RwLock;
 use tokio_util::sync::CancellationToken;
 use crate::presentation::handler::control::model::user::dto::UserIdentity;
 
@@ -31,7 +33,8 @@ pub trait KeyService: Send + Sync{
     async fn create(&self, data: &mut DataKey) -> Result<DataKey>;
     async fn import(&self, data: &mut DataKey) -> Result<DataKey>;
     async fn key_name_exists(&self, name: &String) -> Result<bool>;
-    async fn get_all(&self, user: Option<UserIdentity>,  visibility: Visibility) -> Result<Vec<DataKey>>;
+    async fn get_by_visibility(&self, user: Option<UserIdentity>,  visibility: Visibility) -> Result<Vec<DataKey>>;
+    async fn get_all(&self) -> Result<Vec<DataKey>>;
     async fn get_one(&self, user: Option<UserIdentity>, id: i32) -> Result<DataKey>;
     async fn request_delete(&self, user: UserIdentity, id: i32) -> Result<()>;
     async fn cancel_delete(&self, user: UserIdentity, id: i32) -> Result<()>;
@@ -41,7 +44,8 @@ pub trait KeyService: Send + Sync{
     async fn sign(&self, key_type: String, key_name: String, options: &HashMap<String, String>, data: Vec<u8>) ->Result<Vec<u8>>;
 
     //method below used for maintenance
-    fn start_loop(&self, cancel_token: CancellationToken) -> Result<()>;
+    fn start_cache_cleanup_loop(&self, cancel_token: CancellationToken) -> Result<()>;
+    fn start_key_rotate_loop(&self, cancel_token: CancellationToken) -> Result<()>;
 }
 
 
@@ -49,22 +53,22 @@ pub trait KeyService: Send + Sync{
 pub struct DBKeyService<R, S>
 where
     R: DatakeyRepository + Clone + 'static,
-    S: SignBackend + ?Sized
+    S: SignBackend + ?Sized + 'static
 {
     repository: R,
-    sign_service: Box<S>,
+    sign_service: Arc<RwLock<Box<S>>>,
     container: DataKeyContainer<R>
 }
 
 impl<R, S> DBKeyService<R, S>
     where
         R: DatakeyRepository + Clone + 'static,
-        S: SignBackend + ?Sized
+        S: SignBackend + ?Sized + 'static
 {
     pub fn new(repository: R, sign_service: Box<S>) -> Self {
         Self {
             repository: repository.clone(),
-            sign_service,
+            sign_service: Arc::new(RwLock::new(sign_service)),
             container: DataKeyContainer::new(repository)
         }
     }
@@ -84,16 +88,16 @@ impl<R, S> DBKeyService<R, S>
 #[async_trait]
 impl<R, S> KeyService for DBKeyService<R, S>
 where
-    R: DatakeyRepository + Clone,
-    S: SignBackend + ?Sized
+    R: DatakeyRepository + Clone + 'static,
+    S: SignBackend + ?Sized + 'static
 {
     async fn create(&self, data: &mut DataKey) -> Result<DataKey> {
-        self.sign_service.generate_keys(data).await?;
+        self.sign_service.read().await.generate_keys(data).await?;
         self.repository.create(data.clone()).await
     }
 
     async fn import(&self, data: &mut DataKey) -> Result<DataKey> {
-        self.sign_service.validate_and_update(data).await?;
+        self.sign_service.read().await.validate_and_update(data).await?;
         self.repository.create(data.clone()).await
     }
 
@@ -104,7 +108,7 @@ where
         Ok(false)
     }
 
-    async fn get_all(&self, user: Option<UserIdentity>, visibility: Visibility) -> Result<Vec<DataKey>> {
+    async fn get_by_visibility(&self, user: Option<UserIdentity>, visibility: Visibility) -> Result<Vec<DataKey>> {
         if visibility == Visibility::Private {
             if user.is_none() {
                 return Err(Error::UnprivilegedError);
@@ -112,6 +116,10 @@ where
             return self.repository.get_private_keys(user.unwrap().id).await;
         }
         self.repository.get_public_keys().await
+    }
+
+    async fn get_all(&self) -> Result<Vec<DataKey>> {
+        self.repository.get_all_keys().await
     }
 
     async fn get_one(&self, user: Option<UserIdentity>,  id: i32) -> Result<DataKey> {
@@ -145,7 +153,7 @@ where
 
     async fn export_one(&self, user: Option<UserIdentity>, id: i32) -> Result<DataKey> {
         let mut key = self.get_and_check_permission(user, id).await?;
-        self.sign_service.decode_public_keys(&mut key).await?;
+        self.sign_service.read().await.decode_public_keys(&mut key).await?;
         Ok(key)
     }
 
@@ -160,11 +168,11 @@ where
     }
 
     async fn sign(&self, key_type: String, key_name: String, options: &HashMap<String, String>, data: Vec<u8>) -> Result<Vec<u8>> {
-        self.sign_service.sign(
+        self.sign_service.read().await.sign(
             &self.container.get_data_key(key_type, key_name).await?, data, options.clone()).await
     }
 
-    fn start_loop(&self, cancel_token: CancellationToken) -> Result<()> {
+    fn start_cache_cleanup_loop(&self, cancel_token: CancellationToken) -> Result<()> {
         let container = self.container.clone();
         let mut interval = time::interval(Duration::from_secs(120));
         tokio::spawn(async move {
@@ -175,7 +183,37 @@ where
                         container.clear_keys().await;
                     }
                     _ = cancel_token.cancelled() => {
-                        info!("cancel token received, will quit datakey refresher");
+                        info!("cancel token received, will quit datakey clean loop");
+                        break;
+                    }
+                }
+            }
+
+        });
+        Ok(())
+    }
+
+    fn start_key_rotate_loop(&self, cancel_token: CancellationToken) -> Result<()> {
+        let sign_service = self.sign_service.clone();
+        let mut interval = time::interval(Duration::from_secs(60 * 60 * 2));
+        tokio::spawn(async move {
+            loop {
+                tokio::select! {
+                    _ = interval.tick() => {
+                        info!("start to rotate the keys");
+                        match sign_service.write().await.rotate_key().await {
+                            Ok(changed) => {
+                                if changed {
+                                    info!("keys has been successfully rotated");
+                                }
+                            }
+                            Err(e) => {
+                                error!("failed to rotate key: {}", e);
+                            }
+                        }
+                    }
+                    _ = cancel_token.cancelled() => {
+                        info!("cancel token received, will quit key rotate loop");
                         break;
                     }
                 }

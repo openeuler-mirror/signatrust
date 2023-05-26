@@ -16,7 +16,7 @@
 
 use crate::util::{error::Result, key};
 use secstr::SecVec;
-use chrono::{DateTime, Duration, Utc};
+use chrono::{DateTime, Utc};
 use std::fmt::{Display, Formatter};
 use std::vec::Vec;
 
@@ -29,7 +29,6 @@ pub struct ClusterKey {
     pub algorithm: String,
     pub identity: String,
     pub create_at: DateTime<Utc>,
-    pub expire_at: DateTime<Utc>,
 }
 
 impl Default for ClusterKey {
@@ -40,7 +39,6 @@ impl Default for ClusterKey {
             algorithm: "".to_string(),
             identity: "".to_string(),
             create_at: Default::default(),
-            expire_at: Default::default(),
         }
     }
 }
@@ -56,7 +54,7 @@ impl Display for ClusterKey {
 }
 
 impl ClusterKey {
-    pub fn new(data: Vec<u8>, algorithm: String, keep_in_days: i64) -> Result<Self> {
+    pub fn new(data: Vec<u8>, algorithm: String) -> Result<Self> {
         let now = Utc::now();
         let identity = format!("{}-{}", algorithm, now.format("%d-%m-%Y"));
         Ok(ClusterKey {
@@ -65,7 +63,6 @@ impl ClusterKey {
             algorithm,
             identity,
             create_at: now,
-            expire_at: now + Duration::days(keep_in_days),
         })
     }
 }
@@ -76,6 +73,7 @@ pub struct SecClusterKey {
     pub data: SecVec<u8>,
     pub algorithm: String,
     pub identity: String,
+    pub create_at: DateTime<Utc>,
 }
 
 impl Default for SecClusterKey {
@@ -86,6 +84,7 @@ impl Default for SecClusterKey {
             data: SecVec::new(vec![0, 0, 0, 0]),
             algorithm: "".to_string(),
             identity: "".to_string(),
+            create_at: Default::default(),
         }
     }
 }
@@ -103,6 +102,7 @@ impl SecClusterKey {
             )),
             identity: cluster_key.identity,
             algorithm: cluster_key.algorithm,
+            create_at: cluster_key.create_at,
         })
     }
 }
@@ -111,8 +111,8 @@ impl Display for SecClusterKey {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "id: {}, data: ******, algorithm: {}",
-            self.id, self.algorithm
+            "id: {}, data: ******, algorithm: {} create_at: {}",
+            self.id, self.algorithm, self.create_at
         )
     }
 }

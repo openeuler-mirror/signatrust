@@ -39,12 +39,11 @@ impl ClusterKeyRepository {
 impl Repository for ClusterKeyRepository {
     async fn create(&self, cluster_key: ClusterKey) -> Result<()> {
         let dto = ClusterKeyDTO::from(cluster_key);
-        let _ : Option<ClusterKeyDTO> = sqlx::query_as("INSERT IGNORE INTO cluster_key(data, algorithm, identity, create_at, expire_at) VALUES (?, ?, ?, ?, ?)")
+        let _ : Option<ClusterKeyDTO> = sqlx::query_as("INSERT IGNORE INTO cluster_key(data, algorithm, identity, create_at) VALUES (?, ?, ?, ?)")
             .bind(&dto.data)
             .bind(&dto.algorithm)
             .bind(&dto.identity)
             .bind(dto.create_at)
-            .bind(dto.expire_at)
             .fetch_optional(&self.db_pool)
             .await?;
         Ok(())

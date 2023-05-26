@@ -94,6 +94,18 @@ impl Repository for DataKeyRepository {
         }
         Ok(results)
     }
+
+    async fn get_all_keys(&self) -> Result<Vec<DataKey>> {
+        let dtos: Vec<DataKeyDTO> = sqlx::query_as("SELECT * FROM data_key WHERE key_state != ?")
+            .bind(KeyState::Deleted.to_string())
+            .fetch_all(&self.db_pool)
+            .await?;
+        let mut results = vec![];
+        for dto in dtos.into_iter() {
+            results.push(DataKey::try_from(dto)?);
+        }
+        Ok(results)
+    }
     async fn get_private_keys(&self, user_id: i32) -> Result<Vec<DataKey>> {
         let dtos: Vec<DataKeyDTO> = sqlx::query_as("SELECT * FROM data_key WHERE key_state != ? and visibility = ? and user = ?")
             .bind(KeyState::Deleted.to_string())

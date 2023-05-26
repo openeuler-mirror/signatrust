@@ -141,7 +141,7 @@ async fn create_data_key(user: UserIdentity, key_service: web::Data<dyn KeyServi
 )]
 async fn list_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, key_query: web::Query<KeyQuery>) -> Result<impl Responder, Error> {
     let key_visibility = Visibility::from_str(key_query.visibility.as_str())?;
-    let keys = key_service.into_inner().get_all(Some(user), key_visibility).await?;
+    let keys = key_service.into_inner().get_by_visibility(Some(user), key_visibility).await?;
     let mut results = vec![];
     for k in keys {
         results.push(DataKeyDTO::try_from(k)?)

@@ -34,6 +34,7 @@ use crate::infra::database::model::datakey::repository as datakeyRepository;
 use crate::infra::database::pool::{create_pool, get_db_pool};
 use crate::presentation::handler::control::*;
 use actix_web::{dev::ServiceRequest};
+use tokio_util::sync::CancellationToken;
 use crate::util::error::Result;
 
 use crate::application::datakey::{DBKeyService, KeyService};
@@ -51,7 +52,7 @@ pub struct ControlServer {
     server_config: Arc<RwLock<Config>>,
     user_service: Arc<dyn UserService>,
     key_service: Arc<dyn KeyService>,
-
+    cancel_token: CancellationToken,
 }
 
 struct SecurityAddon;
@@ -106,7 +107,7 @@ impl Modify for SecurityAddon {
 struct ControlApiDoc;
 
 impl ControlServer {
-    pub async fn new(server_config: Arc<RwLock<Config>>) -> Result<Self> {
+    pub async fn new(server_config: Arc<RwLock<Config>>, cancel_token: CancellationToken) -> Result<Self> {
         let database = server_config.read()?.get_table("database")?;
         create_pool(&database).await?;
         let data_repository = datakeyRepository::DataKeyRepository::new(
@@ -130,6 +131,7 @@ impl ControlServer {
             user_service,
             key_service,
             server_config,
+            cancel_token,
         };
         Ok(server)
     }
@@ -156,6 +158,8 @@ impl ControlServer {
             self.user_service.clone());
         let key_service = web::Data::from(
             self.key_service.clone());
+
+        key_service.start_key_rotate_loop(self.cancel_token.clone())?;
 
         //prepare redis store
         let store = RedisSessionStore::new(&redis_connection).await?;
