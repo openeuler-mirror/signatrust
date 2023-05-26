@@ -30,18 +30,18 @@ use pgp::types::{CompressionAlgorithm, SecretKeyTrait};
 use pgp::Deserializable;
 use serde::Deserialize;
 use smallvec::*;
-
 use std::collections::HashMap;
-
 use std::io::{Cursor};
 use std::str::from_utf8;
-
-
 use validator::{Validate, ValidationError};
 use pgp::composed::StandaloneSignature;
-use crate::domain::datakey::entity::{DataKey, DataKeyContent, SecDataKey};
+use crate::domain::datakey::entity::{DataKey, DataKeyContent, SecDataKey, KeyType as DataKeyType};
 use crate::util::key::encode_u8_to_hex_string;
 use super::util::{validate_utc_time_not_expire, validate_utc_time, attributes_validate};
+
+const VALID_KEY_TYPE: [&'static str; 2] = ["rsa", "eddsa"];
+const VALID_KEY_SIZE: [&'static str; 3] = ["2048", "3072", "4096"];
+const VALID_DIGEST_ALGORITHM: [&'static str; 10] = ["none", "md5", "sha1", "sha1", "sha2_256", "sha2_384","sha2_512","sha2_224","sha3_256", "sha3_512"];
 
 #[derive(Debug, Validate, Deserialize)]
 pub struct PgpKeyImportParameter {
@@ -82,7 +82,6 @@ impl PgpKeyGenerationParameter {
     pub fn get_key(&self) -> Result<KeyType> {
         return match self.key_type.as_str() {
             "rsa" => Ok(KeyType::Rsa(self.key_length.parse::<u32>()?)),
-            "ecdh" => Ok(KeyType::ECDH),
             "eddsa" => Ok(KeyType::EdDSA),
             _ => Err(Error::ParameterError(
                 "invalid key type for openpgp".to_string(),
@@ -113,21 +112,21 @@ pub fn get_digest_algorithm(hash_digest: &str) -> Result<HashAlgorithm> {
 }
 
 fn validate_key_type(key_type: &str) -> std::result::Result<(), ValidationError> {
-    if !vec!["rsa", "ecdh", "eddsa"].contains(&key_type) {
+    if !VALID_KEY_TYPE.contains(&key_type) {
         return Err(ValidationError::new("invalid key type, possible values are rsa/ecdh/eddsa"));
     }
     Ok(())
 }
 
 fn validate_digest_algorithm_type(key_type: &str) -> std::result::Result<(), ValidationError> {
-    if !vec!["none", "md5", "sha1", "sha1", "sha2_256", "sha2_384","sha2_512","sha2_224","sha3_256", "sha3_512"].contains(&key_type) {
+    if !VALID_DIGEST_ALGORITHM.contains(&key_type) {
         return Err(ValidationError::new("invalid hash algorithm, possible values are none/md5/sha1/sha1/sha2_256/sha2_384/sha2_512/sha2_224/sha3_256/sha3_512"));
     }
     Ok(())
 }
 
 fn validate_key_size(key_size: &str) -> std::result::Result<(), ValidationError> {
-    if !vec!["2048", "3072", "4096"].contains(&key_size) {
+    if !VALID_KEY_SIZE.contains(&key_size) {
         return Err(ValidationError::new("invalid key size, possible values are 2048/3072/4096"));
     }
     Ok(())
@@ -182,6 +181,7 @@ impl SignPlugins for OpenPGPPlugin {
             SignedPublicKey::from_string(public).map_err(|e| Error::KeyParseError(e.to_string()))?;
         //update key attributes
         key.fingerprint = encode_u8_to_hex_string(&secret_key.fingerprint());
+        //NOTE: currently we can not get expire at from openpgp key
         match public_key.expires_at() {
             None => {}
             Some(time) => {
@@ -283,5 +283,260 @@ impl SignPlugins for OpenPGPPlugin {
         write_packet(&mut cursor, &signature_packet)
             .map_err(|e| Error::SignError(self.identity.clone(), e.to_string()))?;
         Ok(signature_bytes)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use chrono::{Duration, Utc};
+    use rand::Rng;
+    use secstr::SecVec;
+    use crate::domain::datakey::entity::{KeyState, Visibility};
+    use crate::util::options::DETACHED;
+
+    fn get_default_parameter() -> HashMap<String, String> {
+        HashMap::from([
+            ("name".to_string(), "fake_name".to_string()),
+            ("email".to_string(), "fake_email@email.com".to_string()),
+            ("key_type".to_string() ,"rsa".to_string()),
+            ("key_length".to_string(), "2048".to_string()),
+            ("digest_algorithm".to_string(), "sha2_256".to_string()),
+            ("create_at".to_string(), Utc::now().to_string()),
+            ("expire_at".to_string(), (Utc::now() + Duration::days(365)).to_string()),
+            ("passphrase".to_string(), "123456".to_string()),
+        ])
+    }
+
+    fn get_default_datakey() -> DataKey {
+        let now = Utc::now();
+        DataKey {
+            id: 0,
+            name: "fake".to_string(),
+            visibility: Visibility::Public,
+            description: "fake description".to_string(),
+            user: 1,
+            attributes: get_default_parameter(),
+            key_type: DataKeyType::OpenPGP,
+            fingerprint: "".to_string(),
+            private_key: vec![],
+            public_key: vec![],
+            certificate: vec![],
+            create_at: now,
+            expire_at: now,
+            key_state: KeyState::Enabled,
+        }
+    }
+
+    #[test]
+    fn test_key_type_generate_parameter() {
+        let mut parameter = get_default_parameter();
+        parameter.insert("key_type".to_string(), "invalid".to_string());
+        attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect_err("invalid key type");
+        parameter.insert("key_type".to_string(), "".to_string());
+        attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect_err("invalid empty key type");
+        for key_type in VALID_KEY_TYPE {
+            parameter.insert("key_type".to_string(), key_type.to_string());
+            attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect("valid key type");
+        }
+    }
+
+    #[test]
+    fn test_key_size_generate_parameter() {
+        let mut parameter = get_default_parameter();
+        parameter.insert("key_length".to_string(),  "1024".to_string());
+        attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect_err("invalid key length");
+        parameter.insert("key_length".to_string(), "".to_string());
+        attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect_err("invalid empty key length");
+        for key_length in VALID_KEY_SIZE {
+            parameter.insert("key_length".to_string(), key_length.to_string());
+            attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect("valid key length");
+        }
+    }
+
+    #[test]
+    fn test_digest_algorithm_generate_parameter() {
+        let mut parameter = get_default_parameter();
+        parameter.insert("digest_algorithm".to_string(), "1234".to_string());
+        attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect_err("invalid digest algorithm");
+        parameter.insert("digest_algorithm".to_string(),"".to_string());
+        attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect_err("invalid empty digest algorithm");
+        for key_length in VALID_DIGEST_ALGORITHM {
+            parameter.insert("digest_algorithm".to_string(),key_length.to_string());
+            attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect("valid digest algorithm");
+        }
+    }
+
+    #[test]
+    fn test_create_at_generate_parameter() {
+        let mut parameter = get_default_parameter();
+        parameter.insert("create_at".to_string(),"1234".to_string());
+        attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect_err("invalid create at");
+        parameter.insert("create_at".to_string(),"".to_string());
+        attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect_err("invalid empty create at");
+        parameter.insert("create_at".to_string(), Utc::now().to_string());
+        attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect("valid create at");
+    }
+
+    #[test]
+    fn test_expire_at_generate_parameter() {
+        let mut parameter = get_default_parameter();
+        parameter.insert("expire_at".to_string(),"1234".to_string());
+        attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect_err("invalid expire at");
+        parameter.insert("expire_at".to_string(), "".to_string());
+        attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect_err("invalid empty expire at");
+        parameter.insert("expire_at".to_string(),(Utc::now() - Duration::days(1)).to_string());
+        attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect_err("expire at expired");
+        parameter.insert("expire_at".to_string(), (Utc::now() + Duration::minutes(1)).to_string());
+        attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect("valid expire at");
+    }
+
+    #[test]
+    fn test_email_generate_parameter() {
+        let mut parameter = get_default_parameter();
+        parameter.insert("email".to_string(), "fake".to_string());
+        attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect_err("invalid email");
+        parameter.insert("email".to_string(), "".to_string());
+        attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect_err("invalid empty email");
+        parameter.insert("email".to_string(), "tommylikehu@gmail.com".to_string());
+        attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect("valid email");
+    }
+
+    #[test]
+    fn test_generate_key_with_possible_digest_hash() {
+        let mut parameter = get_default_parameter();
+        //choose 3 random digest algorithm
+        for _ in [1,2,3] {
+            let num = rand::thread_rng().gen_range(0..VALID_DIGEST_ALGORITHM.len());
+            parameter.insert("digest_algorithm".to_string(), VALID_DIGEST_ALGORITHM[num].to_string());
+            OpenPGPPlugin::generate_keys(&parameter).expect(format!("generate key with digest {} successfully", VALID_DIGEST_ALGORITHM[num]).as_str());
+        }
+
+    }
+
+    #[test]
+    fn test_generate_key_with_possible_length() {
+        for key_size in VALID_KEY_SIZE{
+            let mut parameter = get_default_parameter();
+            parameter.insert("key_size".to_string(), key_size.to_string());
+            OpenPGPPlugin::generate_keys(&parameter).expect("generate key successfully");
+        }
+    }
+
+    #[test]
+    fn test_generate_key_with_possible_key_type() {
+        for key_type in VALID_KEY_TYPE{
+            let mut parameter = get_default_parameter();
+            parameter.insert("key_type".to_string(), key_type.to_string());
+            OpenPGPPlugin::generate_keys(&parameter).expect("generate key successfully");
+        }
+    }
+
+    #[test]
+    fn test_generate_key_with_without_passphrase() {
+        let mut parameter = get_default_parameter();
+        OpenPGPPlugin::generate_keys(&parameter).expect("generate key successfully");
+        parameter.insert("passphrase".to_string(), "".to_string());
+        OpenPGPPlugin::generate_keys(&parameter).expect("generate key successfully");
+    }
+
+    #[test]
+    fn test_validate_and_update() {
+        let public_key = "-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mQGNBGRsiQsBDADKgFlRCXUEkgiV76THsg4OIgtL2ikjE9+N93jGOpXu6nR6Bg6D
+/Yjw8LehLpnGlAhwXLlNuG42i/KR7Hb3i75mH8PtOeE7Z/64SEz78/kO+Z5+kJFl
+zh3VC4MSqWbKFynTi+exR7hxJjGBanBzHjq67Jy7rtIKi9rgMARL2bD6mOZFm5CA
+tyyU3Qzte/KwN3MaMqHjFcu/Hk1pFID1UQ5Lde47DmoCTWBgKoAFnTgXcn35+Ofw
+mS9zo4+cN8hFgLsYo5CZD32lGuXFYInY85+wpLDT7SjwZkvCyc45Mlf1CUhCHWKm
+VOZy96sfGJ02w1zNW4nGKAG7F2apN+tb6IcK3v6PypDTfq3ApEZ7WgzHvorl0mOe
+u/C5vcvWNg7ii6LqJxbwBRxHdBL5bm53eOPbOhRXWFi349lscnNuxULxYDuT6Czr
+2oRI0+aUpU5QRHlhpYamYjyQa2i40kUPOZkxbBvwWY1qu9OvJE3OeUCDC0htTl8A
+5or9UaakwWCgsM0AEQEAAbQiaHVzaGVuZyAoMTIzKSA8aHVzaGVuZ0BodWF3ZWku
+Y29tPokB1AQTAQoAPhYhBGB4DoA1CAGjlbGwgwKltfuHzQWOBQJkbIkLAhsDBQkA
+D9IABQsJCAcCBhUKCQgLAgQWAgMBAh4BAheAAAoJEAKltfuHzQWOw8EMAISYNLaH
+w0yVGh+3VPyKg73ePYV/Ms7G83zAX8fDHC41E2I5zraN6N7Q0QAh53RKSXWu+7GS
+PIXKOTRtqkXPpRPA5hEnMAB3a/nBmx6npgUmalSiFr7G63d0zcIwDseLNWBTI5MO
+rdDGXznX506xNYJYjYWkRB8kNvs8agYavwO2D47bwjOmJbZ/AK24//enHvGb6Rfh
+fuCptburbPY1lON93PzrdSzFcVdF6BnLXTRXqaAzPFG/zBIusMd8xMX8n/Cj5CL3
+lcsR17MTni7aywPKPljWFLM/jPLl5LWkSQyQqd/iOipTqX4cUgQkPdtcR/5wrQMN
+tHMpstFn/Ntj2iUWaJUgptWhAzROOVKRlbvPIpSwEZJQ1xoWWdMS0lCRlRp1Yf1r
+AG0YQxffrmfhLtZcHCByUGLzjON5Qg5D1BXaNfqo9n1ZzoVSPuFYamXBIPRkYqfl
+Q8rJlaXFZEkEAZYoz953QkhYv4MsbFN8ZvXFQyc3WPm6RYjdcY9AGaelhA==
+=qpU4
+-----END PGP PUBLIC KEY BLOCK-----";
+        let private_key = "-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+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
+j0AZp6WE
+=eDZk
+-----END PGP PRIVATE KEY BLOCK-----";
+        let mut datakey = get_default_datakey();
+        datakey.public_key = public_key.as_bytes().to_vec();
+        datakey.private_key = private_key.as_bytes().to_vec();
+        OpenPGPPlugin::validate_and_update(&mut datakey).expect("validate and update should work");
+        assert_eq!("60780E80350801A395B1B08302A5B5FB87CD058E", datakey.fingerprint);
+    }
+
+    #[test]
+    fn test_sign_with_armored_text() {
+        let content = "hello world".as_bytes();
+        let mut parameter = get_default_parameter();
+        parameter.insert(DETACHED.to_string(), "true".to_string());
+        let keys = OpenPGPPlugin::generate_keys(&parameter).expect("generate key successfully");
+        let sec_keys = SecDataKey {
+            private_key: SecVec::new(keys.private_key.clone()),
+            public_key: SecVec::new(keys.public_key.clone()),
+            certificate: SecVec::new(keys.certificate.clone()),
+            identity: "".to_string(),
+            attributes: Default::default(),
+        };
+        let instance = OpenPGPPlugin::new(sec_keys).expect("create openpgp instance successfully");
+        let signature = instance.sign(content.to_vec(), parameter).expect("sign successfully");
+        let signature_text = from_utf8(&signature).expect("signature bytes to string should work");
+        assert_eq!(true, signature_text.contains("-----BEGIN PGP SIGNATURE-----"));
+        assert_eq!(true, signature_text.contains("-----END PGP SIGNATURE-----"));
+        let (standalone, _) = StandaloneSignature::from_string(signature_text).expect("parse signature successfully");
+        let public = from_utf8(&keys.public_key).expect("parse public key should work");
+        let (public_key, _) = SignedPublicKey::from_string(public).expect("parse signed public key should work");
+        standalone.verify(&public_key, content).expect("signature matches");
     }
 }
