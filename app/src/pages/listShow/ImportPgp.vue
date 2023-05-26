@@ -10,21 +10,21 @@
       <el-form-item label="Name" prop="name">
         <el-input
           v-model="formLabelAlign.name"
-          placeholder="name should be identical , ‘:’ character is not allowed"
+          placeholder="Name is identical, ‘:’ character is not allowed"
         />
       </el-form-item>
       <el-form-item label="Private key" prop="private_key">
         <el-input
           v-model="formLabelAlign.private_key"
           type="textarea"
-          placeholder="private key content in text format"
+          placeholder="Key content in pem format"
         />
       </el-form-item>
       <el-form-item label="Public key" prop="public_key">
         <el-input
           v-model="formLabelAlign.public_key"
           type="textarea"
-          placeholder="public key content in text format"
+          placeholder="Key content in pem format"
         />
       </el-form-item>
 
@@ -38,7 +38,7 @@
         <el-date-picker
           v-model="formLabelAlign.expire_at"
           type="date"
-          placeholder="Pick a day"
+          placeholder="Choose expire date time"
           :disabled-date="pickerOptions"
         />
       </el-form-item>
@@ -63,7 +63,7 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="Digest">
+        <el-form-item label="Digest Algorithm">
           <el-select v-model="formLabelAlign.digest_algorithm" class="m-2" size="small">
             <el-option
               v-for="item in optionsDigest"
@@ -77,16 +77,16 @@
       <el-form-item label="Type">
         <el-input placeholder="openPGP" disabled />
       </el-form-item>
-      <el-form-item label="Passpharse (optional)" prop="pass">
+      <el-form-item label="Passphrase (optional)" prop="pass">
         <el-input
           v-model="formLabelAlign.pass"
-          placeholder="openEuler Infra"
+          placeholder="Passphrase of this key"
           show-password
         />
       </el-form-item>
-      <el-form-item label="Passpharse (optional)" prop="paw2">
+      <el-form-item label="Passphrase (optional)" prop="paw2">
         <el-input
-          placeholder="openEuler Infra Again"
+          placeholder="Input passphrase again"
           v-model="formLabelAlign.paw2"
           show-password
         />

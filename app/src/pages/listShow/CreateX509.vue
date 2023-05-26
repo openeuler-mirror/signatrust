@@ -10,13 +10,13 @@
       <el-form-item label="Name" prop="name">
         <el-input
           v-model="formLabelAlign.name"
-          placeholder="name should be identical , ‘:’ character is not allowed"
+          placeholder="Name is identical, ‘:’ character is not allowed"
         />
       </el-form-item>
       <el-form-item label="Description" prop="description">
         <el-input
           v-model="formLabelAlign.description"
-          placeholder="used for openeuler 22:03 release"
+          placeholder="Description of this key"
         />
       </el-form-item>
       <el-form-item label="Type">
@@ -26,7 +26,7 @@
         <el-date-picker
           v-model="formLabelAlign.expire_at"
           type="date"
-          placeholder="Pick a day"
+          placeholder="Choose expire date time"
           :disabled-date="pickerOptions"
         />
       </el-form-item>
@@ -61,7 +61,7 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="Digest">
+          <el-form-item label="Digest Algorithm">
             <el-select v-model="formLabelAlign.digest_algorithm" class="m-2" size="small">
               <el-option
                 v-for="item in optionsDigest"
@@ -73,25 +73,25 @@
           </el-form-item>
         </div>
         <el-form-item label="Common Name(CN)" prop="common_name">
-          <el-input v-model="formLabelAlign.common_name" placeholder="Common Name(CN)" />
+          <el-input v-model="formLabelAlign.common_name" placeholder="Common Name" />
         </el-form-item>
         <el-form-item label="Locality(L)" prop="locality">
-          <el-input v-model="formLabelAlign.locality" placeholder="Locality(L)" />
+          <el-input v-model="formLabelAlign.locality" placeholder="Locality" />
         </el-form-item>
         <el-form-item label="Organizational Unit(OU)" prop="organizational_unit">
           <el-input
             v-model="formLabelAlign.organizational_unit"
-            placeholder="Organizational Unit(OU)"
+            placeholder="Organizational Unit"
           />
         </el-form-item>
         <el-form-item label="State or ProvinceName(ST)" prop="province_name">
-          <el-input v-model="formLabelAlign.province_name" placeholder="GuangDong" />
+          <el-input v-model="formLabelAlign.province_name" placeholder="State or ProvinceName" />
         </el-form-item>
         <el-form-item label="Organization(O)" prop="organization">
-          <el-input v-model="formLabelAlign.organization" placeholder="openEuler" />
+          <el-input v-model="formLabelAlign.organization" placeholder="Organization" />
         </el-form-item>
         <el-form-item label="Country Name(C)" prop="country_name">
-          <el-input v-model="formLabelAlign.country_name" placeholder="CN" />
+          <el-input v-model="formLabelAlign.country_name" placeholder="Country Name" />
         </el-form-item>
       </div>
     </div>
