@@ -264,7 +264,7 @@ mod test {
     use chrono::{Duration, Utc};
     use secstr::SecVec;
     use crate::domain::datakey::entity::{KeyState, Visibility};
-    use crate::util::options::DETACHED;
+    use crate::util::options::{DETACHED, SIGN_TYPE};
 
     fn get_default_parameter() -> HashMap<String, String> {
         HashMap::from([
@@ -468,5 +468,22 @@ X5BboR/QJakEK+H+EUQAiDs=
         X509Plugin::validate_and_update(&mut datakey).expect("validate and update should work");
         assert_eq!("2123-04-29 09:48:00 UTC", datakey.expire_at.to_string());
         assert_eq!("C9345187DFA0BFB6DCBCC4827BBEA7312E43754B", datakey.fingerprint);
+    }
+
+    #[test]
+    fn test_sign_successful() {
+        let content = "hello world".as_bytes();
+        let mut parameter = get_default_parameter();
+        parameter.insert(SIGN_TYPE.to_string(), SignType::Cms.to_string());
+        let keys = X509Plugin::generate_keys(&parameter).expect("generate key successfully");
+        let sec_keys = SecDataKey {
+            private_key: SecVec::new(keys.private_key.clone()),
+            public_key: SecVec::new(keys.public_key.clone()),
+            certificate: SecVec::new(keys.certificate.clone()),
+            identity: "".to_string(),
+            attributes: Default::default(),
+        };
+        let instance = X509Plugin::new(sec_keys).expect("create x509 instance successfully");
+        let _signature = instance.sign(content.to_vec(), parameter).expect("sign successfully");
     }
 }
