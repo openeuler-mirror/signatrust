@@ -27,6 +27,7 @@ export const useDataStore = defineStore('data', {
       pageSize: 10,
       searchInput: '',
     },
+    email:''
   }),
   actions: {
     async getTableData() {
@@ -40,9 +41,9 @@ export const useDataStore = defineStore('data', {
         this.pagination.currentPage * this.pagination.pageSize
       );
       if (this.pagination.searchInput) {
-        this.tableData = this.realData.filter(
-          (item: any) => item.name === this.pagination.searchInput
-        );
+        this.tableData = this.realData.filter((item: any) =>
+        item.name.toLowerCase().includes(this.pagination.searchInput)
+      );
         this.pagination.totalCount = this.tableData.length;
       } else {
         this.pagination.totalCount = this.realData.length;
@@ -67,7 +68,7 @@ export const useDataStore = defineStore('data', {
       );
       if (this.paginationPri.searchInput) {
         this.tablePriData = this.realPriData.filter(
-          (item: any) => item.name === this.paginationPri.searchInput
+          (item: any) => item.name.toLowerCase().includes(this.paginationPri.searchInput)
         );
         this.paginationPri.totalCount = this.tablePriData.length;
       } else {

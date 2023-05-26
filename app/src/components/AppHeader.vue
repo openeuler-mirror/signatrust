@@ -2,31 +2,42 @@
 import { ref, onMounted, reactive, watch } from "vue";
 import { showGuard, logout, useStoreData, getUserAuth } from "@/shared/utils/login";
 import { useRouter } from "vue-router";
+import { useDataStore } from "@/store/data";
+const useData = useDataStore();
 const router = useRouter();
 const isLogin = ref(false);
-const name = ref("Admin");
 const dropdownCommand = (type: string) => {
   if (type === "logout") {
     isLogin.value = false;
   }
 };
 const toTokens = () => {
-  router.push({
-    path: "/apiTokens",
-  }); 
+  router.push("/tokens");
+};
+const toHome = () => {
+  router.push("/");
+};
+const toOpenEuler = () => {
+  window.open("https://openeuler.org");
 };
 </script>
 <template>
   <div class="common-content-bg-color common-level-one-color app-header">
     <div class="app-header-logo">
-      Signatrust
-      <img src="../assets/Black-horizontal.png" alt="" class="title" />
+      <span @click="toHome" style="cursor: pointer">Signatrust</span>
+      <img
+        src="../assets/Black-horizontal.png"
+        alt=""
+        @click="toOpenEuler"
+        class="title"
+        style="cursor: pointer"
+      />
     </div>
     <div class="app-header-opt">
       <div class="app-header-opt-control">
         <el-dropdown trigger="click" @command="dropdownCommand">
           <span class="construction-user-name">
-            {{ name }}
+            {{ useData.email }}
           </span>
           <template #dropdown>
             <el-dropdown-menu>

@@ -48,15 +48,15 @@ service.interceptors.response.use(
     // 超出 2xx 范围的状态码都会触发该函数。
     // 对响应错误做点什么
     if (error.response.status === 401) {
-      // ElMessage.error('Please log in again');
-      // tokenFailIndicateLogin();
+      ElMessage.error('Please log in again');
       showGuard();
     }
-    if (error.response.status === 403) {
-      // router.replace({path:'/'});
-      // useUserStore.state.dialogFormVisible = true;
+    // if (error.response.status === 400) {
+    //   ElMessage.error('Wrong request');
+    // }
+    if (error.response.status === 500) {
+      ElMessage.error('Server error');
     }
-    console.log(error);
     return Promise.reject(error);
   }
 );

@@ -22,7 +22,7 @@
       <el-form-item label="Type">
         <el-input placeholder="X509" disabled />
       </el-form-item>
-      <el-form-item label="Expire">
+      <el-form-item label="Expire" prop="expire_at">
         <el-date-picker
           v-model="formLabelAlign.expire_at"
           type="date"
@@ -116,7 +116,7 @@ const formLabelAlign = reactive<any>({
   expire_at: "",
   description: "",
   visibility: "private",
-  digest_algorithm: "none",
+  digest_algorithm: "md5",
   key_type: "rsa",
   key_length: "2048",
   common_name: "",
@@ -171,10 +171,6 @@ const optionsSize = [
 ];
 const optionsDigest = [
   {
-    value: "none",
-    label: "none",
-  },
-  {
     value: "md5",
     label: "md5",
   },
@@ -217,7 +213,7 @@ const isName = (rule: any, value: any, callback: any) => {
   if (!value) {
     callback();
   } else {
-    const reg = /^[a-zA-Z]{4,20}$/;
+    const reg = /^[a-zA-Z0-9-]{4,20}$/;
     const name = reg.test(value);
     if (!name) {
       callback(new Error("The value contains 4 to 20 English characters"));
@@ -237,7 +233,7 @@ const isDesc = (rule: any, value: any, callback: any) => {
   if (!value) {
     callback(console.log("avc"));
   } else {
-    const reg = /^[a-zA-Z]{1,100}$/;
+    const reg = /^[a-zA-Z0-9-]{1,100}$/;
     const desc = reg.test(value);
     if (!desc) {
       callback(new Error("The value contains a maximum of 100 English characters"));
@@ -249,7 +245,7 @@ const isDesc = (rule: any, value: any, callback: any) => {
 /* 公共校验 */
 const isCommon = (rule: any, value: any, callback: any) => {
   if (!value) {
-    callback(console.log("avc"));
+    callback();
   } else {
     const reg = /^[a-zA-Z]{1,30}$/;
     const desc = reg.test(value);
@@ -262,7 +258,7 @@ const isCommon = (rule: any, value: any, callback: any) => {
 };
 const isCountry = (rule: any, value: any, callback: any) => {
   if (!value) {
-    callback(console.log("avc"));
+    callback();
   } else {
     const reg = /^[a-zA-Z]{2,2}$/;
     const desc = reg.test(value);
@@ -307,6 +303,9 @@ const rules = reactive<FormRules>({
     { required: true, message: "please enter", trigger: "blur" },
     { validator: isCommon, trigger: "blur" },
   ],
+  expire_at: [
+    { required: true, message: "Please enter expire", trigger: ["blur", "change"] },
+  ],
 });
 //表单请求
 const newKey = () => {
@@ -314,6 +313,7 @@ const newKey = () => {
     useBase.dialogVisible = false;
     useData.getTableData();
     useData.getPriTableData();
+    cleanForm();
   });
 };
 //获取表单值
@@ -343,8 +343,6 @@ const submitForm = async (formEl: FormInstance | undefined) => {
       return false;
     }
   });
-  cleanForm()
-  formEl.resetFields();
 };
 //关闭表单
 const resetForm = (formEl: FormInstance | undefined) => {

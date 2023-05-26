@@ -13,6 +13,12 @@
           placeholder="Name should be identical, ‘:’ character is not allowed"
         />
       </el-form-item>
+      <el-form-item label="Description" prop="description">
+        <el-input
+          v-model="formLabelAlign.description"
+          placeholder="Description of this key"
+        />
+      </el-form-item>
       <el-form-item label="Private key" prop="private_key">
         <el-input
           v-model="formLabelAlign.private_key"
@@ -27,13 +33,14 @@
           placeholder="public key content in pem format"
         />
       </el-form-item>
-      <el-form-item label="Certificate">
+      <el-form-item label="Certificate" prop="certificate">
         <el-input
           v-model="formLabelAlign.certificate"
           type="textarea"
           placeholder="certificate content in pem format"
         />
       </el-form-item>
+      
       <el-form-item label="Visibility">
         <el-radio-group
           v-model="formLabelAlign.visibility"
@@ -44,7 +51,7 @@
           <el-radio label="public" title="123">Public</el-radio>
         </el-radio-group>
       </el-form-item>
-      <el-form-item label="Expire">
+      <el-form-item label="Expire" prop="expire_at">
         <el-date-picker
           v-model="formLabelAlign.expire_at"
           type="date"
@@ -93,6 +100,9 @@
       <el-button type="primary" @click="submitForm(ruleFormRef)"> Confirm </el-button>
     </div>
   </el-form>
+  <el-dialog v-model="dialogVisible" title="Warning" width="20%" :show-close="true" align-center>
+    {{ worryDetail }}
+  </el-dialog>
 </template>
 <script setup lang="ts">
 import { reactive, ref, watch, computed } from "vue";
@@ -104,6 +114,7 @@ import { originalDate } from "@/shared/utils/helper";
 const useData = useDataStore();
 const ruleFormRef = ref<FormInstance>();
 const useBase = useBaseStore();
+const dialogVisible = ref(false);
 const formLabelAlign = reactive<any>({
   name: "",
   description: "",
@@ -114,7 +125,7 @@ const formLabelAlign = reactive<any>({
   key_type: "x509",
   keytype: "rsa",
   key_length: "2048",
-  digest_algorithm: "sha1",
+  digest_algorithm: "md5",
 });
 const param = ref({
   attributes: {
@@ -158,10 +169,6 @@ const optionsSize = [
 ];
 const optionsDigest = [
   {
-    value: "none",
-    label: "none",
-  },
-  {
     value: "md5",
     label: "md5",
   },
@@ -192,7 +199,7 @@ const isName = (rule: any, value: any, callback: any) => {
   if (!value) {
     callback();
   } else {
-    const reg = /^[a-zA-Z]{4,20}$/;
+    const reg = /^[a-zA-Z0-9-]{4,20}$/;
     const name = reg.test(value);
     if (!name) {
       callback(new Error("The value contains 4 to 20 English characters"));
@@ -207,20 +214,55 @@ const isName = (rule: any, value: any, callback: any) => {
     }
   }
 };
-
+/* 描述 */
+const isDesc = (rule: any, value: any, callback: any) => {
+  if (!value) {
+    callback();
+  } else {
+    const reg = /^[a-zA-Z0-9-]{1,100}$/;
+    const desc = reg.test(value);
+    if (!desc) {
+      callback(new Error("The value contains a maximum of 100 English characters"));
+    } else {
+      callback();
+    }
+  }
+};
 const rules = reactive<FormRules>({
   name: [
-    { required: true, message: "please enter", trigger: "blur" },
-    { validator: isName, trigger: ["blur", "change"] },
+    { required: true, message: "please enter" },
+    { validator: isName, trigger: ["change"] },
+  ],
+  description: [
+    { required: true, message: "Please enter a description", trigger: "blur" },
+    { validator: isDesc, trigger: ["blur", "change"] },
+  ],
+  private_key: [
+    { required: true, message: "Please enter private key", trigger: ["blur", "change"] },
+  ],
+  certificate: [
+    { required: true, message: "Please enter certificate", trigger: ["blur", "change"] },
+  ],
+  expire_at: [
+    { required: true, message: "Please enter expire", trigger: ["blur", "change"] },
   ],
 });
 //表单请求
+const worryDetail = ref();
 const importKey = () => {
-  queryImportKey(param.value).then((res) => {
-    useBase.dialogVisible = false;
-    useData.getTableData();
-    useData.getPriTableData();
-  });
+  queryImportKey(param.value)
+    .then((res) => {
+      useBase.dialogVisible = false;
+      useData.getTableData();
+      useData.getPriTableData();
+      formLabelAlign.expire_at = "";
+      formLabelAlign.visibility = "private";
+      formLabelAlign.certificate = "";
+    })
+    .catch((res) => {
+      worryDetail.value = res.response.data.detail;
+      dialogVisible.value = true;
+    });
 };
 //获取表单值
 const getData = () => {
@@ -234,6 +276,7 @@ const getData = () => {
   param.value.attributes.key_type = formLabelAlign.keytype;
   param.value.attributes.digest_algorithm = formLabelAlign.digest_algorithm;
   param.value.attributes.expire_at = originalDate(formLabelAlign.expire_at);
+  param.value.description = formLabelAlign.description;
 };
 //提交表单
 const submitForm = async (formEl: FormInstance | undefined) => {
@@ -246,10 +289,6 @@ const submitForm = async (formEl: FormInstance | undefined) => {
       return false;
     }
   });
-  formEl.resetFields();
-  formLabelAlign.expire_at = "";
-  formLabelAlign.visibility = "private";
-  formLabelAlign.certificate = ''
 };
 //关闭表单
 const resetForm = (formEl: FormInstance | undefined) => {
@@ -258,7 +297,7 @@ const resetForm = (formEl: FormInstance | undefined) => {
   formEl.resetFields();
   formLabelAlign.expire_at = "";
   formLabelAlign.visibility = "private";
-  formLabelAlign.certificate = ''
+  formLabelAlign.certificate = "";
 };
 
 const pickerOptions = (time: any) => {
