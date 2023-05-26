@@ -60,19 +60,19 @@ const linksData = {
 
 const RIGHT_LIST=[
       {
-        NAME: '品牌',
+        NAME: 'Trademark',
         URL: '/other/brand/',
       },
       {
-        NAME: '隐私政策',
+        NAME: 'Privacy Policy',
         URL: '/other/privacy/',
       },
       {
-        NAME: '法律声明',
+        NAME: 'Legal Notice',
         URL: '/other/legal/',
       },
       {
-        NAME: '服务状态',
+        NAME: 'Service Status',
         URL: 'https://status.openeuler.org/',
       },
     ];
@@ -105,7 +105,7 @@ const handleNavClick = (path: string) => {
   <div class="footer">
     <AppContent :pc-top="0" :mobile-top="0">
       <div class="atom">
-        <p class="atom-text">openEuler 是由开放原子开源基金会（OpenAtom Foundation）孵化及运营的开源项目</p>
+        <p class="atom-text">openEuler is an open source project incubated and operated by the OpenAtom Foundation.</p>
         <a href="https://openatom.cn/home" target="_blank">
           <img :src="LogoAtom" class="atom-logo" alt="" />
         </a>
@@ -138,10 +138,10 @@ const handleNavClick = (path: string) => {
                 >{{ link.NAME }}</a
               >
             </div>
-            <p class="copyright">版权所有 © 2022 openEuler 保留一切权利</p>
+            <p class="copyright">Copyright © 2023 openEuler. All rights reserved.</p>
           </div>
           <div class="footer-right">
-            <div  class="code-box">
+            <!-- <div  class="code-box">
               <a
                 v-for="(item, index) in footerCodeList"
                 :key="index"
@@ -155,7 +155,6 @@ const handleNavClick = (path: string) => {
                 </div>
               </a>
             </div>
-            <!-- <div class="footer-links" class="iszh"> -->
               <div class="footer-links" >
               <a
                 v-for="item in linksData.zh"
@@ -166,7 +165,7 @@ const handleNavClick = (path: string) => {
               >
                 <img :src="item.logo" alt="" />
               </a>
-            </div>
+            </div> -->
           </div>
         </div>
       </AppContent>

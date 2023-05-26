@@ -16,7 +16,7 @@
 
     <div class="dialog-footer">
       <el-button @click="cancle">Cancel</el-button>
-      <el-button type="primary" @click="getKeys"> Confirm </el-button>
+      <el-button type="primary" @click="getKeys()"> Confirm </el-button>
     </div>
   </el-form>
 </template>
@@ -38,17 +38,16 @@ const cleanForm = () => {
 const cancle = () => {
   useBase.dialogVisible = false;
   cleanForm();
+  emit("parent");
 };
+//接收父组件的parent方法
+const emit = defineEmits(["parent"]);
 const getKeys = () => {
   const param = {
     description: formLabelAlign.description,
   };
   getApiKeys(param).then(() => {
-    
-    cancle();
-    //接收父组件的parent方法
-    const emit = defineEmits(["parent"]);
-    emit("parent");
+    cancle();  
   });
 };
 </script>

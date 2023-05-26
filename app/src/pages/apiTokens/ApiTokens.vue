@@ -8,7 +8,7 @@
     <div class="table">
       <div class="title">Personal Tokens</div>
       <div class="table-th" v-for="(item, index) in tableData" :key="index">
-        <div class="th" >
+        <div class="th">
           <div class="th-title">
             {{ item.description }}
             <div class="small">
@@ -18,22 +18,17 @@
           <div class="th-btn">
             <el-button @click="openDialog(item.id)">Delete</el-button>
           </div>
-         
         </div>
-       
-        
       </div>
-      <el-dialog v-model="centerDialogVisible" title="Prompt Message" width="30%" center>
-          <span class="textCenter"> Please confirm again </span>
-          <template #footer>
-            <span class="dialog-footer">
-              <el-button @click="centerDialogVisible = false">Cancel</el-button>
-              <el-button type="primary" @click="deletKeys()">
-                Confirm
-              </el-button>
-            </span>
-          </template>
-        </el-dialog>
+      <el-dialog v-model="centerDialogVisible" title="Confirmation" width="30%" center>
+        <span class="textCenter"> Confirm to delete  </span>
+        <template #footer>
+          <span class="dialog-footer">
+            <el-button @click="centerDialogVisible = false">Cancel</el-button>
+            <el-button type="primary" @click="deletKeys()"> Confirm </el-button>
+          </span>
+        </template>
+      </el-dialog>
     </div>
   </div>
   <footer>
@@ -73,16 +68,18 @@ const getApiKeys = () => {
   });
 };
 //删除数据
-const deletId = ref()
+const deletId = ref();
 const deletKeys = () => {
-  deleteApiKeys(deletId.value).then((res) => centerDialogVisible.value = false);
-  getApiKeys()
+  deleteApiKeys(deletId.value).then((res) => {
+    centerDialogVisible.value = false;
+    getApiKeys();
+  });
 };
 //打开dialog
-const openDialog = (val:any)=>{
+const openDialog = (val: any) => {
   centerDialogVisible.value = true;
-  deletId.value = val
-}
+  deletId.value = val;
+};
 onMounted(() => getApiKeys());
 </script>
 <style scoped lang="scss">

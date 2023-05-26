@@ -3,11 +3,13 @@ import AppHeader from "@/components/AppHeader.vue";
 import { useRoute, useRouter } from "vue-router";
 import { getToken } from "@/api/show";
 import { showGuard } from "@/shared/utils/login";
+import { useDataStore } from "@/store/data";
+const useData = useDataStore();
 const router = useRouter();
 const route = useRoute();
 const queryToken = () => {
   getToken()
-    .then(() => router.push("./"))
+    .then((res:any) => {useData.email = res.email})
     .catch(() => showGuard());
 };
 queryToken()

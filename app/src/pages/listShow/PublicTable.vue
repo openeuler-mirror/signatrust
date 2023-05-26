@@ -8,7 +8,7 @@
       v-model="searchInput"
       placeholder="Search by Name"
       :prefix-icon="Search"
-      @change="querySearch"
+      @input="querySearch"
       @clear="clearSearchInput"
       :clearable="true"
     />
@@ -43,7 +43,11 @@
       align="left"
       show-overflow-tooltip
       width="90"
-    />
+    >
+      <template #default="scope">
+        {{ scope.row.key_type.toUpperCase() }}
+      </template>
+    </el-table-column>
     <el-table-column
       prop="create_at"
       label="Create Time"
@@ -65,14 +69,22 @@
       align="left"
       width="120"
       show-overflow-tooltip
-    />
+    >
+      <template #default="scope">
+        {{ scope.row.attributes.key_type.toUpperCase() }}
+      </template>
+    </el-table-column>
     <el-table-column
       prop="attributes.digest_algorithm"
       label="Digest Algorithm"
       align="left"
       width="140"
       show-overflow-tooltip
-    />
+    >
+      <template #default="scope">
+        {{ scope.row.attributes.digest_algorithm.toUpperCase() }}
+      </template>
+    </el-table-column>
     <el-table-column
       prop="attributes.key_length"
       label="Key Size"
@@ -80,13 +92,13 @@
       show-overflow-tooltip
       width="90"
     />
-    <el-table-column
+    <!-- <el-table-column
       prop="user"
       label="Author"
       align="left"
       show-overflow-tooltip
       width="80"
-    />
+    /> -->
     <el-table-column fixed="right" label="Operations" width="400">
       <template #default="scope">
         <el-button
@@ -95,13 +107,18 @@
           size="small"
           @click="exportData(scope.row.id, scope.row.name)"
           >Export</el-button
-        >|
-        <el-button
-          link
-          type="primary"
-          size="small"
-          @click="deleteData(scope.row.id, 'delete')"
-          >Delete</el-button
+        >
+        <span v-if="scope.row.key_state === 'pending'"
+          >|
+          <el-button
+            link
+            type="primary"
+            size="small"
+            @click="deleteData(scope.row.id, 'cancel delete')"
+            >Cancel Delete</el-button
+          > </span
+        ><span v-else
+          >| <el-button link type="" size="small" disabled>Cancel Delete</el-button></span
         ><span v-if="scope.row.key_state === 'disabled'"
           >|
           <el-button
@@ -111,6 +128,8 @@
             @click="enableData(scope.row.id, 'enable')"
             >Enable</el-button
           ></span
+        ><span v-else
+          >| <el-button link type="" size="small" disabled>Enable</el-button></span
         >
         <span v-if="scope.row.key_state === 'enabled'"
           >|
@@ -121,16 +140,20 @@
             @click="disableData(scope.row.id, 'disable')"
             >Disable</el-button
           ></span
-        ><span v-if="scope.row.key_state === 'disabled'"
+        ><span v-else
+          >| <el-button link type="" size="small" disabled>Disable</el-button></span
+        >
+        <span v-if="scope.row.key_state !== 'enabled'"
           >|
           <el-button
             link
             type="primary"
             size="small"
-            @click="requestData(scope.row.id, 'request')"
+            @click="requestData(scope.row.id, 'request delete')"
             >Request Delete</el-button
           ></span
-        ><span v-else
+        >
+        <span v-else
           >|
           <el-button link type="" size="small" disabled>Request Delete</el-button></span
         >
@@ -155,8 +178,8 @@
       ></el-pagination
     >
   </div>
-  <el-dialog v-model="dialogVisible" title="Prompt Message" width="30%" center>
-    <span class="textCenter"> Please confirm again </span>
+  <el-dialog v-model="dialogVisible" title="Confirmation" width="30%" center>
+    <span class="textCenter"> Confirm to {{ witchChange }}</span>
 
     <div class="dialog-footer">
       <el-button @click="dialogVisible = false">Cancel</el-button>
@@ -268,7 +291,7 @@ const clearSearchInput = () => {
 const witchChange = ref();
 const witchOne = ref();
 const confirm = () => {
-  if (witchChange.value === "delete") {
+  if (witchChange.value === "cancel delete") {
     queryDeleteKey(witchOne.value).then((res) => getAllData());
     dialogVisible.value = false;
   } else if (witchChange.value === "enable") {
@@ -277,7 +300,7 @@ const confirm = () => {
   } else if (witchChange.value === "disable") {
     queryDisableKey(witchOne.value).then((res) => getAllData());
     dialogVisible.value = false;
-  } else if (witchChange.value === "request") {
+  } else if (witchChange.value === "request delete") {
     queryRequestKey(witchOne.value).then((res) => getAllData());
     dialogVisible.value = false;
   }
@@ -305,7 +328,7 @@ const confirm = () => {
 }
 .el-button {
   padding-right: 4px;
-  --el-color-primary: #000;
+  // --el-color-primary: #000;
   --el-color-primary-light-5: #002fa7;
 }
 .demo-pagination-block {

@@ -2,11 +2,11 @@
   <div class="container">
     <div class="title">State and Permissions</div>
     <el-table :data="tableData" style="width: 50%">
-      <el-table-column prop="state" label="State/Permission" width="120" />
-      <el-table-column prop="sign" label="Sign" width="100" />
-      <el-table-column prop="display" label="Display" width="100" />
-      <el-table-column prop="keys" label="Export Public Keys" width="100" />
-      <el-table-column prop="note" label="Note" width="300" />
+      <el-table-column prop="state" label="State/Permission"  />
+      <el-table-column prop="sign" label="Sign" />
+      <el-table-column prop="display" label="Display"  />
+      <el-table-column prop="keys" label="Export Public Keys"  />
+      <el-table-column prop="note" label="Note" width="400" />
     </el-table>
   </div>
 </template>

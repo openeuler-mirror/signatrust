@@ -22,7 +22,7 @@
       <el-form-item label="Type">
         <el-input placeholder="openPGP" disabled />
       </el-form-item>
-      <el-form-item label="Expire">
+      <el-form-item label="Expire"  prop="expire_at">
         <el-date-picker
           v-model="formLabelAlign.expire_at"
           type="date"
@@ -144,10 +144,6 @@ const optionsType = [
     label: "RSA",
   },
   {
-    value: "ecdh",
-    label: "ECDH",
-  },
-  {
     value: "eddsa",
     label: "EDDSA",
   },
@@ -222,7 +218,7 @@ const isName = (rule: any, value: any, callback: any) => {
   if (!value) {
     callback();
   } else {
-    const reg = /^[a-zA-Z]{4,20}$/;
+    const reg = /^[a-zA-Z0-9-]{4,20}$/;
     const name = reg.test(value);
     if (!name) {
       callback(new Error("The value contains 4 to 20 English characters"));
@@ -242,7 +238,7 @@ const isDesc = (rule: any, value: any, callback: any) => {
   if (!value) {
     callback();
   } else {
-    const reg = /^[a-zA-Z]{1,100}$/;
+    const reg = /^[a-zA-Z0-9-]{1,100}$/;
     const desc = reg.test(value);
     if (!desc) {
       callback(new Error("The value contains a maximum of 100 English characters"));
@@ -256,7 +252,7 @@ const isPass = (rule: any, value: any, callback: any) => {
   if (!value) {
     callback();
   } else {
-    const reg = /^[a-zA-Z]{4,20}$/;
+    const reg = /^[a-zA-Z0-9]{4,20}$/;
     const pass = reg.test(value);
     if (!pass) {
       callback(new Error("The value contains 4 to 20 English characters"));
@@ -266,7 +262,7 @@ const isPass = (rule: any, value: any, callback: any) => {
   }
 };
 const againPass = (rule: any, value: any, callback: any) => {
-  if (value === "") {
+  if (value === "" && formLabelAlign.pass === "") {
     callback();
   } else if (value !== formLabelAlign.pass) {
     callback(new Error("Two password mismatches"));
@@ -284,8 +280,8 @@ const rules = reactive<FormRules>({
     },
   ],
   name: [
-    { required: true, message: "Please enter name", trigger: "blur" },
-    { validator: isName, trigger: ["blur", "change"] },
+    { required: true, message: "Please enter"},
+    { validator: isName, trigger: ["change"] },
   ],
   description: [
     { required: true, message: "Please enter a description", trigger: "blur" },
@@ -299,6 +295,9 @@ const rules = reactive<FormRules>({
     { required: false, message: "enter your pass again", trigger: "blur" },
     { validator: againPass },
   ],
+  expire_at: [
+    { required: true, message: "Please enter expire", trigger: ["blur", "change"] },
+  ],
 });
 //表单请求
 const newKey = () => {
@@ -306,6 +305,7 @@ const newKey = () => {
     useBase.dialogVisible = false;
     useData.getTableData();
     useData.getPriTableData();
+    cleanForm();
   });
 };
 //获取表单值
@@ -331,8 +331,6 @@ const submitForm = async (formEl: FormInstance | undefined) => {
       return false;
     }
   });
-  cleanForm();
-  formEl.resetFields();
 };
 //关闭表单
 const resetForm = (formEl: FormInstance | undefined) => {

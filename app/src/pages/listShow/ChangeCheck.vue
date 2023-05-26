@@ -11,8 +11,8 @@
       center
       :before-close="close"
     >
-      <CreatePgp v-if="title === 'Create New PGP Keys'"/>
-      <CreateX509 v-if="title === 'Create New X509 Keys'" />
+      <CreatePgp v-if="title === 'Create PGP Keys'"/>
+      <CreateX509 v-if="title === 'Create X509 Keys'" />
       <ImportPgp v-if="title === 'Import PGP Keys'" />
       <ImportX509 v-if="title === 'Import X509 Keys'" />
     </el-dialog>
@@ -30,8 +30,8 @@ const title = ref();
 const check = [
   "Import X509 Keys",
   "Import PGP Keys",
-  "Create New X509 Keys",
-  "Create New PGP Keys",
+  "Create X509 Keys",
+  "Create PGP Keys",
 ];
 const showDetail = (item: any) => {
   useBase.dialogVisible = true;
