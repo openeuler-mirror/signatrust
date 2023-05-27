@@ -1,7 +1,7 @@
 <template>
   <el-form
     label-position="right"
-    label-width="200px"
+    label-width="auto"
     :model="formLabelAlign"
     :rules="rules"
     ref="ruleFormRef"
@@ -32,8 +32,8 @@
       </el-form-item>
       <el-form-item label="Visibility">
         <el-radio-group v-model="formLabelAlign.visibility" class="ml-4"  @change="getChange()">
-          <el-radio label="private" title="123">Private</el-radio>
-          <el-radio label="public" title="123">Public</el-radio>
+          <el-radio label="private" title="The private key pairs are managed by yourself, no one else can seen/use your private key pairs.">Private</el-radio>
+          <el-radio label="public" title="The public key pairs can be created/used by any administrator, but in order to delete it, it require triple confirms from different administrators.">Public</el-radio>
         </el-radio-group>
       </el-form-item>
     </div>
@@ -202,7 +202,7 @@ const cleanForm = () => {
   keys.forEach((key) => {
     formLabelAlign[key] = "";
   });
-  formLabelAlign.digest_algorithm = "none";
+  formLabelAlign.digest_algorithm = "md5";
   formLabelAlign.key_length = "2048";
   formLabelAlign.key_type = "rsa";
   formLabelAlign.visibility = "private";
@@ -379,7 +379,7 @@ const getChange = () => {
   .sel {
     display: flex;
     .m-2 {
-      padding-right: 24px;
+      // padding-right: 24px;
     }
   }
 }
@@ -394,12 +394,12 @@ const getChange = () => {
 }
 </style>
 <style lang="scss">
-.sel {
-  .el-select .el-input__inner {
-    width: 80px;
-    height: 24px;
-    margin-right: 2px;
-    margin-left: 2px;
-  }
-}
+// .sel {
+//   .el-select .el-input__inner {
+//     width: 80px;
+//     height: 24px;
+//     margin-right: 2px;
+//     margin-left: 2px;
+//   }
+// }
 </style>

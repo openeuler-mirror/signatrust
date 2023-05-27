@@ -1,7 +1,7 @@
 <template>
   <el-form
     label-position="right"
-    label-width="200px"
+    label-width="auto"
     :model="formLabelAlign"
     :rules="rules"
     ref="ruleFormRef"
@@ -36,8 +36,8 @@
           class="ml-4"
           @change="getChange()"
         >
-          <el-radio label="private" title="123">Private</el-radio>
-          <el-radio label="public" title="123">Public</el-radio>
+          <el-radio label="private" title="The private key pairs are managed by yourself, no one else can seen/use your private key pairs.">Private</el-radio>
+          <el-radio label="public" title="The public key pairs can be created/used by any administrator, but in order to delete it, it require triple confirms from different administrators.">Public</el-radio>
         </el-radio-group>
       </el-form-item>
     </div>
@@ -55,7 +55,7 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="Key Size">
+          <el-form-item label="Key Size" >
             <el-select v-model="formLabelAlign.key_length" class="m-2" size="small">
               <el-option
                 v-for="item in optionsSize"
@@ -381,12 +381,12 @@ const getChange = () => {
 }
 </style>
 <style lang="scss">
-.sel {
-  .el-select .el-input__inner {
-    width: 80px;
-    height: 24px;
-    margin-right: 2px;
-    margin-left: 2px;
-  }
-}
+// .sel {
+//   .el-select .el-input__inner {
+//     width: 80px;
+//     height: 24px;
+//     margin-right: 2px;
+//     margin-left: 2px;
+//   }
+// }
 </style>
