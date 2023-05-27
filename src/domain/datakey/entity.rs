@@ -104,7 +104,8 @@ pub struct DataKey {
     pub certificate: Vec<u8>,
     pub create_at: DateTime<Utc>,
     pub expire_at: DateTime<Utc>,
-    pub key_state: KeyState
+    pub key_state: KeyState,
+    pub user_email: Option<String>,
 }
 
 impl ExtendableAttributes for DataKey {

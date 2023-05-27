@@ -73,6 +73,7 @@ where
         if rotate_in_days  < DEFAULT_ROTATE_IN_DAYS {
             return Err(Error::ConfigError(format!("rotate in days should greater than {}", rotate_in_days)));
         }
+        info!("cluster key will be rotated in {} days", rotate_in_days);
         Ok(EncryptionEngineWithClusterKey {
             cluster_repository,
             encryptor,

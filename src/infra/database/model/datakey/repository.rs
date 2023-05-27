@@ -83,7 +83,10 @@ impl Repository for DataKeyRepository {
     }
 
     async fn get_public_keys(&self) -> Result<Vec<DataKey>> {
-        let dtos: Vec<DataKeyDTO> = sqlx::query_as("SELECT * FROM data_key WHERE key_state != ? and visibility = ?")
+        let dtos: Vec<DataKeyDTO> = sqlx::query_as(
+            "SELECT D.*, U.email AS user_email \
+            FROM data_key D INNER JOIN user U ON D.user = U.id \
+            WHERE D.key_state != ? and D.visibility = ?")
             .bind(KeyState::Deleted.to_string())
             .bind(Visibility::Public.to_string())
             .fetch_all(&self.db_pool)
@@ -96,7 +99,10 @@ impl Repository for DataKeyRepository {
     }
 
     async fn get_all_keys(&self) -> Result<Vec<DataKey>> {
-        let dtos: Vec<DataKeyDTO> = sqlx::query_as("SELECT * FROM data_key WHERE key_state != ?")
+        let dtos: Vec<DataKeyDTO> = sqlx::query_as(
+            "SELECT D.*, U.email AS user_email \
+            FROM data_key D INNER JOIN user U ON D.user = U.id \
+            WHERE D.key_state != ?")
             .bind(KeyState::Deleted.to_string())
             .fetch_all(&self.db_pool)
             .await?;
@@ -107,7 +113,10 @@ impl Repository for DataKeyRepository {
         Ok(results)
     }
     async fn get_private_keys(&self, user_id: i32) -> Result<Vec<DataKey>> {
-        let dtos: Vec<DataKeyDTO> = sqlx::query_as("SELECT * FROM data_key WHERE key_state != ? and visibility = ? and user = ?")
+        let dtos: Vec<DataKeyDTO> = sqlx::query_as(
+            "SELECT D.*, U.email AS user_email \
+            FROM data_key D INNER JOIN user U ON D.user = U.id \
+            WHERE D.key_state != ? and D.visibility = ? and D.user = ?")
             .bind(KeyState::Deleted.to_string())
             .bind(Visibility::Private.to_string())
             .bind(user_id)
@@ -121,7 +130,10 @@ impl Repository for DataKeyRepository {
     }
 
     async fn get_by_id(&self, id: i32) -> Result<DataKey> {
-        let dto: DataKeyDTO = sqlx::query_as("SELECT * FROM data_key WHERE id = ? AND key_state != ?")
+        let dto: DataKeyDTO = sqlx::query_as(
+            "SELECT D.*, U.email AS user_email \
+            FROM data_key D INNER JOIN user U ON D.user = U.id \
+            WHERE D.id = ? AND D.key_state != ?")
             .bind(id)
             .bind(KeyState::Deleted.to_string())
             .fetch_one(&self.db_pool)
@@ -130,7 +142,10 @@ impl Repository for DataKeyRepository {
     }
 
     async fn get_by_name(&self, name: &String) -> Result<DataKey> {
-        let dto: DataKeyDTO = sqlx::query_as("SELECT * FROM data_key WHERE name = ? AND key_state != ?")
+        let dto: DataKeyDTO = sqlx::query_as(
+            "SELECT D.*, U.email AS user_email \
+            FROM data_key D INNER JOIN user U ON D.user = U.id \
+            WHERE D.name = ? AND D.key_state != ?")
             .bind(name)
             .bind(KeyState::Deleted.to_string())
             .fetch_one(&self.db_pool)
@@ -150,7 +165,10 @@ impl Repository for DataKeyRepository {
     }
 
     async fn get_enabled_key_by_type_and_name(&self, key_type: String, name: String) -> Result<DataKey> {
-        let dto: DataKeyDTO = sqlx::query_as("SELECT * FROM data_key WHERE name = ? AND key_type = ? AND key_state = ?")
+        let dto: DataKeyDTO = sqlx::query_as(
+            "SELECT D.*, U.email AS user_email \
+            FROM data_key D INNER JOIN user U ON D.user = U.id \
+            WHERE D.name = ? AND D.key_type = ? AND D.key_state = ?")
             .bind(name)
             .bind(key_type)
             .bind(KeyState::Enabled.to_string())

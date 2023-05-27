@@ -39,9 +39,9 @@ use crate::domain::datakey::entity::{DataKey, DataKeyContent, SecDataKey, KeyTyp
 use crate::util::key::encode_u8_to_hex_string;
 use super::util::{validate_utc_time_not_expire, validate_utc_time, attributes_validate};
 
-const VALID_KEY_TYPE: [&'static str; 2] = ["rsa", "eddsa"];
-const VALID_KEY_SIZE: [&'static str; 3] = ["2048", "3072", "4096"];
-const VALID_DIGEST_ALGORITHM: [&'static str; 10] = ["none", "md5", "sha1", "sha1", "sha2_256", "sha2_384","sha2_512","sha2_224","sha3_256", "sha3_512"];
+const VALID_KEY_TYPE: [&str; 2] = ["rsa", "eddsa"];
+const VALID_KEY_SIZE: [&str; 3] = ["2048", "3072", "4096"];
+const VALID_DIGEST_ALGORITHM: [&str; 10] = ["none", "md5", "sha1", "sha1", "sha2_256", "sha2_384","sha2_512","sha2_224","sha3_256", "sha3_512"];
 
 #[derive(Debug, Validate, Deserialize)]
 pub struct PgpKeyImportParameter {

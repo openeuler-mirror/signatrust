@@ -39,7 +39,8 @@ pub(super) struct DataKeyDTO {
     pub certificate: String,
     pub create_at: DateTime<Utc>,
     pub expire_at: DateTime<Utc>,
-    pub key_state: String
+    pub key_state: String,
+    pub user_email: Option<String>,
 }
 
 
@@ -62,6 +63,7 @@ impl TryFrom<DataKeyDTO> for DataKey {
             create_at: dto.create_at,
             expire_at: dto.expire_at,
             key_state: KeyState::from_str(&dto.key_state)?,
+            user_email: dto.user_email,
         })
     }
 }
@@ -91,6 +93,7 @@ impl TryFrom<DataKey> for DataKeyDTO {
             create_at: data_key.create_at,
             expire_at: data_key.expire_at,
             key_state: data_key.key_state.to_string(),
+            user_email: None
         })
     }
 }

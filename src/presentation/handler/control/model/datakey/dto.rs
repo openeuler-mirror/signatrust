@@ -131,6 +131,8 @@ pub struct DataKeyDTO {
     pub expire_at: String,
     /// Key state
     pub key_state: String,
+    /// User email
+    pub user_email: Option<String>,
 }
 
 fn validate_utc_time(expire: &str) -> std::result::Result<(), ValidationError> {
@@ -194,7 +196,8 @@ impl DataKey {
             certificate: dto.certificate.into_bytes(),
             create_at: now,
             expire_at: now,
-            key_state: KeyState::default()
+            key_state: KeyState::default(),
+            user_email: None,
         })
     }
 
@@ -223,7 +226,8 @@ impl DataKey {
             certificate: vec![],
             create_at: now,
             expire_at: dto.expire_at.parse()?,
-            key_state: KeyState::default()
+            key_state: KeyState::default(),
+            user_email: None,
         })
     }
 }
@@ -246,6 +250,7 @@ impl TryFrom<DataKey> for DataKeyDTO {
             create_at: dto.create_at.to_string(),
             expire_at: dto.expire_at.to_string(),
             key_state: dto.key_state.to_string(),
+            user_email: dto.user_email,
         })
     }
 }
