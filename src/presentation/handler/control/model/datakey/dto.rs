@@ -133,6 +133,8 @@ pub struct DataKeyDTO {
     pub key_state: String,
     /// User email
     pub user_email: Option<String>,
+    /// Request user email list, only for public key
+    pub request_delete_users: Option<String>,
 }
 
 fn validate_utc_time(expire: &str) -> std::result::Result<(), ValidationError> {
@@ -198,6 +200,7 @@ impl DataKey {
             expire_at: now,
             key_state: KeyState::default(),
             user_email: None,
+            request_delete_users: None,
         })
     }
 
@@ -228,6 +231,7 @@ impl DataKey {
             expire_at: dto.expire_at.parse()?,
             key_state: KeyState::default(),
             user_email: None,
+            request_delete_users: None,
         })
     }
 }
@@ -251,6 +255,7 @@ impl TryFrom<DataKey> for DataKeyDTO {
             expire_at: dto.expire_at.to_string(),
             key_state: dto.key_state.to_string(),
             user_email: dto.user_email,
+            request_delete_users: dto.request_delete_users,
         })
     }
 }

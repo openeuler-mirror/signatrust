@@ -21,15 +21,17 @@ pub struct RequestDeleteDTO {
     pub id: i32,
     pub user_id: i32,
     pub key_id: i32,
+    pub user_email: String,
     pub create_at: DateTime<Utc>,
 }
 
 impl RequestDeleteDTO {
-    pub fn new(key_id: i32, user_id: i32) -> Self {
+    pub fn new(key_id: i32, user_id: i32, user_email: String) -> Self {
         Self {
             id: 0,
             user_id,
             key_id,
+            user_email,
             create_at: Utc::now()
         }
     }

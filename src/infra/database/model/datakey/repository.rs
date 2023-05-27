@@ -39,10 +39,11 @@ impl DataKeyRepository {
         }
     }
 
-    async fn create_request_delete(&self, user_id: i32, id: i32, tx: &mut Transaction<'_, MySql>) -> Result<()> {
-        let _ : Option<RequestDeleteDTO> = sqlx::query_as("INSERT IGNORE INTO request_delete(user_id, key_id, create_at) VALUES (?, ?, ?)")
+    async fn create_request_delete(&self, user_id: i32, user_email: String, id: i32, tx: &mut Transaction<'_, MySql>) -> Result<()> {
+        let _ : Option<RequestDeleteDTO> = sqlx::query_as("INSERT IGNORE INTO request_delete(user_id, key_id, user_email, create_at) VALUES (?, ?, ?, ?)")
             .bind(user_id)
             .bind(id)
+            .bind(user_email)
             .bind(Utc::now())
             .fetch_optional(tx)
             .await?;
@@ -84,9 +85,12 @@ impl Repository for DataKeyRepository {
 
     async fn get_public_keys(&self) -> Result<Vec<DataKey>> {
         let dtos: Vec<DataKeyDTO> = sqlx::query_as(
-            "SELECT D.*, U.email AS user_email \
-            FROM data_key D INNER JOIN user U ON D.user = U.id \
-            WHERE D.key_state != ? and D.visibility = ?")
+            "SELECT D.*, U.email AS user_email, GROUP_CONCAT(R.user_email) as request_delete_users \
+            FROM data_key D \
+            INNER JOIN user U ON D.user = U.id \
+            LEFT JOIN request_delete R ON D.id = R.key_id \
+            WHERE D.key_state != ? and D.visibility = ? \
+            GROUP BY D.id")
             .bind(KeyState::Deleted.to_string())
             .bind(Visibility::Public.to_string())
             .fetch_all(&self.db_pool)
@@ -131,9 +135,11 @@ impl Repository for DataKeyRepository {
 
     async fn get_by_id(&self, id: i32) -> Result<DataKey> {
         let dto: DataKeyDTO = sqlx::query_as(
-            "SELECT D.*, U.email AS user_email \
+            "SELECT D.*, U.email AS user_email, GROUP_CONCAT(R.user_email) as request_delete_users \
             FROM data_key D INNER JOIN user U ON D.user = U.id \
-            WHERE D.id = ? AND D.key_state != ?")
+            LEFT JOIN request_delete R ON D.id = R.key_id \
+            WHERE D.id = ? AND D.key_state != ? \
+            GROUP BY D.id")
             .bind(id)
             .bind(KeyState::Deleted.to_string())
             .fetch_one(&self.db_pool)
@@ -143,9 +149,11 @@ impl Repository for DataKeyRepository {
 
     async fn get_by_name(&self, name: &String) -> Result<DataKey> {
         let dto: DataKeyDTO = sqlx::query_as(
-            "SELECT D.*, U.email AS user_email \
+            "SELECT D.*, U.email AS user_email GROUP_CONCAT(R.user_email) as request_delete_users \
             FROM data_key D INNER JOIN user U ON D.user = U.id \
-            WHERE D.name = ? AND D.key_state != ?")
+            LEFT JOIN request_delete R ON D.id = R.key_id \
+            WHERE D.name = ? AND D.key_state != ? \
+            GROUP BY D.id")
             .bind(name)
             .bind(KeyState::Deleted.to_string())
             .fetch_one(&self.db_pool)
@@ -188,7 +196,7 @@ impl Repository for DataKeyRepository {
         Ok(())
     }
 
-    async fn request_delete_public_key(&self, user_id: i32, id: i32) -> Result<()> {
+    async fn request_delete_public_key(&self, user_id: i32, user_email: String, id: i32) -> Result<()> {
         let mut tx = self.db_pool.begin().await?;
         //1. update key state to pending delete if needed.
         let _: Option<DataKeyDTO> = sqlx::query_as(
@@ -201,7 +209,7 @@ impl Repository for DataKeyRepository {
             .fetch_optional(&mut tx)
             .await?;
         //2. add request delete record
-        self.create_request_delete(user_id, id, &mut tx).await?;
+        self.create_request_delete(user_id, user_email, id, &mut tx).await?;
         //3. delete datakey if pending delete count >= threshold
         let _: Option<DataKeyDTO> = sqlx::query_as(
             "UPDATE data_key SET key_state = ? \

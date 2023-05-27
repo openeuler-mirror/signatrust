@@ -106,6 +106,7 @@ pub struct DataKey {
     pub expire_at: DateTime<Utc>,
     pub key_state: KeyState,
     pub user_email: Option<String>,
+    pub request_delete_users: Option<String>,
 }
 
 impl ExtendableAttributes for DataKey {
