@@ -31,6 +31,13 @@
       </template>
     </el-table-column>
     <el-table-column
+            prop="user_email"
+            label="Author"
+            align="left"
+            width="120"
+            show-overflow-tooltip
+    />
+    <el-table-column
       prop="description"
       label="Descirption"
       align="left"
@@ -78,7 +85,7 @@
       prop="attributes.digest_algorithm"
       label="Digest Algorithm"
       align="left"
-      width="140"
+      width="120"
       show-overflow-tooltip
     >
       <template #default="scope">
@@ -225,13 +232,13 @@ const copy = () => {
   let clipboard = new Clipboard(".tag");
   clipboard.on("success", (e) => {
     ElMessage({
-      message: "复制成功",
+      message: "Successfully copied",
       type: "success",
     });
     clipboard.destroy();
   });
   clipboard.on("error", (e) => {
-    ElMessage.error("复制失败");
+    ElMessage.error("Failed to copy");
     clipboard.destroy();
   });
 };

@@ -40,9 +40,9 @@ use crate::domain::sign_plugin::SignPlugins;
 use crate::util::key::encode_u8_to_hex_string;
 use super::util::{validate_utc_time_not_expire, validate_utc_time, attributes_validate};
 
-const VALID_KEY_TYPE: [&'static str; 2] = ["rsa", "dsa"];
-const VALID_KEY_SIZE: [&'static str; 3] = ["2048", "3072", "4096"];
-const VALID_DIGEST_ALGORITHM: [&'static str; 6] = ["md5", "sha1", "sha2_256","sha2_384","sha2_512","sha2_224"];
+const VALID_KEY_TYPE: [&str; 2] = ["rsa", "dsa"];
+const VALID_KEY_SIZE: [&str; 3] = ["2048", "3072", "4096"];
+const VALID_DIGEST_ALGORITHM: [&str; 6] = ["md5", "sha1", "sha2_256","sha2_384","sha2_512","sha2_224"];
 
 #[derive(Debug, Validate, Deserialize)]
 pub struct X509KeyGenerationParameter {
