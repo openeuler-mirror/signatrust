@@ -6,7 +6,7 @@
     <el-dialog
       v-model="useBase.dialogVisible"
       :title="title"
-      width="50%"
+      width="70%"
       :show-close="false"
       center
       :before-close="close"
