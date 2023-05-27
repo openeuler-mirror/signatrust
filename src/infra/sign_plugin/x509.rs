@@ -300,6 +300,8 @@ mod test {
             create_at: now,
             expire_at: now,
             key_state: KeyState::Enabled,
+            user_email: None,
+            request_delete_users: None,
         }
     }
 

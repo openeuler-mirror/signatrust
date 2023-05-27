@@ -128,13 +128,14 @@ where
 
     async fn request_delete(&self, user: UserIdentity, id: i32) -> Result<()> {
         let user_id = user.id;
+        let user_email = user.email.clone();
         let key = self.get_and_check_permission(Some(user), id).await?;
         if key.key_state == KeyState::Enabled {
             return Err(Error::ParameterError("enabled key does not support delete".to_string()));
         }
         match key.visibility {
             Visibility::Public => {
-                self.repository.request_delete_public_key(user_id, key.id).await
+                self.repository.request_delete_public_key(user_id, user_email, key.id).await
             }
             Visibility::Private => {
                 self.repository.delete_private_key(key.id, user_id).await

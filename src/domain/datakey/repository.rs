@@ -30,6 +30,6 @@ pub trait Repository: Send + Sync {
     async fn update_state(&self, id: i32, state: KeyState) -> Result<()>;
     async fn get_enabled_key_by_type_and_name(&self, key_type: String, name: String) -> Result<DataKey>;
     async fn delete_private_key(&self, id: i32, user_id: i32) -> Result<()>;
-    async fn request_delete_public_key(&self, user_id: i32, id: i32) -> Result<()>;
+    async fn request_delete_public_key(&self, user_id: i32, user_email: String, id: i32) -> Result<()>;
     async fn cancel_delete_public_key(&self, user_id: i32, id: i32) -> Result<()>;
 }
