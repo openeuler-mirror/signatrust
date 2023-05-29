@@ -16,7 +16,11 @@
   <el-table ref="multipleTableRef" :data="useData.tableData">
     <el-table-column label="Name" show-overflow-tooltip prop="name" width="150">
     </el-table-column>
-    <el-table-column prop="key_state" label="State" align="left" width="80" />
+    <el-table-column prop="key_state" label="State" align="left" width="80">
+      <template #default="scope">
+        <span :title="scope.row.request_delete_users">{{ scope.row.key_state }}</span>
+      </template>
+    </el-table-column>
     <el-table-column label="Fingerprint" align="left" show-overflow-tooltip>
       <template #default="scope">
         <img
@@ -31,11 +35,11 @@
       </template>
     </el-table-column>
     <el-table-column
-            prop="user_email"
-            label="Author"
-            align="left"
-            width="120"
-            show-overflow-tooltip
+      prop="user_email"
+      label="Author"
+      align="left"
+      width="120"
+      show-overflow-tooltip
     />
     <el-table-column
       prop="description"
@@ -85,7 +89,7 @@
       prop="attributes.digest_algorithm"
       label="Digest Algorithm"
       align="left"
-      width="120"
+      width="150"
       show-overflow-tooltip
     >
       <template #default="scope">

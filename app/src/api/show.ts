@@ -1,16 +1,6 @@
 // 导入axios实例
 import http from './request';
 
-/**
- * 获取授权的相关回调链接
- */
-//  export const queryCourse= (param:any) => http({
-//     method:'get',
-//     url:'/oneid/oidc/authorize',
-//     params:param
-
-// });
-
 // 换取token
 export const getToken = () => http({
     method:'get',

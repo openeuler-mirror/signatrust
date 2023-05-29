@@ -1,12 +1,10 @@
 import axios from 'axios';
 import type { AxiosRequestConfig, AxiosPromise } from 'axios';
 import { ElMessage } from 'element-plus';
-import { baseUrls } from './baseUrl';
-import { getUserAuth, tokenFailIndicateLogin,showGuard } from '@/shared/utils/login';
+import { showGuard } from '@/shared/utils/login';
 
 // 创建一个 axios 实例
 const service = axios.create({
-  // baseURL: baseUrls, // 所有的请求地址前缀部分
   timeout: 60000, // 请求超时时间毫秒
   headers: {
     // 设置后端需要的传参类型
@@ -17,14 +15,6 @@ service.interceptors.request.use(
   // 在发送请求之前做些什么
 
   (config: any) => {
-    // const { Authorization} = getUserAuth();
-    // const Authorization = 'LzPvbFaBQO45oqoXv8m31I2g0eO5WvkF67k7J515'
-    //   if (Authorization) {
-    //     const to = {
-    //       Authorization,
-    //     };
-    //     Object.assign(config.headers, to);
-    //   }
     return config;
   },
   error => {
@@ -48,19 +38,14 @@ service.interceptors.response.use(
     // 超出 2xx 范围的状态码都会触发该函数。
     // 对响应错误做点什么
     if (error.response.status === 401) {
-      ElMessage.error('Please log in again');
       showGuard();
     }
-    // if (error.response.status === 400) {
-    //   ElMessage.error('Wrong request');
-    // }
     if (error.response.status === 500) {
       ElMessage.error('Server error');
     }
     return Promise.reject(error);
   }
 );
-
 export default function (
   urlParam: string | AxiosRequestConfig,
   param?: AxiosRequestConfig
