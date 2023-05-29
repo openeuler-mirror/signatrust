@@ -86,7 +86,7 @@
       prop="attributes.key_type"
       label="Key Algorithm"
       align="left"
-      width="120"
+      width="150"
       show-overflow-tooltip
     >
       <template #default="scope">
