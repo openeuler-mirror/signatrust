@@ -74,8 +74,13 @@ fn main() -> Result<()> {
     };
     //handler and quit
     if let Some(handler) = command {
-        handler.validate().expect("failed to validate command option");
-        if !handler.handle().expect("failed to perform command") {
+        if let Err(err) = handler.validate() {
+            error!("failed to validate command: {}", err);
+            return Err(err);
+        }
+
+        if let Err(err) = handler.handle() {
+            error!("failed to handle command: {}", err);
             return Err(Error::PartialSuccessError)
         }
     }

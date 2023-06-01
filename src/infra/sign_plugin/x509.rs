@@ -34,7 +34,7 @@ use serde::Deserialize;
 use validator::{Validate, ValidationError};
 use crate::util::options;
 use crate::util::sign::SignType;
-use crate::domain::datakey::entity::{DataKey, DataKeyContent, SecDataKey, KeyType as DataKeyType};
+use crate::domain::datakey::entity::{DataKey, DataKeyContent, SecDataKey};
 use crate::util::error::{Error, Result};
 use crate::domain::sign_plugin::SignPlugins;
 use crate::util::key::encode_u8_to_hex_string;
@@ -264,6 +264,7 @@ mod test {
     use chrono::{Duration, Utc};
     use secstr::SecVec;
     use crate::domain::datakey::entity::{KeyState, Visibility};
+    use crate::domain::datakey::entity::{KeyType};
     use crate::util::options::{DETACHED, SIGN_TYPE};
 
     fn get_default_parameter() -> HashMap<String, String> {
@@ -292,7 +293,7 @@ mod test {
             description: "fake description".to_string(),
             user: 1,
             attributes: get_default_parameter(),
-            key_type: DataKeyType::X509,
+            key_type: KeyType::X509,
             fingerprint: "".to_string(),
             private_key: vec![],
             public_key: vec![],

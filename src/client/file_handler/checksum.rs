@@ -15,7 +15,7 @@
  */
 
 use super::traits::FileHandler;
-use crate::util::sign::{SignType, KeyType};
+use crate::util::sign::{KeyType};
 use crate::util::error::Result;
 use async_trait::async_trait;
 use std::path::PathBuf;
@@ -49,14 +49,10 @@ impl FileHandler for CheckSumFileHandler {
         }
 
         if let Some(key_type) = sign_options.get(options::KEY_TYPE) {
-            if let Some(sign_type) = sign_options.get(options::SIGN_TYPE) {
-                if sign_type != SignType::Cms.to_string().as_str()
-                    && key_type == KeyType::X509.to_string().as_str()
-                {
-                    return Err(Error::InvalidArgumentError(
-                        "checksum file only support x509 key with cms sign type".to_string(),
-                    ));
-                }
+            if key_type != KeyType::Pgp.to_string().as_str() {
+                return Err(Error::InvalidArgumentError(
+                    "checksum file only support pgp key type".to_string(),
+                ));
             }
         }
         Ok(())
@@ -78,5 +74,55 @@ impl FileHandler for CheckSumFileHandler {
             temp_file.as_path().display().to_string(),
             format!("{}.{}", path.as_path().display(), FILE_EXTENSION),
         ))
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::env;
+
+    #[test]
+    fn test_validate_options() {
+        let mut options = HashMap::new();
+        options.insert(options::DETACHED.to_string(), "false".to_string());
+        let handler = CheckSumFileHandler::new();
+        let result = handler.validate_options(&options);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "invalid argument: checksum file only support detached signature"
+        );
+
+        options.remove(options::DETACHED);
+        let result = handler.validate_options(&options);
+        assert!(result.is_ok());
+
+        options.insert(options::DETACHED.to_string(), "true".to_string());
+        options.insert(options::KEY_TYPE.to_string(), KeyType::Pgp.to_string());
+        let result = handler.validate_options(&options);
+        assert!(result.is_ok());
+
+        options.insert(options::KEY_TYPE.to_string(), KeyType::X509.to_string());
+        let result = handler.validate_options(&options);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "invalid argument: checksum file only support pgp key type"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_assemble_data() {
+        let handler = CheckSumFileHandler::new();
+        let options = HashMap::new();
+        let path = PathBuf::from("./test_data/test.txt");
+        let data = vec![vec![1, 2, 3]];
+        let temp_dir = env::temp_dir();
+        let result = handler.assemble_data(&path, data, &temp_dir, &options).await;
+        assert!(result.is_ok());
+        let (temp_file, file_name) = result.expect("invoke assemble data should work");
+        assert_eq!(temp_file.starts_with(temp_dir.to_str().unwrap()), true);
+        assert_eq!(file_name, "./test_data/test.txt.asc");
     }
 }

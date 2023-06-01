@@ -17,6 +17,7 @@
 use clap::{Args};
 use crate::util::error::Result;
 use config::{Config};
+use regex::Regex;
 use std::sync::{Arc, atomic::AtomicBool, RwLock};
 use super::traits::SignCommand;
 use std::path::PathBuf;
@@ -40,7 +41,8 @@ use std::sync::atomic::{AtomicI32, Ordering};
 lazy_static! {
     pub static ref FILE_EXTENSION: HashMap<FileType, Vec<&'static str>> = HashMap::from([
         (FileType::Rpm, vec!["rpm", "srpm"]),
-        (FileType::CheckSum, vec!["txt", "sha256sum"]),
+        //checksum file can be used for any file
+        (FileType::CheckSum, vec![".*"]),
         (FileType::KernelModule, vec!["ko"]),
         (FileType::EfiImage, vec!["efi"]),
     ]);
@@ -133,11 +135,14 @@ impl CommandAddHandler {
     fn file_candidates(&self, extension: &str) -> Result<bool> {
         let collections = FILE_EXTENSION.get(
             &self.file_type).ok_or_else(||
-            error::Error::FileNotSupportError(format!("{}", self.file_type)))?;
-        if collections.contains(&extension) {
-            return Ok(true)
+            error::Error::FileNotSupportError(extension.to_string(), self.file_type.to_string()))?;
+        for value in collections {
+            let re = Regex::new(format!(r"^{}$", value).as_str()).unwrap();
+            if re.is_match(extension) {
+                return Ok(true)
+            }
         }
-        Ok(false)
+        Err(error::Error::FileNotSupportError(extension.to_string(), self.file_type.to_string()))
     }
 }
 
