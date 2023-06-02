@@ -96,8 +96,8 @@ pub enum Error {
     UnprivilegedError,
 
     //client error
-    #[error("file type not supported {0}")]
-    FileNotSupportError(String),
+    #[error("file extension {0} not supported for file {1}")]
+    FileNotSupportError(String, String),
     #[error("not any valid file found")]
     NoFileCandidateError,
     #[error("failed to split file: {0}")]

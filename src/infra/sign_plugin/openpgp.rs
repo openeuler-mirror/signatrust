@@ -35,11 +35,12 @@ use std::io::{Cursor};
 use std::str::from_utf8;
 use validator::{Validate, ValidationError};
 use pgp::composed::StandaloneSignature;
-use crate::domain::datakey::entity::{DataKey, DataKeyContent, SecDataKey, KeyType as DataKeyType};
+use crate::domain::datakey::entity::{DataKey, DataKeyContent, SecDataKey};
 use crate::util::key::encode_u8_to_hex_string;
 use super::util::{validate_utc_time_not_expire, validate_utc_time, attributes_validate};
 
-const VALID_KEY_TYPE: [&str; 2] = ["rsa", "eddsa"];
+// NOTE: `eddsa` will be supported only when it's supported in rpm library, check https://github.com/rpm-rs/rpm/pull/146
+const VALID_KEY_TYPE: [&str; 1] = ["rsa"];
 const VALID_KEY_SIZE: [&str; 3] = ["2048", "3072", "4096"];
 const VALID_DIGEST_ALGORITHM: [&str; 10] = ["none", "md5", "sha1", "sha1", "sha2_256", "sha2_384","sha2_512","sha2_224","sha3_256", "sha3_512"];
 
@@ -293,6 +294,7 @@ mod test {
     use rand::Rng;
     use secstr::SecVec;
     use crate::domain::datakey::entity::{KeyState, Visibility};
+    use crate::domain::datakey::entity::{KeyType};
     use crate::util::options::DETACHED;
 
     fn get_default_parameter() -> HashMap<String, String> {
@@ -317,7 +319,7 @@ mod test {
             description: "fake description".to_string(),
             user: 1,
             attributes: get_default_parameter(),
-            key_type: DataKeyType::OpenPGP,
+            key_type: KeyType::OpenPGP,
             fingerprint: "".to_string(),
             private_key: vec![],
             public_key: vec![],

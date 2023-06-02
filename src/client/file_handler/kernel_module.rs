@@ -102,7 +102,7 @@ impl KernelModuleFileHandler {
     pub fn get_raw_content(&self, path: &PathBuf, sign_options: &mut HashMap<String, String>) -> Result<Vec<u8>> {
         let raw_content = fs::read(path)?;
         let mut file = fs::File::open(path)?;
-        if file.metadata()?.len() <= MAGIC_NUMBER_SIZE as u64 {
+        if file.metadata()?.len() <= SIGNATURE_SIZE as u64 {
             return Ok(raw_content);
         }
         //identify magic string and end of the file
@@ -207,3 +207,168 @@ impl FileHandler for KernelModuleFileHandler {
         ));
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::env;
+    use rand::Rng;
+
+    fn generate_signed_kernel_module(length: usize, incorrect_length: bool) -> Result<(String, Vec<u8>)> {
+        let mut rng = rand::thread_rng();
+        let temp_file = env::temp_dir().join(Uuid::new_v4().to_string());
+        let mut file = fs::File::create(temp_file.clone())?;
+        let raw_content: Vec<u8> = (0..length).map(|_| rng.gen_range(0..=255)).collect();
+        file.write_all(&raw_content)?;
+        //append fake signature
+        let signature = vec![1,2,3,4,5,6];
+        file.write_all(&signature)?;
+        let mut size = signature.len();
+        if incorrect_length {
+            size = size + length + 2;
+        }
+        //append signature metadata
+        let signature = ModuleSignature::new(size as c_uint);
+        file.write_all(&bincode::encode_to_vec(
+            signature,
+            config::standard()
+                .with_fixed_int_encoding()
+                .with_big_endian())?)?;
+        file.write_all(MAGIC_NUMBER.as_bytes())?;
+        Ok((temp_file.display().to_string(), raw_content))
+    }
+
+    fn generate_unsigned_kernel_module(length: usize) -> Result<(String, Vec<u8>)> {
+        let mut rng = rand::thread_rng();
+        let temp_file = env::temp_dir().join(Uuid::new_v4().to_string());
+        let mut file = fs::File::create(temp_file.clone())?;
+        let raw_content: Vec<u8> = (0..length).map(|_| rng.gen_range(0..=255)).collect();
+        file.write_all(&raw_content)?;
+        Ok((temp_file.display().to_string(), raw_content))
+    }
+
+    #[test]
+    fn test_get_raw_content_with_small_unsigned_content() {
+        let mut sign_options = HashMap::new();
+        let file_handler = KernelModuleFileHandler::new();
+        let (name, original_content) = generate_unsigned_kernel_module(SIGNATURE_SIZE-1).expect("generate unsigned kernel module failed");
+        let path = PathBuf::from(name);
+        let raw_content = file_handler.get_raw_content(&path, &mut sign_options).expect("get raw content failed");
+        assert_eq!(raw_content.len(), SIGNATURE_SIZE-1);
+        assert_eq!(original_content, raw_content);
+    }
+
+    #[test]
+    fn test_get_raw_content_with_large_unsigned_content() {
+        let mut sign_options = HashMap::new();
+        let file_handler = KernelModuleFileHandler::new();
+        let (name, original_content) = generate_unsigned_kernel_module(SIGNATURE_SIZE+100).expect("generate unsigned kernel module failed");
+        let path = PathBuf::from(name);
+        let raw_content = file_handler.get_raw_content(&path, &mut sign_options).expect("get raw content failed");
+        assert_eq!(raw_content.len(), SIGNATURE_SIZE+100);
+        assert_eq!(original_content, raw_content);
+    }
+
+    #[test]
+    fn test_get_raw_content_with_signed_content() {
+        let mut sign_options = HashMap::new();
+        let file_handler = KernelModuleFileHandler::new();
+        let (name, original_content) = generate_signed_kernel_module(100,false).expect("generate signed kernel module failed");
+        let path = PathBuf::from(name);
+        let raw_content = file_handler.get_raw_content(&path, &mut sign_options).expect("get raw content failed");
+        assert_eq!(raw_content.len(), 100);
+        assert_eq!(original_content, raw_content);
+    }
+
+    #[test]
+    fn test_get_raw_content_with_invalid_signed_content() {
+        let mut sign_options = HashMap::new();
+        let file_handler = KernelModuleFileHandler::new();
+        let (name, _) = generate_signed_kernel_module(100,true).expect("generate signed kernel module failed");
+        let path = PathBuf::from(name);
+        let result = file_handler.get_raw_content(&path, &mut sign_options);
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "failed to split file: invalid kernel module signature size found"
+        );
+    }
+
+    #[test]
+    fn test_validate_options() {
+        let mut options = HashMap::new();
+        options.insert(options::KEY_TYPE.to_string(), KeyType::Pgp.to_string());
+        let handler = KernelModuleFileHandler::new();
+        let result = handler.validate_options(&options);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "invalid argument: kernel module file only support x509 signature"
+        );
+
+        options.insert(options::KEY_TYPE.to_string(), KeyType::X509.to_string());
+        options.insert(options::SIGN_TYPE.to_string(), SignType::Authenticode.to_string());
+        let result = handler.validate_options(&options);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "invalid argument: kernel module file only support cms or pkcs7 sign type"
+        );
+
+
+        options.insert(options::SIGN_TYPE.to_string(), SignType::Cms.to_string());
+        let result = handler.validate_options(&options);
+        assert!(result.is_ok());
+
+        options.insert(options::SIGN_TYPE.to_string(), SignType::PKCS7.to_string());
+        let result = handler.validate_options(&options);
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_assemble_data_with_detached_true() {
+        let handler = KernelModuleFileHandler::new();
+        let mut options = HashMap::new();
+        options.insert(options::DETACHED.to_string(), "true".to_string());
+        let path = PathBuf::from("./test_data/test.ko");
+        let data = vec![vec![1, 2, 3]];
+        let temp_dir = env::temp_dir();
+        let result = handler.assemble_data(&path, data, &temp_dir, &options).await;
+        assert!(result.is_ok());
+        let (temp_file, file_name) = result.expect("invoke assemble data should work");
+        assert_eq!(temp_file.starts_with(temp_dir.to_str().unwrap()), true);
+        assert_eq!(file_name, "./test_data/test.ko.p7s");
+        let result = fs::read(temp_file).expect("read temp file failed");
+        assert_eq!(result, vec![1, 2, 3]);
+    }
+
+    #[tokio::test]
+    async fn test_assemble_data_with_detached_false() {
+        let handler = KernelModuleFileHandler::new();
+        let mut options = HashMap::new();
+        options.insert(options::DETACHED.to_string(), "false".to_string());
+        let (name, raw_content) = generate_signed_kernel_module(100,false).expect("generate signed kernel module failed");
+        let path = PathBuf::from(name.clone());
+        let data = vec![vec![1, 2, 3]];
+        let temp_dir = env::temp_dir();
+        let result = handler.assemble_data(&path, data, &temp_dir, &options).await;
+        assert!(result.is_ok());
+        let (temp_file, file_name) = result.expect("invoke assemble data should work");
+        assert_eq!(temp_file.starts_with(temp_dir.to_str().unwrap()), true);
+        assert_eq!(file_name, name);
+        let result = handler.get_raw_content(&PathBuf::from(temp_file), &mut options).expect("get raw content failed");
+        assert_eq!(result, raw_content);
+    }
+
+    #[tokio::test]
+    async fn test_split_content() {
+        let mut sign_options = HashMap::new();
+        let file_handler = KernelModuleFileHandler::new();
+        let (name, original_content) = generate_unsigned_kernel_module(SIGNATURE_SIZE-1).expect("generate unsigned kernel module failed");
+        let path = PathBuf::from(name);
+        let raw_content = file_handler.split_data(&path, &mut sign_options).await.expect("get raw content failed");
+        assert_eq!(raw_content[0].len(), SIGNATURE_SIZE-1);
+        assert_eq!(original_content, raw_content[0]);
+    }
+
+}
+
