@@ -133,3 +133,92 @@ impl FileHandler for RpmFileHandler {
     }
 }
 
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::env;
+    use std::fs;
+    use std::io::Write;
+
+    fn get_signed_rpm() -> Result<PathBuf> {
+        let current_dir = env::current_dir().expect("get current dir failed");
+        Ok(PathBuf::from(current_dir.join("test_assets").join("Imath-3.1.4-1.oe2303.x86_64.rpm")))
+    }
+
+    fn generate_invalid_rpm() -> Result<PathBuf> {
+        let temp_file = env::temp_dir().join(Uuid::new_v4().to_string());
+        let mut file = File::create(temp_file.clone())?;
+        let content = vec![1,2,3,4];
+        file.write_all(&content)?;
+        Ok(temp_file)
+    }
+
+    fn generate_signed_rpm() -> Result<PathBuf> {
+        let original = get_signed_rpm()?;
+        let mut src_file = File::open(original)?;
+        let mut content = Vec::new();
+        let _ = src_file.read_to_end(&mut content)?;
+        let temp_file = env::temp_dir().join(Uuid::new_v4().to_string());
+        let mut file = File::create(temp_file.clone())?;
+        file.write_all(&content)?;
+        Ok(temp_file)
+    }
+
+    #[test]
+    fn test_validate_options() {
+        let mut options = HashMap::new();
+        options.insert(options::KEY_TYPE.to_string(), KeyType::X509.to_string());
+        let handler = RpmFileHandler::new();
+        let result = handler.validate_options(&options);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "invalid argument: rpm file only support pgp signature"
+        );
+
+        options.insert(options::KEY_TYPE.to_string(), KeyType::Pgp.to_string());
+        options.insert(options::DETACHED.to_string(), "true".to_string());
+        let result = handler.validate_options(&options);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "invalid argument: rpm file only support inside signature"
+        );
+
+        options.insert(options::DETACHED.to_string(), "false".to_string());
+        let result = handler.validate_options(&options);
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_split_data_success() {
+        let mut sign_options = HashMap::new();
+        let file_handler = RpmFileHandler::new();
+        let path = get_signed_rpm().expect("get signed rpm failed");
+        let raw_content = file_handler.split_data(&path, &mut sign_options).await.expect("get raw content failed");
+        assert_eq!(raw_content.len(), 2);
+        assert_eq!(raw_content[0].len(), 4325);
+        assert_eq!(raw_content[1].len(), 67757);
+    }
+
+    #[tokio::test]
+    async fn test_split_data_failed() {
+        let mut sign_options = HashMap::new();
+        let file_handler = RpmFileHandler::new();
+        let path = generate_invalid_rpm().expect("generate invalid rpm failed");
+        let raw_content = file_handler.split_data(&path, &mut sign_options).await.expect_err("split invalid rpm file would failed");
+    }
+
+    #[tokio::test]
+    async fn test_assemble_data_success() {
+        let mut sign_options = HashMap::new();
+        let file_handler = RpmFileHandler::new();
+        let path = generate_signed_rpm().expect("generate signed rpm failed");
+        let fake_signature = vec![vec![1,2,3,4], vec![1,2,3,4]];
+        let raw_content = file_handler.assemble_data(&path, fake_signature, &env::temp_dir(), &mut sign_options).await.expect("assemble data failed");
+    }
+
+}
+
+
+

@@ -345,7 +345,7 @@ mod test {
     async fn test_assemble_data_with_detached_false() {
         let handler = KernelModuleFileHandler::new();
         let mut options = HashMap::new();
-        options.insert(options::DETACHED.to_string(), "false".to_string());
+        options.insert(DETACHED.to_string(), "false".to_string());
         let (name, raw_content) = generate_signed_kernel_module(100,false).expect("generate signed kernel module failed");
         let path = PathBuf::from(name.clone());
         let data = vec![vec![1, 2, 3]];
