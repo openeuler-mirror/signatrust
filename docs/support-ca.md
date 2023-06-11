@@ -16,13 +16,16 @@ for end entities. This trust chain enables the establishment of trust from the r
 ## Design and Concept
 In design, there would be three types of certificates, Root CA, Intermediate CA and End Entity. And we restrictively follow the 3-level hierarchical trust model in design.
 ```
-            Root CA(validity period about 30 years)
-                |
-                |
-        Intermediate CA(validity period about 10 years)
-                |
-                |
-            End Entity(validity period about 3 year)
+                        Root CA
+                           |
+               -----------------------------
+               |                            |
+       Intermediate CA1              Intermediate CA2
+               |                            |
+    ---------------------       ---------------------------
+    |                   |       |                         |
+ End Entity1     End Entity2 End Entity3              End Entity4
+
 ```
 ### Root CA
 The root CA is the top-most CA in the hierarchy and is responsible for issuing certificates for intermediate CAs,
@@ -54,6 +57,19 @@ When generated, we can get the profile detail via inspecting certificate file:
             Netscape Comment:
                 Signatrust Root CA
 ```
+The life cycle and functionality of the Certificate Authority is defined as below:
+
+| State\Operations   | Issue Cert | Export Cert | Enable | Disable | Cancel Revoke | Revoke | Cancel Delete | Delete | Sign OBJ |
+|--------------------|------------|-------------|--------|---------|---------------|--------|---------------|--------|----------|
+| **Disabled**       | No         | No          | Yes    | No      | No            | No     | No            | Yes    | No       |
+| **Enabled**        | Yes        | Yes         | No     | Yes     | No            | No     | No            | No     | No       |
+| **Pending Revoke** | \          | \           | \      | \       | \             | \      | \             | \      | \        |
+| **Revoked**        | \          | \           | \      | \       | \             | \      | \             | \      | \        |
+| **Expired**        | No         | No          | No     | No      | No            | No     | No            | Yes    | No       |
+| **Pending Delete** | No         | No          | No     | No      | No            | No     | Yes           | No     | No       |
+| **Deleted**        | No         | No          | No     | No      | No            | No     | No            | No     | No       |
+
+**NOTE**: we don't support revoking a Root Certificate Authority.
 ### Intermediate CA
 The intermediate CA is responsible for issuing end entities certificates. Considering we restrictively follow the 3-level hierarchical trust model, the profile for intermediate
 CA would be:
@@ -63,6 +79,7 @@ basicConstraints        = critical, CA:TRUE, pathlen:0
 subjectKeyIdentifier    = hash
 authorityKeyIdentifier  = keyid:always, issuer:always
 keyUsage                = critical, cRLSign, digitalSignature, keyCertSign
+authorityInfoAccess     = OCSP;URI:<Signatrust OSCP Responder>, caIssuers;URI:<Signatrust CA URI>
 nsCertType = objCA
 nsComment = "Signatrust Intermediate CA"
 ```
@@ -83,7 +100,24 @@ When generated, we can get the profile detail via inspecting certificate file:
                 Object Signing CA
             Netscape Comment:
                 Signatrust Intermediate CA
+            Authority Information Access:
+                OCSP - URI:https://oscp.signatrust.osinfra.cn
+                CA Issuers - URI:https://signatrust.osinfra.cn/api/v1/keys/<key-id>/certificate
 ```
+The life cycle and functionality of the Intermediate Certificate Authority is defined as below:
+
+| State\Operations   | Issue Cert | Export Cert | Enable | Disable | Cancel Revoke | Revoke | Cancel Delete | Delete | Sign OBJ |
+|--------------------|------------|-------------|--------|---------|---------------|--------|---------------|--------|----------|
+| **Disabled**       | No         | No          | Yes    | No      | No            | Yes    | No            | Yes    | No       |
+| **Enabled**        | Yes        | Yes         | No     | Yes     | No            | No     | No            | NO     | No       |
+| **Pending Revoke** | No         | No          | No     | No      | Yes           | No     | No            | No     | No       |
+| **Revoked**        | No         | No          | No     | No      | No            | No     | No            | Yes    | No       |
+| **Expired**        | No         | No          | No     | No      | No            | No     | No            | Yes    | No       |
+| **Pending Delete** | No         | No          | No     | No      | No            | No     | Yes           | No     | No       |
+| **Deleted**        | No         | No          | No     | No      | No            | No     | No            | No     | No       |
+
+The intermediate CA can not issue a cert nor export public key when it's in pending revoke and pending delete state.
+
 ### End Entity (End Certificate)
 The end entity is the entity that is being certified by the CA. And will be used for signature. The profile for
 end entity would be:
@@ -94,6 +128,7 @@ subjectKeyIdentifier    = hash
 authorityKeyIdentifier  = keyid:always, issuer:always
 keyUsage                = critical, digitalSignature, nonRepudiation
 extendedKeyUsage        = codeSigning
+authorityInfoAccess     = OCSP;URI:<Signatrust OSCP Responder>, caIssuers;URI:<Signatrust CA URI>
 nsCertType = objsign
 nsComment = "Signatrust Sign Certificate"
 ```
@@ -127,15 +162,42 @@ When generated, we can get the profile detail via inspecting certificate file:
                 Object Signing
             Netscape Comment:
                 Signatrust Sign Certificate
+            Authority Information Access:
+                OCSP - URI:https://oscp.signatrust.osinfra.cn
+                CA Issuers - URI:https://signatrust.osinfra.cn/api/v1/keys/<key-id>/certificate
 ```
+
+The life cycle and functionality of the End Entity Certificate is defined as below:
+
+| State\Operations   | Issue Cert | Export Cert | Enable | Disable | Cancel Revoke | Revoke | Cancel Delete | Delete | Sign OBJ |
+|--------------------|------------|-------------|--------|---------|---------------|--------|---------------|--------|----------|
+| **Disabled**       | No         | No          | Yes    | No      | No            | Yes    | No            | Yes    | No       |
+| **Enabled**        | No         | Yes         | No     | Yes     | No            | No     | No            | NO     | Yes      |
+| **Pending Revoke** | No         | No          | No     | No      | Yes           | No     | No            | No     | No       |
+| **Revoked**        | No         | No          | No     | No      | No            | No     | No            | Yes    | No       |
+| **Expired**        | No         | No          | No     | No      | No            | No     | No            | Yes    | No       |
+| **Pending Delete** | No         | No          | No     | No      | No            | No     | Yes           | No     | No       |
+| **Deleted**        | No         | No          | No     | No      | No            | No     | No            | No     | No       |
+
 ### Certificate Revocation List
 one of the benefits we can get from introducing private CA is about the certificate revocation list; we need both support to revoke intermediate CA and end entity certificate.
 the CRL content would be updated every **7** days in design, and the generated certificates would append the CRL Distribution Endpoint in X509 extension as well:
 ```shell
 X509v3 CRL Distribution Points:
             Full Name:
-              URI:https://signatrust.osinfra.cn/api/v1/keys/<ca-or-intermediate-ca-id>/crl
+              URI:https://signatrust.osinfra.cn/api/v1/keys/<key-id>/crl
 ```
+### Online Certificate Status Protocol
+The Online Certificate Status Protocol (OCSP) enables the client to determine the
+(revocation) state of an identified certificate.
+The OCSP responder will be added into the AIA if supported.
+```shell
+ Authority Information Access:
+            OCSP - URI:https://oscp.signatrust.osinfra.cn
+```
+And when compared with CRL it can provide real-time, on-demand checking revocation status of a certificate.
+We can also support this protocol in the future.
+
 ### Others
 Since the CAs are usually public for certificates and CRLs download,
 we don't support generating personal CA and ICA for now.
@@ -152,6 +214,7 @@ pub enum KeyState {
     PendingRevoke,  //new status
     Revoked,        //new status
     PendingDelete,
+    Expired,        //new status
     Deleted
 }
 ```
@@ -172,12 +235,21 @@ we should drop all existing X509 keys in the database because they don't follow 
 new design.
 
 2. In order to support the hierarchical structure introduced by CAs, we should add a new column named `parent_id` for datakey
-table, it's only useful for `X509EE` and `X509ICA`.
+table, it's only useful for `X509EE` and `X509ICA`. Also, CA will utilize the serial number to identify the certificate,
+especially for CRL generation and finding the revoked certificate, therefore, we need to add a new column `serial_number` for `X509EE` and `X509ICA`:
 ```sql
 ALTER TABLE data_key ADD parent_id INT AFTER `key_type`;
+ALTER TABLE data_key ADD serial_number VARCHAR(90) AFTER `fingerprint`;
 ```
-
-3. We need to introduce two new tables to store the CRL content and revoked keys, the tables would be:
+3. We already supported triple confirmation for key deletion, and we can introduce the same mechanism for key revocation. 
+In order to support this, we need to rename the `request_delete` table to
+`pending_operation` and add a new column `type` and `reason` to indicate the request type and revoke/delete reason:
+```sql
+ALTER TABLE request_delete ADD type VARCHAR(30) AFTER `id`;
+ALTER TABLE request_delete ADD reason VARCHAR(200) AFTER `key_id`;
+ALTER TABLE request_delete RENAME TO pending_operation;
+```
+4. We need to introduce two new tables to store the CRL content and revoked keys, the tables would be:
 ```sql
 CREATE TABLE x509_crl_content (
                        id INT AUTO_INCREMENT,                       
@@ -186,11 +258,12 @@ CREATE TABLE x509_crl_content (
                        data TEXT NOT NULL,
                        PRIMARY KEY(id),                    
 );
-CREATE TABLE x509_crl_revoked (
+CREATE TABLE x509_keys_revoked (
                       id INT AUTO_INCREMENT,
                       ca_id INT NOT NULL,
                       key_id INT NOT NULL,
                       create_at DATETIME,
+                      reason VARCHAR(30),
                       FOREIGN KEY (ca_id) REFERENCES data_key(id),
                       FOREIGN KEY (key_id) REFERENCES data_key(id),
                       UNIQUE KEY `unique_ca_and_key` (`ca_id`,`key_id`)                   
@@ -289,6 +362,13 @@ POST /api/v1/keys/<key-id>/action/cancel_delete
 POST /api/v1/keys/<key-id>/action/request_revoke
 POST /api/v1/keys/<key-id>/action/cancel_revoke
 ```
+For the revoke API, we need to pass the reason in the request body as well,
+and the revoke reason will follow openssl recommendation:
+```shell
+{
+    "reason": "one of these keyCompromise, CACompromise, affiliationChanged, superseded, cessationOfOperation, certificateHold, privilegeWithdrawn, and AACompromise"
+}
+```
 #### CRL generation detail
 We use rust-openssl to handle the x509 related operations, but the rust-openssl library currently doesn't support CRL
 generation, we need to utilize the openssl C library and FFI to generate CRLs; ChatGPT generates the code below for demonstration:
@@ -371,6 +451,10 @@ int main() {
 **Alternative**: Add CRL generation support in the rust-openssl library is also an option, but it's not a trivial task.
 
 CRL update will be performed by the control server periodically, for every CA and ICA it's every 7 days, we will check
-the `update_at` column of the `x509_crl_content` table and compare it with the current time. The `x509_crl_revoked` will be updated based on two conditions:
-1. Add: when a certificate is revoked, and it's signed by the corresponding CA/ICA.
+the `update_at` column of the `x509_crl_content` table and compare it with the current time. The `x509_keys_revoked` will be updated based on two conditions:
+1. Add: when an EE certificate is revoked, and it's issued by the corresponding CA/ICA.
 2. Remove: when a certificate is deleted.
+3. Add: when a CA or ICA on the chain has been compromised, all the certificates signed by the CA/ICA will be added to the list, this behaviour is defined in [RFC2560](https://datatracker.ietf.org/doc/html/rfc2560#section-2.7)
+#### OSCP detail
+We need to set up an OSCP server to support the OSCP request,
+and this will be described in detail within another proposal.
