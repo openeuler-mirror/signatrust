@@ -41,3 +41,18 @@ impl KMSProviderFactory {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_kms_provider_factory() {
+        let mut config = HashMap::new();
+        config.insert("type".to_string(), Value::from("not_existed"));
+        assert!(KMSProviderFactory::new_provider(&config).is_err());
+        config.insert("type".to_string(), Value::from("dummy"));
+        KMSProviderFactory::new_provider(&config).expect("kms provider from valid string should succeed");
+    }
+}
+

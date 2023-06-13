@@ -23,6 +23,7 @@ use config::{Config, File};
 use std::sync::{Arc, atomic::AtomicBool, RwLock};
 use crate::client::cmd::traits::SignCommand;
 
+mod infra;
 mod util;
 mod client;
 mod domain;

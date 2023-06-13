@@ -117,3 +117,52 @@ impl Display for SecClusterKey {
     }
 }
 
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::collections::HashMap;
+    use crate::infra::kms::dummy::DummyKMS;
+
+    fn get_dummy_kms_provider() -> Box<dyn KMSProvider> {
+        Box::new(DummyKMS::new(&HashMap::new()).unwrap())
+    }
+
+    #[tokio::test]
+    async fn test_sec_cluster_key_load_and_display() {
+        let kms_provider = get_dummy_kms_provider();
+        let content = vec![1,2,3,4];
+        let hexed_content = key::encode_u8_to_hex_string(&content).as_bytes().to_vec();
+        let cluster_key = ClusterKey::new(hexed_content, "FAKE_ALGORITHM".to_string()).expect("create cluster key failed");
+        let sec_cluster_key = SecClusterKey::load(cluster_key, &kms_provider).await.expect("load cluster key failed");
+        assert_eq!(sec_cluster_key.data.unsecure(), content);
+        assert_eq!(true, format!("{}", sec_cluster_key).contains("FAKE_ALGORITHM"));
+    }
+
+    #[test]
+    fn test_sec_cluster_key_default() {
+        let sec_cluster_key = SecClusterKey::default();
+        assert_eq!(sec_cluster_key.id, 0);
+        assert_eq!(sec_cluster_key.data.unsecure(), vec![0, 0, 0, 0]);
+        assert_eq!(sec_cluster_key.algorithm, "");
+        assert_eq!(sec_cluster_key.identity, "");
+    }
+
+    #[test]
+    fn test_cluster_key_default() {
+        let cluster_key = ClusterKey::default();
+        assert_eq!(cluster_key.id, 0);
+        assert_eq!(cluster_key.data, vec![0, 0, 0, 0]);
+        assert_eq!(cluster_key.algorithm, "");
+        assert_eq!(cluster_key.identity, "");
+    }
+
+    #[tokio::test]
+    async fn test_cluster_key_new_and_display() {
+        let content = vec![1,2,3,4];
+        let hexed_content = key::encode_u8_to_hex_string(&content).as_bytes().to_vec();
+        let cluster_key = ClusterKey::new(hexed_content.clone(), "FAKE_ALGORITHM".to_string()).expect("create cluster key failed");
+        assert_eq!(cluster_key.data, hexed_content);
+        assert_eq!(true, format!("{}", cluster_key).contains("FAKE_ALGORITHM"));
+    }
+}
+

@@ -18,7 +18,7 @@ use crate::util::error::{Error, Result};
 use std::fmt;
 use std::str::FromStr;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Algorithm {
     Aes256GSM,
 }
@@ -50,3 +50,16 @@ pub trait Encryptor: Send + Sync {
     fn encrypt(&self, key: Vec<u8>, content: Vec<u8>) -> Result<Vec<u8>>;
     fn decrypt(&self, key: Vec<u8>, content: Vec<u8>) -> Result<Vec<u8>>;
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_algorithm_from_string_and_display() {
+        let _ = Algorithm::from_str("invalid_algorithm").expect_err("algorithm from invalid string should fail");
+        let algorithm = Algorithm::from_str("aes256gsm").expect("algorithm from string failed");
+        assert_eq!(format!("{}", algorithm), "Aes256GSM");
+    }
+}
+

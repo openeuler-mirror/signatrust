@@ -41,3 +41,18 @@ impl KMSProvider for DummyKMS {
         Ok(content)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_dummy_kms() {
+        let dummy_kms = DummyKMS::new(&HashMap::new()).unwrap();
+        let content = "dummy kms test".to_string();
+        let encoded_content = dummy_kms.encode(content.clone()).await.unwrap();
+        assert_eq!(content, encoded_content);
+        let decoded_content = dummy_kms.decode(encoded_content).await.unwrap();
+        assert_eq!(content, decoded_content);
+    }
+}
