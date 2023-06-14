@@ -13,6 +13,11 @@ users(client) can check the CRL to ensure that a certificate has not been revoke
 Higher-level CAs, known as root CAs, certify and sign the certificates of intermediate CAs, which, in turn, issue certificates
 for end entities. This trust chain enables the establishment of trust from the root CAs down to the end-entity certificates.
 
+## Use Cases
+1. In the field of singing KO and EFI file, our customer needs to get notified when the certificate is revoked due to compromise or other reasons.
+2. We need this mechanism to support issuing and revoking the clients used at the client component side for mTLS communication.
+Now we utilize HuaweiCloud to issue the certificate, and within this change we can manage these certificates independently in the future.
+
 ## Design and Concept
 In design, there would be three types of certificates, Root CA, Intermediate CA and End Entity. And we restrictively follow the 3-level hierarchical trust model in design.
 ```
