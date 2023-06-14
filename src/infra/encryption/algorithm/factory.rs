@@ -31,3 +31,15 @@ impl AlgorithmFactory {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_algorithm_factory() {
+        assert!(AlgorithmFactory::new_algorithm("aes-512-gcm").is_err());
+        let algo = AlgorithmFactory::new_algorithm("aes256gsm").expect("algorithm from valid string should succeed");
+        assert_eq!(algo.algorithm(), Algorithm::Aes256GSM);
+    }
+}

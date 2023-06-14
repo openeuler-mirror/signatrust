@@ -265,7 +265,7 @@ mod test {
     use secstr::SecVec;
     use crate::domain::datakey::entity::{KeyState, Visibility};
     use crate::domain::datakey::entity::{KeyType};
-    use crate::util::options::{DETACHED, SIGN_TYPE};
+    use crate::util::options::{SIGN_TYPE};
 
     fn get_default_parameter() -> HashMap<String, String> {
         HashMap::from([

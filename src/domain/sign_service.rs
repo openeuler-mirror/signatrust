@@ -21,7 +21,7 @@ use std::str::FromStr;
 use crate::domain::datakey::entity::DataKey;
 use async_trait::async_trait;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum SignBackendType {
     Memory,
 }
@@ -44,4 +44,17 @@ pub trait SignBackend: Send + Sync{
     async fn rotate_key(&mut self) -> Result<bool>;
     async fn sign(&self, data_key: &DataKey, content: Vec<u8>, options: HashMap<String, String>) -> Result<Vec<u8>>;
     async fn decode_public_keys(&self, data_key: &mut DataKey) -> Result<()>;
+}
+
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_sign_backend_type_from_string_and_display() {
+        let _ = SignBackendType::from_str("invalid_type").expect_err("sign backend type from invalid string should fail");
+        let sign_backend_type = SignBackendType::from_str("memory").expect("sign backend type from string failed");
+        assert_eq!(sign_backend_type, SignBackendType::Memory);
+    }
 }
