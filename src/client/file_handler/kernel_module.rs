@@ -154,7 +154,7 @@ impl KernelModuleFileHandler {
 impl FileHandler for KernelModuleFileHandler {
     fn validate_options(&self, sign_options: &HashMap<String, String>) -> Result<()> {
         if let Some(key_type) = sign_options.get(options::KEY_TYPE) {
-            if key_type != KeyType::X509.to_string().as_str() {
+            if key_type != KeyType::X509EE.to_string().as_str() {
                 return Err(Error::InvalidArgumentError(
                     "kernel module file only support x509 signature".to_string(),
                 ));
@@ -305,7 +305,7 @@ mod test {
             "invalid argument: kernel module file only support x509 signature"
         );
 
-        options.insert(options::KEY_TYPE.to_string(), KeyType::X509.to_string());
+        options.insert(options::KEY_TYPE.to_string(), KeyType::X509EE.to_string());
         options.insert(options::SIGN_TYPE.to_string(), SignType::Authenticode.to_string());
         let result = handler.validate_options(&options);
         assert!(result.is_err());

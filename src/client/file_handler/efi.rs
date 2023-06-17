@@ -29,7 +29,7 @@ impl FileHandler for EfiFileHandler {
         }
 
         if let Some(key_type) = sign_options.get(options::KEY_TYPE) {
-            if key_type != KeyType::X509.to_string().as_str() {
+            if key_type != KeyType::X509EE.to_string().as_str() {
                 return Err(Error::InvalidArgumentError(
                     "EFI image only support x509 key type".to_string(),
                 ));

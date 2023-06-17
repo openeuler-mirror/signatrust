@@ -55,13 +55,16 @@ impl Display for FileType {
 pub enum KeyType {
     Pgp,
     X509,
+    X509EE,
 }
 
 impl Display for KeyType {
     fn fmt(&self, f: &mut Formatter) -> fmtResult {
         match self {
             KeyType::Pgp => write!(f, "pgp"),
-            KeyType::X509 => write!(f, "x509"),
+            KeyType::X509EE => write!(f, "x509ee"),
+            //client can use 'x509' to specify a x509 key type for the purpose of simplicity.
+            KeyType::X509 => write!(f, "x509ee")
         }
     }
 }

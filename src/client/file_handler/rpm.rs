@@ -167,7 +167,7 @@ mod test {
     #[test]
     fn test_validate_options() {
         let mut options = HashMap::new();
-        options.insert(options::KEY_TYPE.to_string(), KeyType::X509.to_string());
+        options.insert(options::KEY_TYPE.to_string(), KeyType::X509EE.to_string());
         let handler = RpmFileHandler::new();
         let result = handler.validate_options(&options);
         assert!(result.is_err());
@@ -206,7 +206,7 @@ mod test {
         let mut sign_options = HashMap::new();
         let file_handler = RpmFileHandler::new();
         let path = generate_invalid_rpm().expect("generate invalid rpm failed");
-        let raw_content = file_handler.split_data(&path, &mut sign_options).await.expect_err("split invalid rpm file would failed");
+        let _raw_content = file_handler.split_data(&path, &mut sign_options).await.expect_err("split invalid rpm file would failed");
     }
 
     #[tokio::test]
@@ -215,7 +215,7 @@ mod test {
         let file_handler = RpmFileHandler::new();
         let path = generate_signed_rpm().expect("generate signed rpm failed");
         let fake_signature = vec![vec![1,2,3,4], vec![1,2,3,4]];
-        let raw_content = file_handler.assemble_data(&path, fake_signature, &env::temp_dir(), &mut sign_options).await.expect("assemble data failed");
+        let _raw_content = file_handler.assemble_data(&path, fake_signature, &env::temp_dir(), &mut sign_options).await.expect("assemble data failed");
     }
 
 }

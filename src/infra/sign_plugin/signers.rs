@@ -17,9 +17,8 @@
 use crate::domain::sign_plugin::SignPlugins;
 use crate::infra::sign_plugin::openpgp::OpenPGPPlugin;
 use crate::infra::sign_plugin::x509::X509Plugin;
-use crate::domain::datakey::entity::{DataKey, DataKeyContent, KeyType};
+use crate::domain::datakey::entity::{DataKey, KeyType};
 use crate::util::error::Result;
-use std::collections::HashMap;
 
 use crate::domain::datakey::entity::SecDataKey;
 
@@ -31,25 +30,15 @@ impl Signers {
     pub fn load_from_data_key(key_type: &KeyType, data_key: SecDataKey) -> Result<Box<dyn SignPlugins>> {
         match key_type {
             KeyType::OpenPGP => Ok(Box::new(OpenPGPPlugin::new(data_key)?)),
-            KeyType::X509 => Ok(Box::new(X509Plugin::new(data_key)?)),
+            KeyType::X509CA | KeyType::X509ICA | KeyType::X509EE => Ok(Box::new(X509Plugin::new(data_key)?)),
         }
     }
 
-    //generating new key, including private & public keys and the certificate, empty if not required.
-    pub fn generate_keys(
-        key_type: &KeyType,
-        value: &HashMap<String, String>,
-    ) -> Result<DataKeyContent> {
-        match key_type {
-            KeyType::OpenPGP => OpenPGPPlugin::generate_keys(value),
-            KeyType::X509 => X509Plugin::generate_keys(value),
-        }
-    }
 
     pub fn validate_and_update(datakey: &mut DataKey) -> Result<()> {
         match datakey.key_type {
             KeyType::OpenPGP => OpenPGPPlugin::validate_and_update(datakey),
-            KeyType::X509 => X509Plugin::validate_and_update(datakey),
+            KeyType::X509CA | KeyType::X509ICA | KeyType::X509EE => X509Plugin::validate_and_update(datakey),
         }
     }
 }

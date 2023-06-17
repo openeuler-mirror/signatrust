@@ -21,7 +21,7 @@ use std::env;
 use validator::Validate;
 use chrono::{Duration, Utc};
 use crate::util::error::{Result};
-use crate::util::sign::KeyType;
+use crate::domain::datakey::entity::KeyType as EntityKeyTpe;
 use clap::{Parser, Subcommand};
 use clap::{Args};
 use tokio_util::sync::CancellationToken;
@@ -29,6 +29,8 @@ use crate::domain::datakey::entity::{DataKey};
 use crate::domain::user::entity::User;
 use crate::presentation::handler::control::model::datakey::dto::{CreateDataKeyDTO};
 use crate::presentation::handler::control::model::user::dto::UserIdentity;
+use std::str::FromStr;
+
 
 mod util;
 mod infra;
@@ -116,12 +118,14 @@ pub struct CommandGenerateKeys {
     #[arg(help = "specify the 'CountryName' used for x509 key generation. ")]
     param_x509_country_name: Option<String>,
     #[arg(long)]
+    #[arg(help = "specify the name of the CA or ICA which used for cert issuing. ")]
+    param_x509_parent_name: Option<String>,
+    #[arg(long)]
     #[arg(help = "specify the email of admin which this key bounds to")]
     email: String,
     #[arg(long)]
-    #[arg(value_enum)]
     #[arg(help = "specify th type of key")]
-    key_type: KeyType,
+    key_type: String,
 }
 
 fn generate_keys_parameters(command: &CommandGenerateKeys) -> HashMap<String, String> {
@@ -129,10 +133,11 @@ fn generate_keys_parameters(command: &CommandGenerateKeys) -> HashMap<String, St
     attributes.insert("key_type".to_string(), command.param_key_type.clone());
     attributes.insert("key_length".to_string(), command.param_key_size.clone());
     attributes.insert("digest_algorithm".to_string(), command.digest_algorithm.clone());
-    if command.key_type == KeyType::Pgp {
+    let key_type = EntityKeyTpe::from_str(&command.key_type).unwrap();
+    if key_type == EntityKeyTpe::OpenPGP {
         attributes.insert("email".to_string(), command.param_pgp_email.clone().unwrap());
         attributes.insert("passphrase".to_string(), command.param_pgp_passphrase.clone().unwrap());
-    } else if command.key_type == KeyType::X509 {
+    } else {
         attributes.insert("common_name".to_string(), command.param_x509_common_name.clone().unwrap());
         attributes.insert("country_name".to_string(), command.param_x509_country_name.clone().unwrap());
         attributes.insert("locality".to_string(), command.param_x509_locality.clone().unwrap());
@@ -163,14 +168,18 @@ async fn main() -> Result<()> {
             let user = control_server.get_user_by_email(&generate_keys.email).await?;
 
             let now = Utc::now();
-            let key = CreateDataKeyDTO {
+            let mut key = CreateDataKeyDTO {
                 name: generate_keys.name.clone(),
                 description: generate_keys.description.clone(),
-                visibility: "public".to_string(),
                 attributes: generate_keys_parameters(&generate_keys),
-                key_type: generate_keys.key_type.to_string(),
+                key_type: generate_keys.key_type.clone(),
+                parent_id: None,
                 expire_at: format!("{}", now + Duration::days(30)),
             };
+            if let Some(id) = generate_keys.param_x509_parent_name {
+                let data_key = control_server.get_key_by_name(&id).await?;
+                key.parent_id = Some(data_key.id);
+            }
             key.validate()?;
 
             let keys = control_server.create_keys(&mut DataKey::create_from(key, UserIdentity::from(user))?).await?;

@@ -75,7 +75,11 @@ impl Modify for SecurityAddon {
         crate::presentation::handler::control::datakey_handler::create_data_key,
         crate::presentation::handler::control::datakey_handler::delete_data_key,
         crate::presentation::handler::control::datakey_handler::cancel_delete_data_key,
-        crate::presentation::handler::control::datakey_handler::export_data_key,
+        crate::presentation::handler::control::datakey_handler::revoke_data_key,
+        crate::presentation::handler::control::datakey_handler::cancel_revoke_data_key,
+        crate::presentation::handler::control::datakey_handler::export_public_key,
+        crate::presentation::handler::control::datakey_handler::export_certificate,
+        crate::presentation::handler::control::datakey_handler::export_crl,
         crate::presentation::handler::control::datakey_handler::enable_data_key,
         crate::presentation::handler::control::datakey_handler::disable_data_key,
         crate::presentation::handler::control::datakey_handler::import_data_key,
@@ -93,8 +97,7 @@ impl Modify for SecurityAddon {
         schemas(crate::presentation::handler::control::model::datakey::dto::DataKeyDTO,
                 crate::presentation::handler::control::model::datakey::dto::CreateDataKeyDTO,
                 crate::presentation::handler::control::model::datakey::dto::ImportDataKeyDTO,
-                crate::presentation::handler::control::model::datakey::dto::ExportKey,
-                crate::presentation::handler::control::model::datakey::dto::KeyQuery,
+                crate::presentation::handler::control::model::datakey::dto::RevokeCertificateDTO,
                 crate::presentation::handler::control::model::datakey::dto::NameIdenticalQuery,
                 crate::presentation::handler::control::model::token::dto::TokenDTO,
                 crate::presentation::handler::control::model::token::dto::CreateTokenDTO,
@@ -247,8 +250,13 @@ impl ControlServer {
     //used for control admin cmd
     pub async fn create_keys(&self, data: &mut DataKey) -> Result<DataKey> {
         let key = self.key_service.create(data).await?;
-        self.key_service.enable(None, key.id).await?;
+        self.key_service.enable(None, format!("{}", key.id)).await?;
         Ok(key)
+    }
+
+    //used for control admin cmd
+    pub async fn get_key_by_name(&self, name: &str) -> Result<DataKey> {
+        self.key_service.get_by_name(name).await
     }
 
     pub async fn get_user_by_email(&self, email: &str) -> Result<User> {

@@ -35,7 +35,7 @@ use std::io::{Cursor};
 use std::str::from_utf8;
 use validator::{Validate, ValidationError};
 use pgp::composed::StandaloneSignature;
-use crate::domain::datakey::entity::{DataKey, DataKeyContent, SecDataKey};
+use crate::domain::datakey::entity::{DataKey, DataKeyContent, SecDataKey, KeyType as EntityKeyType};
 use crate::util::key::encode_u8_to_hex_string;
 use super::util::{validate_utc_time_not_expire, validate_utc_time, attributes_validate};
 
@@ -134,10 +134,11 @@ fn validate_key_size(key_size: &str) -> std::result::Result<(), ValidationError>
 }
 
 pub struct OpenPGPPlugin {
-    secret_key: SignedSecretKey,
-    public_key: SignedPublicKey,
+    name: String,
+    secret_key: Option<SignedSecretKey>,
+    public_key: Option<SignedPublicKey>,
     identity: String,
-    attributes: HashMap<String, String>
+    attributes: HashMap<String, String>,
 }
 
 impl OpenPGPPlugin {
@@ -153,13 +154,23 @@ impl OpenPGPPlugin {
 
 impl SignPlugins for OpenPGPPlugin {
     fn new(db: SecDataKey) -> Result<Self> {
-        let private = from_utf8(db.private_key.unsecure()).map_err(|e| Error::KeyParseError(e.to_string()))?;
-        let (secret_key, _) =
-            SignedSecretKey::from_string(private).map_err(|e| Error::KeyParseError(e.to_string()))?;
-        let public = from_utf8(db.public_key.unsecure()).map_err(|e| Error::KeyParseError(e.to_string()))?;
-        let (public_key, _) =
-            SignedPublicKey::from_string(public).map_err(|e| Error::KeyParseError(e.to_string()))?;
+        let mut secret_key = None;
+        let mut public_key = None;
+        if !db.private_key.unsecure().is_empty() {
+            let private = from_utf8(db.private_key.unsecure()).map_err(|e| Error::KeyParseError(e.to_string()))?;
+            let (value, _) =
+                SignedSecretKey::from_string(private).map_err(|e| Error::KeyParseError(e.to_string()))?;
+            secret_key = Some(value);
+        }
+
+        if !db.public_key.unsecure().is_empty() {
+            let public = from_utf8(db.public_key.unsecure()).map_err(|e| Error::KeyParseError(e.to_string()))?;
+            let (value, _) =
+                SignedPublicKey::from_string(public).map_err(|e| Error::KeyParseError(e.to_string()))?;
+            public_key = Some(value);
+        }
         Ok(Self {
+            name: db.name.clone(),
             secret_key,
             public_key,
             identity: db.identity.clone(),
@@ -200,10 +211,8 @@ impl SignPlugins for OpenPGPPlugin {
         todo!()
     }
 
-    fn generate_keys(
-        attributes: &HashMap<String, String>,
-    ) -> Result<DataKeyContent> {
-        let parameter = attributes_validate::<PgpKeyGenerationParameter>(attributes)?;
+    fn generate_keys(&self, _key_type: &EntityKeyType,  _infra_config: &HashMap<String, String>) -> Result<DataKeyContent> {
+        let parameter = attributes_validate::<PgpKeyGenerationParameter>(&self.attributes)?;
         let mut key_params = SecretKeyParamsBuilder::default();
         let create_at = parameter.create_at.parse()?;
         let expire :DateTime<Utc> = parameter.expire_at.parse()?;
@@ -236,6 +245,7 @@ impl SignPlugins for OpenPGPPlugin {
             public_key: signed_public_key.to_armored_bytes(None)?,
             certificate: vec![],
             fingerprint: encode_u8_to_hex_string(&signed_secret_key.fingerprint()),
+            serial_number: Some(encode_u8_to_hex_string(&signed_secret_key.fingerprint())),
         })
     }
 
@@ -253,22 +263,23 @@ impl SignPlugins for OpenPGPPlugin {
             }
         };
         let now = Utc::now();
+        let secret_key_id = self.secret_key.clone().unwrap().key_id();
         let sig_cfg = SignatureConfig {
             version: SignatureVersion::V4,
             typ: SignatureType::Binary,
-            pub_alg: self.public_key.primary_key.algorithm(),
+            pub_alg: self.public_key.clone().unwrap().primary_key.algorithm(),
             hash_alg: digest,
-            issuer: Some(self.secret_key.key_id()),
+            issuer: Some(secret_key_id.clone()),
             created: Some(now),
             unhashed_subpackets: vec![],
             hashed_subpackets: vec![
                 Subpacket::SignatureCreationTime(now),
-                Subpacket::Issuer(self.secret_key.key_id()),
+                Subpacket::Issuer(secret_key_id),
             ],
         };
         let read_cursor = Cursor::new(content);
         let signature_packet = sig_cfg
-            .sign(&self.secret_key, passwd_fn, read_cursor)
+            .sign(&self.secret_key.clone().unwrap(), passwd_fn, read_cursor)
             .map_err(|e| Error::SignError(self.identity.clone(), e.to_string()))?;
 
 
@@ -295,7 +306,13 @@ mod test {
     use secstr::SecVec;
     use crate::domain::datakey::entity::{KeyState, Visibility};
     use crate::domain::datakey::entity::{KeyType};
+    use crate::domain::encryption_engine::EncryptionEngine;
+    use crate::infra::encryption::dummy_engine::DummyEngine;
     use crate::util::options::DETACHED;
+
+    fn get_encryption_engine() -> Box<dyn EncryptionEngine> {
+        Box::new(DummyEngine::default())
+    }
 
     fn get_default_parameter() -> HashMap<String, String> {
         HashMap::from([
@@ -310,9 +327,9 @@ mod test {
         ])
     }
 
-    fn get_default_datakey() -> DataKey {
+    fn get_default_datakey(name: Option<String>, parameter: Option<HashMap<String, String>>) -> DataKey {
         let now = Utc::now();
-        DataKey {
+        let mut datakey = DataKey {
             id: 0,
             name: "fake".to_string(),
             visibility: Visibility::Public,
@@ -320,7 +337,9 @@ mod test {
             user: 1,
             attributes: get_default_parameter(),
             key_type: KeyType::OpenPGP,
+            parent_id: None,
             fingerprint: "".to_string(),
+            serial_number: None,
             private_key: vec![],
             public_key: vec![],
             certificate: vec![],
@@ -329,7 +348,16 @@ mod test {
             key_state: KeyState::Enabled,
             user_email: None,
             request_delete_users: None,
+            request_revoke_users: None,
+            parent_key: None,
+        };
+        if let Some(name) = name {
+            datakey.name = name;
         }
+        if let Some(parameter) = parameter {
+            datakey.attributes = parameter;
+        }
+        datakey
     }
 
     #[test]
@@ -406,42 +434,66 @@ mod test {
         attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect("valid email");
     }
 
-    #[test]
-    fn test_generate_key_with_possible_digest_hash() {
+    #[tokio::test]
+    async fn test_generate_key_with_possible_digest_hash() {
         let mut parameter = get_default_parameter();
+        let dummy_engine = get_encryption_engine();
         //choose 3 random digest algorithm
         for _ in [1,2,3] {
             let num = rand::thread_rng().gen_range(0..VALID_DIGEST_ALGORITHM.len());
             parameter.insert("digest_algorithm".to_string(), VALID_DIGEST_ALGORITHM[num].to_string());
-            OpenPGPPlugin::generate_keys(&parameter).expect(format!("generate key with digest {} successfully", VALID_DIGEST_ALGORITHM[num]).as_str());
+            let sec_datakey = SecDataKey::load(
+                &get_default_datakey(
+                    None, Some(parameter.clone())), &dummy_engine).await.expect("load sec datakey successfully");
+            let plugin = OpenPGPPlugin::new(sec_datakey).expect("create openpgp plugin successfully");
+            plugin.generate_keys(&KeyType::OpenPGP, &HashMap::new()).expect(format!("generate key with digest {} successfully", VALID_DIGEST_ALGORITHM[num]).as_str());
         }
 
     }
 
-    #[test]
-    fn test_generate_key_with_possible_length() {
-        for key_size in VALID_KEY_SIZE{
-            let mut parameter = get_default_parameter();
-            parameter.insert("key_size".to_string(), key_size.to_string());
-            OpenPGPPlugin::generate_keys(&parameter).expect("generate key successfully");
-        }
-    }
-
-    #[test]
-    fn test_generate_key_with_possible_key_type() {
-        for key_type in VALID_KEY_TYPE{
-            let mut parameter = get_default_parameter();
-            parameter.insert("key_type".to_string(), key_type.to_string());
-            OpenPGPPlugin::generate_keys(&parameter).expect("generate key successfully");
-        }
-    }
-
-    #[test]
-    fn test_generate_key_with_without_passphrase() {
+    #[tokio::test]
+    async fn test_generate_key_with_possible_length() {
         let mut parameter = get_default_parameter();
-        OpenPGPPlugin::generate_keys(&parameter).expect("generate key successfully");
+        let dummy_engine = get_encryption_engine();
+        for key_size in VALID_KEY_SIZE{
+            parameter.insert("key_size".to_string(), key_size.to_string());
+            let sec_datakey = SecDataKey::load(
+                &get_default_datakey(
+                    None, Some(parameter.clone())), &dummy_engine).await.expect("load sec datakey successfully");
+            let plugin = OpenPGPPlugin::new(sec_datakey).expect("create openpgp plugin successfully");
+            plugin.generate_keys(&KeyType::OpenPGP, &HashMap::new()).expect(format!("generate key with key size {} successfully", key_size).as_str());
+        }
+    }
+
+    #[tokio::test]
+    async fn test_generate_key_with_possible_key_type() {
+        let mut parameter = get_default_parameter();
+        let dummy_engine = get_encryption_engine();
+        for key_type in VALID_KEY_TYPE{
+            parameter.insert("key_type".to_string(), key_type.to_string());
+            let sec_datakey = SecDataKey::load(
+                &get_default_datakey(
+                    None, Some(parameter.clone())), &dummy_engine).await.expect("load sec datakey successfully");
+            let plugin = OpenPGPPlugin::new(sec_datakey).expect("create openpgp plugin successfully");
+            plugin.generate_keys(&KeyType::OpenPGP, &HashMap::new()).expect(format!("generate key with key type {} successfully", key_type).as_str());
+        }
+    }
+
+    #[tokio::test]
+    async fn test_generate_key_with_without_passphrase() {
+        let mut parameter = get_default_parameter();
+        let dummy_engine = get_encryption_engine();
+        let sec_datakey = SecDataKey::load(
+            &get_default_datakey(
+                None, Some(parameter.clone())), &dummy_engine).await.expect("load sec datakey successfully");
+        let plugin = OpenPGPPlugin::new(sec_datakey).expect("create openpgp plugin successfully");
+        plugin.generate_keys(&KeyType::OpenPGP, &HashMap::new()).expect(format!("generate key with no passphrase successfully").as_str());
         parameter.insert("passphrase".to_string(), "".to_string());
-        OpenPGPPlugin::generate_keys(&parameter).expect("generate key successfully");
+        let sec_datakey = SecDataKey::load(
+            &get_default_datakey(
+                None, Some(parameter.clone())), &dummy_engine).await.expect("load sec datakey successfully");
+        let plugin = OpenPGPPlugin::new(sec_datakey).expect("create openpgp plugin successfully");
+        plugin.generate_keys(&KeyType::OpenPGP, &HashMap::new()).expect(format!("generate key with passphrase successfully").as_str());
     }
 
     #[test]
@@ -513,25 +565,32 @@ BCQ921xH/nCtAw20cymy0Wf822PaJRZolSCm1aEDNE45UpGVu88ilLARklDXGhZZ
 j0AZp6WE
 =eDZk
 -----END PGP PRIVATE KEY BLOCK-----";
-        let mut datakey = get_default_datakey();
+        let mut datakey = get_default_datakey(None, None);
         datakey.public_key = public_key.as_bytes().to_vec();
         datakey.private_key = private_key.as_bytes().to_vec();
         OpenPGPPlugin::validate_and_update(&mut datakey).expect("validate and update should work");
         assert_eq!("60780E80350801A395B1B08302A5B5FB87CD058E", datakey.fingerprint);
     }
 
-    #[test]
-    fn test_sign_with_armored_text() {
+    #[tokio::test]
+    async fn test_sign_with_armored_text() {
         let content = "hello world".as_bytes();
         let mut parameter = get_default_parameter();
         parameter.insert(DETACHED.to_string(), "true".to_string());
-        let keys = OpenPGPPlugin::generate_keys(&parameter).expect("generate key successfully");
+        let dummy_engine = get_encryption_engine();
+        let sec_datakey = SecDataKey::load(
+            &get_default_datakey(
+                None, Some(parameter.clone())), &dummy_engine).await.expect("load sec datakey successfully");
+        let plugin = OpenPGPPlugin::new(sec_datakey).expect("create openpgp plugin successfully");
+        let keys = plugin.generate_keys(&KeyType::OpenPGP, &HashMap::new()).expect(format!("generate key successfully").as_str());
         let sec_keys = SecDataKey {
+            name: "".to_string(),
             private_key: SecVec::new(keys.private_key.clone()),
             public_key: SecVec::new(keys.public_key.clone()),
             certificate: SecVec::new(keys.certificate.clone()),
             identity: "".to_string(),
             attributes: Default::default(),
+            parent: None,
         };
         let instance = OpenPGPPlugin::new(sec_keys).expect("create openpgp instance successfully");
         let signature = instance.sign(content.to_vec(), parameter).expect("sign successfully");

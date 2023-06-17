@@ -3,7 +3,6 @@ worker_threads = 8
 buffer_size = 20480
 # consider the memory consumption if number bumped since all binaries will be stored in memory
 max_concurrency = 100
-token = ""
 [server]
 domain_name = "signatrust.test.osinfra.cn"
 tls_cert = "/Users/tommylike/Work/codes/rust-projects/signatrust/.data/certs/client/server.crt"
