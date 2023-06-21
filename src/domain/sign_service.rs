@@ -18,8 +18,9 @@ use crate::util::error::{Result, Error};
 use std::collections::HashMap;
 use std::str::FromStr;
 
-use crate::domain::datakey::entity::DataKey;
+use crate::domain::datakey::entity::{DataKey, RevokedKey};
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 
 #[derive(Debug, PartialEq)]
 pub enum SignBackendType {
@@ -44,6 +45,7 @@ pub trait SignBackend: Send + Sync{
     async fn rotate_key(&mut self) -> Result<bool>;
     async fn sign(&self, data_key: &DataKey, content: Vec<u8>, options: HashMap<String, String>) -> Result<Vec<u8>>;
     async fn decode_public_keys(&self, data_key: &mut DataKey) -> Result<()>;
+    async fn generate_crl_content(&self, data_key: &DataKey, revoked_keys: Vec<RevokedKey>, last_update: DateTime<Utc>, next_update: DateTime<Utc>) -> Result<Vec<u8>>;
 }
 
 

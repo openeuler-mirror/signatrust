@@ -38,7 +38,7 @@ use serde::Deserialize;
 use validator::{Validate, ValidationError};
 use crate::util::options;
 use crate::util::sign::SignType;
-use crate::domain::datakey::entity::{DataKey, DataKeyContent, INFRA_CONFIG_DOMAIN_NAME, KeyType, SecDataKey, SecParentDateKey};
+use crate::domain::datakey::entity::{DataKey, DataKeyContent, INFRA_CONFIG_DOMAIN_NAME, KeyType, RevokedKey, SecDataKey, SecParentDateKey};
 use crate::util::error::{Error, Result};
 use crate::domain::sign_plugin::SignPlugins;
 use crate::util::key::encode_u8_to_hex_string;
@@ -411,6 +411,11 @@ impl SignPlugins for X509Plugin {
                 Ok(cms_signature.to_der()?)
             }
         }
+    }
+
+    fn generate_crl_content(&self, revoked_keys: Vec<RevokedKey>, last_update: DateTime<Utc>, next_update: DateTime<Utc>) -> Result<Vec<u8>> {
+        //TODO: support revoked_keys
+        Ok("generated crl".to_string().into_bytes())
     }
 }
 

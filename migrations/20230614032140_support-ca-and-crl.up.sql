@@ -12,7 +12,6 @@ CREATE TABLE pending_operation (
                 key_id INT NOT NULL,
                 request_type VARCHAR(30) NOT NULL,
                 user_email varchar(60) NOT NULL,
-                reason VARCHAR(200),
                 create_at DATETIME,
                 PRIMARY KEY(id),
                 FOREIGN KEY (user_id) REFERENCES user(id),
@@ -23,7 +22,7 @@ CREATE TABLE pending_operation (
 # Add new table for crl content and revoked certificates
 CREATE TABLE x509_crl_content (
             id INT AUTO_INCREMENT,
-            ca_id INT NOT NULL,
+            ca_id INT NOT NULL UNIQUE,
             create_at DATETIME,
             update_at DATETIME,
             data TEXT NOT NULL,

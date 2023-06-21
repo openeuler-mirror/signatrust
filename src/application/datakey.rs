@@ -19,11 +19,12 @@ use crate::domain::sign_service::SignBackend;
 use crate::util::error::{Error, Result};
 use async_trait::async_trait;
 use crate::domain::datakey::entity::{DataKey, KeyAction, KeyState, X509CRL, X509RevokeReason};
-use tokio::time::{Duration, self};
+use tokio::time::{self};
 
 use crate::util::signer_container::DataKeyContainer;
 use std::collections::HashMap;
 use std::sync::{Arc};
+use chrono::{Duration, Utc};
 use tokio::sync::RwLock;
 use tokio_util::sync::CancellationToken;
 use crate::domain::datakey::entity::KeyType::{OpenPGP, X509CA, X509EE, X509ICA};
@@ -52,6 +53,9 @@ pub trait KeyService: Send + Sync{
     //method below used for maintenance
     fn start_cache_cleanup_loop(&self, cancel_token: CancellationToken) -> Result<()>;
     fn start_key_rotate_loop(&self, cancel_token: CancellationToken) -> Result<()>;
+
+    //method below used for x509 crl
+    fn start_key_plugin_maintenance(&self, cancel_token: CancellationToken, refresh_days: i32) -> Result<()>;
 }
 
 
@@ -122,18 +126,22 @@ impl<R, S> DBKeyService<R, S>
                 }
             }
         }
-        return match valid_state_by_key_action.get(&key_action) {
+        match valid_state_by_key_action.get(&key_action) {
             None => {
-                Err(Error::ConfigError("key action is missing, please check the key action".to_string()))
+                return Err(Error::ConfigError("key action is missing, please check the key action".to_string()))
             }
             Some(states) => {
-                if states.contains(&key.key_state) {
-                    Ok(())
-                } else {
-                    Err(Error::ActionsNotAllowedError(format!("action '{}' is not permitted for state '{}'", key_action, key.key_state)))
+                if !states.contains(&key.key_state) {
+                    return Err(Error::ActionsNotAllowedError(format!("action '{}' is not permitted for state '{}'", key_action, key.key_state)))
                 }
             }
         }
+        if key_action == KeyAction::Revoke || key_action == KeyAction::CancelRevoke {
+            if key.parent_id.is_none() {
+                return Err(Error::ActionsNotAllowedError(format!("action '{}' is not permitted for key without parent", key_action)))
+            }
+        }
+        Ok(())
     }
 }
 
@@ -206,14 +214,14 @@ where
         let user_id = user.id;
         let user_email = user.email.clone();
         let key = self.get_and_check_permission(Some(user), id_or_name, KeyAction::Revoke).await?;
-        self.repository.request_revoke_key(user_id, user_email, key.id, reason).await?;
+        self.repository.request_revoke_key(user_id, user_email, key.id, key.parent_id.unwrap(), reason).await?;
         Ok(())
     }
 
     async fn cancel_revoke(&self, user: UserIdentity, id_or_name: String) -> Result<()> {
         let user_id = user.id;
         let key = self.get_and_check_permission(Some(user), id_or_name, KeyAction::CancelRevoke).await?;
-        self.repository.cancel_revoke_key(user_id, key.id).await?;
+        self.repository.cancel_revoke_key(user_id, key.id, key.parent_id.unwrap()).await?;
         Ok(())
     }
 
@@ -234,7 +242,7 @@ where
 
     fn start_cache_cleanup_loop(&self, cancel_token: CancellationToken) -> Result<()> {
         let container = self.container.clone();
-        let mut interval = time::interval(Duration::from_secs(120));
+        let mut interval = time::interval(Duration::seconds(120).to_std()?);
         tokio::spawn(async move {
             loop {
                 tokio::select! {
@@ -255,7 +263,7 @@ where
 
     fn start_key_rotate_loop(&self, cancel_token: CancellationToken) -> Result<()> {
         let sign_service = self.sign_service.clone();
-        let mut interval = time::interval(Duration::from_secs(60 * 60 * 2));
+        let mut interval = time::interval(Duration::seconds(60 * 60 * 2).to_std()?);
         tokio::spawn(async move {
             loop {
                 tokio::select! {
@@ -280,6 +288,45 @@ where
             }
 
         });
+        Ok(())
+    }
+
+    fn start_key_plugin_maintenance(&self, cancel_token: CancellationToken, refresh_days: i32) -> Result<()> {
+        let mut interval = time::interval(Duration::hours(2).to_std()?);
+        let duration = Duration::days(refresh_days as i64);
+        let repository = self.repository.clone();
+        let sign_service = self.sign_service.clone();
+        tokio::spawn(async move {
+            loop { tokio::select! {
+                    _ = interval.tick() => {
+                        info!("start to update execute key plugin maintenance");
+                        match repository.get_keys_for_crl_update(duration).await {
+                            Ok(keys) => {
+                                let now = Utc::now();
+                                for key in keys {
+                                    match repository.get_revoked_serial_number_by_parent_id(key.id).await {
+                                        Ok(revoke_keys) => {
+                                            match sign_service.read().await.generate_crl_content(&key, revoke_keys, now.clone(), now + duration).await {
+                                                Ok(data) => {
+                                                    let crl_content = X509CRL::new(key.id, data, now, now);
+                                                    if let Err(e) = repository.upsert_x509_crl(crl_content).await {
+                                                        error!("Failed to update CRL content for key: {} {}, {}", key.key_state, key.id, e);
+                                                    } else {
+                                                        info!("CRL has been successfully updated for key: {} {}", key.key_type, key.id);
+                                                    }}
+                                                Err(e) => {
+                                                    error!("failed to update CRL content for key: {} {} and error {}", key.key_state, key.id, e);
+                                                }}}
+                                        Err(e) => {
+                                            error!("failed to get revoked keys for key {} {}, error {}", key.key_state, key.id, e);
+                                        }}}}
+                            Err(e) => {
+                                error!("failed to get keys for CRL update: {}", e);
+                            }}}
+                    _ = cancel_token.cancelled() => {
+                        info!("cancel token received, will quit key plugin maintenance loop");
+                        break;
+                    }}}});
         Ok(())
     }
 }

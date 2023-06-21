@@ -35,7 +35,7 @@ use std::io::{Cursor};
 use std::str::from_utf8;
 use validator::{Validate, ValidationError};
 use pgp::composed::StandaloneSignature;
-use crate::domain::datakey::entity::{DataKey, DataKeyContent, SecDataKey, KeyType as EntityKeyType};
+use crate::domain::datakey::entity::{DataKey, DataKeyContent, SecDataKey, KeyType as EntityKeyType, RevokedKey};
 use crate::util::key::encode_u8_to_hex_string;
 use super::util::{validate_utc_time_not_expire, validate_utc_time, attributes_validate};
 
@@ -295,6 +295,10 @@ impl SignPlugins for OpenPGPPlugin {
         write_packet(&mut cursor, &signature_packet)
             .map_err(|e| Error::SignError(self.identity.clone(), e.to_string()))?;
         Ok(signature_bytes)
+    }
+
+    fn generate_crl_content(&self, _revoked_keys: Vec<RevokedKey>, _last_update: DateTime<Utc>, _next_update: DateTime<Utc>) -> Result<Vec<u8>> {
+        todo!()
     }
 }
 

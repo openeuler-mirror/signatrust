@@ -163,6 +163,9 @@ impl ControlServer {
             self.key_service.clone());
 
         key_service.start_key_rotate_loop(self.cancel_token.clone())?;
+        key_service.start_key_plugin_maintenance(
+            self.cancel_token.clone(),
+            self.server_config.read()?.get_string("control-server.server_port")?.parse()?)?;
 
         //prepare redis store
         let store = RedisSessionStore::new(&redis_connection).await?;

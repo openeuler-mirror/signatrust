@@ -17,7 +17,8 @@
 use super::entity::DataKey;
 use crate::util::error::Result;
 use async_trait::async_trait;
-use crate::domain::datakey::entity::{KeyState, X509CRL, X509RevokeReason};
+use chrono::Duration;
+use crate::domain::datakey::entity::{KeyState, RevokedKey, X509CRL, X509RevokeReason};
 
 #[async_trait]
 pub trait Repository: Send + Sync {
@@ -30,9 +31,12 @@ pub trait Repository: Send + Sync {
     async fn update_key_data(&self, data_key: DataKey) -> Result<()>;
     async fn get_enabled_key_by_type_and_name(&self, key_type: String, name: String) -> Result<DataKey>;
     async fn request_delete_key(&self, user_id: i32, user_email: String, id: i32) -> Result<()>;
-    async fn request_revoke_key(&self, user_id: i32, user_email: String, id: i32, reason: X509RevokeReason) -> Result<()>;
+    async fn request_revoke_key(&self, user_id: i32, user_email: String, id: i32, parent_id: i32, reason: X509RevokeReason) -> Result<()>;
     async fn cancel_delete_key(&self, user_id: i32, id: i32) -> Result<()>;
-    async fn cancel_revoke_key(&self, user_id: i32, id: i32) -> Result<()>;
+    async fn cancel_revoke_key(&self, user_id: i32, id: i32, parent_id: i32) -> Result<()>;
     //crl related methods
     async fn get_x509_crl_by_ca_id(&self, id: i32) -> Result<X509CRL>;
+    async fn upsert_x509_crl(&self, crl: X509CRL) -> Result<()>;
+    async fn get_keys_for_crl_update(&self, duration: Duration) -> Result<Vec<DataKey>>;
+    async fn get_revoked_serial_number_by_parent_id(&self, id: i32) -> Result<Vec<RevokedKey>>;
 }

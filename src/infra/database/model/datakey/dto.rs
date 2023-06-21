@@ -42,9 +42,14 @@ pub(super) struct DataKeyDTO {
     pub create_at: DateTime<Utc>,
     pub expire_at: DateTime<Utc>,
     pub key_state: String,
+    #[sqlx(default)]
     pub user_email: Option<String>,
+    #[sqlx(default)]
     pub request_delete_users: Option<String>,
-    pub request_revoke_users: Option<String>
+    #[sqlx(default)]
+    pub request_revoke_users: Option<String>,
+    #[sqlx(default)]
+    pub x509_crl_update_at: Option<DateTime<Utc>>
 }
 
 
@@ -106,7 +111,8 @@ impl TryFrom<DataKey> for DataKeyDTO {
             key_state: data_key.key_state.to_string(),
             user_email: None,
             request_delete_users: None,
-            request_revoke_users: None
+            request_revoke_users: None,
+            x509_crl_update_at: None,
         })
     }
 }

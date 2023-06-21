@@ -163,6 +163,18 @@ pub struct X509CRL {
     pub update_at: DateTime<Utc>,
 }
 
+impl X509CRL {
+    pub fn new(ca_id: i32, data: Vec<u8>, create_at: DateTime<Utc>, update_at: DateTime<Utc>) -> Self {
+        X509CRL {
+            id: 0,
+            ca_id,
+            data,
+            create_at,
+            update_at,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum X509RevokeReason {
     Unspecified,
@@ -218,6 +230,16 @@ pub struct ParentKey {
     pub public_key: Vec<u8>,
     pub certificate: Vec<u8>,
     pub attributes: HashMap<String, String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct RevokedKey {
+    pub id: i32,
+    pub key_id: i32,
+    pub ca_id: i32,
+    pub reason: X509RevokeReason,
+    pub create_at: DateTime<Utc>,
+    pub serial_number: Option<String>
 }
 
 #[derive(Debug, Clone)]

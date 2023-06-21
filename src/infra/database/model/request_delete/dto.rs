@@ -17,6 +17,7 @@ use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 use sqlx::FromRow;
 use chrono::{DateTime, Utc};
+use crate::domain::datakey::entity::{RevokedKey, X509RevokeReason};
 use crate::util::error::Error;
 
 #[derive(Debug, Clone, PartialEq, sqlx::Type)]
@@ -48,6 +49,43 @@ impl FromStr for RequestType {
     }
 }
 
+#[derive(Debug, FromRow)]
+pub struct RevokedKeyDTO {
+    pub id: i32,
+    pub key_id: i32,
+    pub ca_id: i32,
+    pub reason: String,
+    pub create_at: DateTime<Utc>,
+}
+
+impl RevokedKeyDTO {
+    pub fn new(key_id: i32, ca_id: i32, reason: X509RevokeReason) -> Self {
+        Self {
+            id: 0,
+            key_id,
+            ca_id,
+            create_at: Utc::now(),
+            reason: reason.to_string(),
+        }
+    }
+}
+
+impl TryFrom<RevokedKeyDTO> for RevokedKey {
+    type Error = Error;
+
+    fn try_from(dto: RevokedKeyDTO) -> Result<Self, Self::Error> {
+        Ok(RevokedKey {
+            id: dto.id,
+            key_id: dto.key_id,
+            ca_id: dto.ca_id,
+            reason: X509RevokeReason::from_str(&dto.reason)?,
+            create_at: dto.create_at,
+            serial_number: None,
+        })
+    }
+}
+
+
 
 #[derive(Debug, FromRow)]
 pub struct PendingOperationDTO {
@@ -55,13 +93,12 @@ pub struct PendingOperationDTO {
     pub user_id: i32,
     pub key_id: i32,
     pub request_type: RequestType,
-    pub reason: Option<String>,
     pub user_email: String,
     pub create_at: DateTime<Utc>,
 }
 
 impl PendingOperationDTO {
-    pub fn new_for_delete(key_id: i32, user_id: i32, user_email: String, reason: Option<String>) -> Self {
+    pub fn new_for_delete(key_id: i32, user_id: i32, user_email: String) -> Self {
         Self {
             id: 0,
             user_id,
@@ -69,11 +106,10 @@ impl PendingOperationDTO {
             user_email,
             create_at: Utc::now(),
             request_type: RequestType::Delete,
-            reason
         }
     }
 
-    pub fn new_for_revoke(key_id: i32, user_id: i32, user_email: String, reason: String) -> Self {
+    pub fn new_for_revoke(key_id: i32, user_id: i32, user_email: String) -> Self {
         Self {
             id: 0,
             user_id,
@@ -81,7 +117,6 @@ impl PendingOperationDTO {
             user_email,
             create_at: Utc::now(),
             request_type: RequestType::Revoke,
-            reason: Some(reason)
         }
     }
 }

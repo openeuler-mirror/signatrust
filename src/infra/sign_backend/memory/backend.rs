@@ -28,11 +28,12 @@ use crate::infra::database::pool::{DbPool};
 use crate::infra::kms::factory;
 use crate::infra::encryption::engine::{EncryptionEngineWithClusterKey};
 use crate::domain::encryption_engine::EncryptionEngine;
-use crate::domain::datakey::entity::{INFRA_CONFIG_DOMAIN_NAME, SecDataKey};
+use crate::domain::datakey::entity::{INFRA_CONFIG_DOMAIN_NAME, RevokedKey, SecDataKey};
 use crate::infra::sign_plugin::signers::Signers;
 use crate::domain::datakey::entity::DataKey;
 use crate::util::error::{Error, Result};
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 use crate::infra::encryption::algorithm::factory::AlgorithmFactory;
 
 
@@ -120,5 +121,10 @@ impl SignBackend for MemorySignBackend {
         data_key.public_key = self.engine.decode(data_key.public_key.clone()).await?;
         data_key.certificate = self.engine.decode(data_key.certificate.clone()).await?;
         Ok(())
+    }
+
+    async fn generate_crl_content(&self, data_key: &DataKey, revoked_keys: Vec<RevokedKey>, last_update: DateTime<Utc>, next_update: DateTime<Utc>) -> Result<Vec<u8>> {
+        let sec_key = SecDataKey::load(data_key, &self.engine).await?;
+        Signers::load_from_data_key(&data_key.key_type, sec_key)?.generate_crl_content(revoked_keys, last_update, next_update)
     }
 }
