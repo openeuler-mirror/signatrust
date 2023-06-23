@@ -99,6 +99,7 @@ impl Modify for SecurityAddon {
                 crate::presentation::handler::control::model::datakey::dto::ImportDataKeyDTO,
                 crate::presentation::handler::control::model::datakey::dto::RevokeCertificateDTO,
                 crate::presentation::handler::control::model::datakey::dto::NameIdenticalQuery,
+                crate::presentation::handler::control::model::datakey::dto::ListKeyQuery,
                 crate::presentation::handler::control::model::token::dto::TokenDTO,
                 crate::presentation::handler::control::model::token::dto::CreateTokenDTO,
                 crate::presentation::handler::control::model::user::dto::UserIdentity,

@@ -143,9 +143,11 @@ impl Repository for DataKeyRepository {
         Ok(())
     }
 
-    async fn get_all_keys(&self) -> Result<Vec<DataKey>> {
-        let dtos: Vec<DataKeyDTO> = sqlx::query_as(
-            "SELECT D.*, U.email AS user_email, GROUP_CONCAT(R.user_email) as request_delete_users, \
+    async fn get_all_keys(&self, key_type: Option<KeyType>) -> Result<Vec<DataKey>> {
+        let dtos: Vec<DataKeyDTO> = match key_type {
+            None => {
+                sqlx::query_as(
+                    "SELECT D.*, U.email AS user_email, GROUP_CONCAT(R.user_email) as request_delete_users, \
             GROUP_CONCAT(K.user_email) as request_revoke_users \
             FROM data_key D \
             INNER JOIN user U ON D.user = U.id \
@@ -153,9 +155,27 @@ impl Repository for DataKeyRepository {
             LEFT JOIN pending_operation K ON D.id = K.key_id and K.request_type = 'revoke' \
             WHERE D.key_state != ? \
             GROUP BY D.id")
-            .bind(KeyState::Deleted.to_string())
-            .fetch_all(&self.db_pool)
-            .await?;
+                    .bind(KeyState::Deleted.to_string())
+                    .fetch_all(&self.db_pool)
+                    .await?
+            }
+            Some(key_t) => {
+                sqlx::query_as(
+                    "SELECT D.*, U.email AS user_email, GROUP_CONCAT(R.user_email) as request_delete_users, \
+            GROUP_CONCAT(K.user_email) as request_revoke_users \
+            FROM data_key D \
+            INNER JOIN user U ON D.user = U.id \
+            LEFT JOIN pending_operation R ON D.id = R.key_id and R.request_type = 'delete' \
+            LEFT JOIN pending_operation K ON D.id = K.key_id and K.request_type = 'revoke' \
+            WHERE D.key_state != ? AND \
+            D.key_type = ? \
+            GROUP BY D.id")
+                    .bind(KeyState::Deleted.to_string())
+                    .bind(key_t.to_string())
+                    .fetch_all(&self.db_pool)
+                    .await?
+            }
+        };
         let mut results = vec![];
         for dto in dtos.into_iter() {
             results.push(DataKey::try_from(dto)?);
@@ -395,7 +415,7 @@ impl Repository for DataKeyRepository {
     async fn upsert_x509_crl(&self, crl: X509CRL) -> Result<()> {
         let dto = X509CRLDTO::try_from(crl)?;
         match self.get_x509_crl_by_ca_id(dto.ca_id).await {
-            Ok(crl) => {
+            Ok(_) => {
                 sqlx::query(
                     "UPDATE x509_crl_content SET data = ?, create_at = ?, update_at = ? WHERE ca_id = ?")
                     .bind(dto.data)

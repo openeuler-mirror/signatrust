@@ -55,6 +55,7 @@ pub struct RevokedKeyDTO {
     pub key_id: i32,
     pub ca_id: i32,
     pub reason: String,
+    pub serial_number: Option<String>,
     pub create_at: DateTime<Utc>,
 }
 
@@ -66,6 +67,7 @@ impl RevokedKeyDTO {
             ca_id,
             create_at: Utc::now(),
             reason: reason.to_string(),
+            serial_number: None,
         }
     }
 }
@@ -80,7 +82,7 @@ impl TryFrom<RevokedKeyDTO> for RevokedKey {
             ca_id: dto.ca_id,
             reason: X509RevokeReason::from_str(&dto.reason)?,
             create_at: dto.create_at,
-            serial_number: None,
+            serial_number: dto.serial_number,
         })
     }
 }

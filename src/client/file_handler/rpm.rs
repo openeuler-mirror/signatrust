@@ -137,7 +137,7 @@ impl FileHandler for RpmFileHandler {
 mod test {
     use super::*;
     use std::env;
-    use std::fs;
+
     use std::io::Write;
 
     fn get_signed_rpm() -> Result<PathBuf> {

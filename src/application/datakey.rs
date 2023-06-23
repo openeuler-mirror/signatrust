@@ -18,7 +18,7 @@ use crate::domain::datakey::repository::Repository as DatakeyRepository;
 use crate::domain::sign_service::SignBackend;
 use crate::util::error::{Error, Result};
 use async_trait::async_trait;
-use crate::domain::datakey::entity::{DataKey, KeyAction, KeyState, X509CRL, X509RevokeReason};
+use crate::domain::datakey::entity::{DataKey, KeyAction, KeyState, KeyType, X509CRL, X509RevokeReason};
 use tokio::time::{self};
 
 use crate::util::signer_container::DataKeyContainer;
@@ -35,7 +35,7 @@ pub trait KeyService: Send + Sync{
     async fn create(&self, data: &mut DataKey) -> Result<DataKey>;
     async fn import(&self, data: &mut DataKey) -> Result<DataKey>;
     async fn get_by_name(&self, name: &str) -> Result<DataKey>;
-    async fn get_all(&self) -> Result<Vec<DataKey>>;
+    async fn get_all(&self, key_type: Option<KeyType>) -> Result<Vec<DataKey>>;
     async fn get_one(&self, user: Option<UserIdentity>, id_or_name: String) -> Result<DataKey>;
     //get keys content
     async fn export_one(&self, user: Option<UserIdentity>, id_or_name: String) -> Result<DataKey>;
@@ -136,10 +136,8 @@ impl<R, S> DBKeyService<R, S>
                 }
             }
         }
-        if key_action == KeyAction::Revoke || key_action == KeyAction::CancelRevoke {
-            if key.parent_id.is_none() {
-                return Err(Error::ActionsNotAllowedError(format!("action '{}' is not permitted for key without parent", key_action)))
-            }
+        if (key_action == KeyAction::Revoke || key_action == KeyAction::CancelRevoke) && key.parent_id.is_none() {
+            return Err(Error::ActionsNotAllowedError(format!("action '{}' is not permitted for key without parent", key_action)))
         }
         Ok(())
     }
@@ -175,8 +173,8 @@ where
         self.repository.get_by_name(name).await
     }
 
-    async fn get_all(&self) -> Result<Vec<DataKey>> {
-        self.repository.get_all_keys().await
+    async fn get_all(&self, key_type: Option<KeyType>) -> Result<Vec<DataKey>> {
+        self.repository.get_all_keys(key_type).await
     }
 
     async fn get_one(&self, user: Option<UserIdentity>,  id_or_name: String) -> Result<DataKey> {
@@ -306,7 +304,7 @@ where
                                 for key in keys {
                                     match repository.get_revoked_serial_number_by_parent_id(key.id).await {
                                         Ok(revoke_keys) => {
-                                            match sign_service.read().await.generate_crl_content(&key, revoke_keys, now.clone(), now + duration).await {
+                                            match sign_service.read().await.generate_crl_content(&key, revoke_keys, now, now + duration).await {
                                                 Ok(data) => {
                                                     let crl_content = X509CRL::new(key.id, data, now, now);
                                                     if let Err(e) = repository.upsert_x509_crl(crl_content).await {

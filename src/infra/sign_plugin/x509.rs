@@ -31,9 +31,11 @@ use openssl::rsa::Rsa;
 use openssl::stack::Stack;
 use openssl::x509;
 use openssl::x509::extension::{AuthorityKeyIdentifier, BasicConstraints, KeyUsage, SubjectKeyIdentifier};
-use openssl::x509::X509Extension;
+use openssl::x509::{X509Crl, X509Extension};
 use secstr::SecVec;
 use serde::Deserialize;
+use foreign_types_shared::{ForeignType, ForeignTypeRef};
+use openssl_sys::{X509_CRL_new, X509_CRL_set_issuer_name, X509_CRL_set1_lastUpdate, X509_CRL_add0_revoked, X509_CRL_sign, X509_CRL_set1_nextUpdate, X509_REVOKED_new, X509_REVOKED_set_serialNumber, X509_REVOKED_set_revocationDate};
 
 use validator::{Validate, ValidationError};
 use crate::util::options;
@@ -41,7 +43,7 @@ use crate::util::sign::SignType;
 use crate::domain::datakey::entity::{DataKey, DataKeyContent, INFRA_CONFIG_DOMAIN_NAME, KeyType, RevokedKey, SecDataKey, SecParentDateKey};
 use crate::util::error::{Error, Result};
 use crate::domain::sign_plugin::SignPlugins;
-use crate::util::key::encode_u8_to_hex_string;
+use crate::util::key::{decode_hex_string_to_u8, encode_u8_to_hex_string};
 use super::util::{validate_utc_time_not_expire, validate_utc_time, attributes_validate};
 
 const VALID_KEY_TYPE: [&str; 2] = ["rsa", "dsa"];
@@ -414,8 +416,30 @@ impl SignPlugins for X509Plugin {
     }
 
     fn generate_crl_content(&self, revoked_keys: Vec<RevokedKey>, last_update: DateTime<Utc>, next_update: DateTime<Utc>) -> Result<Vec<u8>> {
-        //TODO: support revoked_keys
-        Ok("generated crl".to_string().into_bytes())
+        let parameter = attributes_validate::<X509KeyGenerationParameter>(&self.attributes)?;
+        let private_key = PKey::private_key_from_pem(self.private_key.unsecure())?;
+        let certificate = x509::X509::from_pem(self.certificate.unsecure())?;
+
+        //prepare raw crl content
+        let crl =  unsafe{ X509_CRL_new() };
+        let x509_name= certificate.subject_name().as_ptr();
+
+        unsafe { X509_CRL_set_issuer_name(crl, x509_name); };
+        unsafe {X509_CRL_set1_lastUpdate(crl, Asn1Time::from_unix(last_update.naive_utc().timestamp())?.as_ptr())};
+        unsafe {X509_CRL_set1_nextUpdate(crl, Asn1Time::from_unix(next_update.naive_utc().timestamp())?.as_ptr())};
+        for revoked_key in revoked_keys {
+            //TODO: Add revoke reason here.
+            if let Some(serial_number) = revoked_key.serial_number {
+                let cert_serial = BigNum::from_slice(&decode_hex_string_to_u8(&serial_number))?;
+                let revoked =unsafe{X509_REVOKED_new()};
+                unsafe {X509_REVOKED_set_serialNumber(revoked, Asn1Integer::from_bn(&cert_serial)?.as_ptr())};
+                unsafe {X509_REVOKED_set_revocationDate(revoked, Asn1Time::from_unix(revoked_key.create_at.naive_utc().timestamp())?.as_ptr())};
+                unsafe {X509_CRL_add0_revoked(crl, revoked)};
+            }
+        }
+        unsafe {X509_CRL_sign(crl, private_key.as_ptr(), parameter.get_digest_algorithm()?.as_ptr())};
+        let content = unsafe {X509Crl::from_ptr(crl)};
+        Ok(content.to_pem()?)
     }
 }
 
@@ -424,7 +448,7 @@ mod test {
     use super::*;
     use chrono::{Duration, Utc};
     use secstr::SecVec;
-    use crate::domain::datakey::entity::{KeyState, ParentKey, Visibility};
+    use crate::domain::datakey::entity::{KeyState, ParentKey, Visibility, X509RevokeReason};
     use crate::domain::datakey::entity::{KeyType};
     use crate::domain::encryption_engine::EncryptionEngine;
     use crate::infra::encryption::dummy_engine::DummyEngine;
@@ -744,5 +768,49 @@ X5BboR/QJakEK+H+EUQAiDs=
         };
         let instance = X509Plugin::new(sec_keys).expect("create x509 instance successfully");
         let _signature = instance.sign(content.to_vec(), parameter).expect("sign successfully");
+    }
+
+    #[tokio::test]
+    async fn test_crl_generation() {
+        let parameter = get_default_parameter();
+        let dummy_engine = get_encryption_engine();
+        let infra_config = get_infra_config();
+        // create ca
+        let mut ca_key = get_default_datakey(
+            Some("fake ca".to_string()), Some(parameter.clone()), Some(KeyType::X509CA));
+        let sec_datakey = SecDataKey::load(
+            &ca_key, &dummy_engine).await.expect("load sec datakey successfully");
+        let plugin = X509Plugin::new(sec_datakey).expect("create plugin successfully");
+        let ca_content = plugin.generate_keys(&KeyType::X509CA, &infra_config).expect(format!("generate ca key with no passphrase successfully").as_str());
+        ca_key.private_key = ca_content.private_key;
+        ca_key.public_key = ca_content.public_key;
+        ca_key.certificate = ca_content.certificate;
+        ca_key.serial_number = ca_content.serial_number;
+        ca_key.fingerprint = ca_content.fingerprint;
+        let crl_sec_datakey = SecDataKey::load(
+            &ca_key, &dummy_engine).await.expect("load sec datakey successfully");
+        let plugin = X509Plugin::new(crl_sec_datakey).expect("create plugin successfully");
+        let revoke_time = Utc::now();
+        let last_update = Utc::now() + Duration::days(1);
+        let next_update = Utc::now() + Duration::days(2);
+        let serial_number = X509Plugin::generate_serial_number().expect("generate serial number successfully");
+        let revoked_keys = RevokedKey{
+            id: 0,
+            key_id: 0,
+            ca_id: 0,
+            reason: X509RevokeReason::Unspecified,
+            create_at: revoke_time.clone(),
+            serial_number: Some(encode_u8_to_hex_string(&serial_number.to_vec()))
+        };
+        //generate crl
+        let content = plugin.generate_crl_content(vec![revoked_keys], last_update.clone(), next_update.clone()).expect("generate crl successfully");
+        let crl = X509Crl::from_pem(&content).expect("load generated crl successfully");
+        assert_eq!(crl.last_update()==Asn1Time::from_unix(last_update.naive_utc().timestamp()).expect("convert to asn1 time successfully"), true);
+        assert_eq!(crl.next_update().expect("next update is set")==Asn1Time::from_unix(next_update.naive_utc().timestamp()).expect("convert to asn1 time successfully"), true);
+        assert_eq!(crl.get_revoked().is_some(), true);
+        let revoked = crl.get_revoked().expect("revoke stack is not empty").get(0).expect("first revoke is not empty");
+        assert_eq!(revoked.serial_number().to_owned().expect("convert to asn1 number work") == Asn1Integer::from_bn(&serial_number).expect("convert from bn number should work"), true);
+        assert_eq!(revoked.revocation_date().to_owned()==Asn1Time::from_unix(revoke_time.naive_utc().timestamp()).expect("convert to asn1 time successfully"), true);
+
     }
 }

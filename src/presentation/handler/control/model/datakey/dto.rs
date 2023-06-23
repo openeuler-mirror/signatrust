@@ -64,6 +64,14 @@ pub struct NameIdenticalQuery {
     pub name: String,
 }
 
+#[derive(Deserialize, IntoParams, Validate, ToSchema)]
+pub struct ListKeyQuery {
+    /// Key type, optional, should be one of x509ca, x509ica, x509ee, or pgp
+    #[validate(custom = "validate_key_type")]
+    pub key_type: Option<String>,
+}
+
+
 #[derive(Debug, Validate, Deserialize, ToSchema)]
 pub struct CreateDataKeyDTO {
     /// Key Name, should be identical, length between 4 and 20, not contains any colon symbol.

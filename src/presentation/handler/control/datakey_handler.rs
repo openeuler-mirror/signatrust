@@ -20,7 +20,7 @@ use actix_web::{
 };
 
 
-use crate::presentation::handler::control::model::datakey::dto::{CertificateContent, CreateDataKeyDTO, CRLContent, DataKeyDTO, ImportDataKeyDTO, NameIdenticalQuery, PublicKeyContent, RevokeCertificateDTO};
+use crate::presentation::handler::control::model::datakey::dto::{CertificateContent, CreateDataKeyDTO, CRLContent, DataKeyDTO, ImportDataKeyDTO, ListKeyQuery, NameIdenticalQuery, PublicKeyContent, RevokeCertificateDTO};
 use crate::util::error::Error;
 use validator::Validate;
 use crate::application::datakey::KeyService;
@@ -131,6 +131,9 @@ async fn create_data_key(user: UserIdentity, key_service: web::Data<dyn KeyServi
 #[utoipa::path(
     get,
     path = "/api/v1/keys/",
+    params(
+        ListKeyQuery
+    ),
     security(
     ("Authorization" = [])
     ),
@@ -140,8 +143,12 @@ async fn create_data_key(user: UserIdentity, key_service: web::Data<dyn KeyServi
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn list_data_key(_user: UserIdentity, key_service: web::Data<dyn KeyService>) -> Result<impl Responder, Error> {
-    let keys = key_service.into_inner().get_all().await?;
+async fn list_data_key(_user: UserIdentity, key_service: web::Data<dyn KeyService>, key: web::Query<ListKeyQuery>) -> Result<impl Responder, Error> {
+    let key_type = match key.key_type {
+        Some(ref k) => Some(KeyType::from_str(k)?),
+        None => None,
+    };
+    let keys = key_service.into_inner().get_all(key_type).await?;
     let mut results = vec![];
     for k in keys {
         results.push(DataKeyDTO::try_from(k)?)
