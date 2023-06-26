@@ -28,18 +28,20 @@ use crate::infra::database::pool::{DbPool};
 use crate::infra::kms::factory;
 use crate::infra::encryption::engine::{EncryptionEngineWithClusterKey};
 use crate::domain::encryption_engine::EncryptionEngine;
-use crate::domain::datakey::entity::SecDataKey;
+use crate::domain::datakey::entity::{INFRA_CONFIG_DOMAIN_NAME, RevokedKey, SecDataKey};
 use crate::infra::sign_plugin::signers::Signers;
 use crate::domain::datakey::entity::DataKey;
 use crate::util::error::{Error, Result};
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 use crate::infra::encryption::algorithm::factory::AlgorithmFactory;
 
 
 /// Memory Sign Backend will perform all sensitive operations directly in host memory.
 pub struct MemorySignBackend {
     server_config: Arc<RwLock<Config>>,
-    engine: Box<dyn EncryptionEngine>
+    engine: Box<dyn EncryptionEngine>,
+    infra_configs: HashMap<String, String>,
 }
 
 impl MemorySignBackend {
@@ -70,8 +72,13 @@ impl MemorySignBackend {
         )?;
         engine.initialize().await?;
 
+        let infra_configs = HashMap::from([
+            (INFRA_CONFIG_DOMAIN_NAME.to_string(), server_config.read()?.get_string("control-server.domain_name")?),
+        ]);
+
         Ok(MemorySignBackend {
             server_config,
+            infra_configs,
             engine: Box::new(engine),
         })
     }
@@ -90,11 +97,14 @@ impl SignBackend for MemorySignBackend {
     }
 
     async fn generate_keys(&self, data_key: &mut DataKey) -> Result<()> {
-        let keys = Signers::generate_keys(&data_key.key_type, &data_key.attributes)?;
-        data_key.private_key = self.engine.encode(keys.private_key).await?;
-        data_key.public_key = self.engine.encode(keys.public_key).await?;
-        data_key.certificate = self.engine.encode(keys.certificate).await?;
-        data_key.fingerprint = keys.fingerprint;
+        let sec_key = SecDataKey::load(data_key, &self.engine).await?;
+        let content = Signers::load_from_data_key(&data_key.key_type, sec_key)?.generate_keys(
+            &data_key.key_type, &self.infra_configs)?;
+        data_key.private_key = self.engine.encode(content.private_key).await?;
+        data_key.public_key = self.engine.encode(content.public_key).await?;
+        data_key.certificate = self.engine.encode(content.certificate).await?;
+        data_key.fingerprint = content.fingerprint;
+        data_key.serial_number = content.serial_number;
         Ok(())
     }
 
@@ -111,5 +121,10 @@ impl SignBackend for MemorySignBackend {
         data_key.public_key = self.engine.decode(data_key.public_key.clone()).await?;
         data_key.certificate = self.engine.decode(data_key.certificate.clone()).await?;
         Ok(())
+    }
+
+    async fn generate_crl_content(&self, data_key: &DataKey, revoked_keys: Vec<RevokedKey>, last_update: DateTime<Utc>, next_update: DateTime<Utc>) -> Result<Vec<u8>> {
+        let sec_key = SecDataKey::load(data_key, &self.engine).await?;
+        Signers::load_from_data_key(&data_key.key_type, sec_key)?.generate_crl_content(revoked_keys, last_update, next_update)
     }
 }

@@ -11,7 +11,6 @@ import PublicTable from "./PublicTable.vue";
   <div class="main">
     <ChangeCheck />
     <PublicTable/>
-    <PrivateTable />
     <Permissions />
     
   </div>

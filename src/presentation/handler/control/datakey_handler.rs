@@ -20,19 +20,18 @@ use actix_web::{
 };
 
 
-use crate::presentation::handler::control::model::datakey::dto::{CreateDataKeyDTO, DataKeyDTO, ExportKey, ImportDataKeyDTO, KeyQuery, NameIdenticalQuery};
+use crate::presentation::handler::control::model::datakey::dto::{CertificateContent, CreateDataKeyDTO, CRLContent, DataKeyDTO, ImportDataKeyDTO, ListKeyQuery, NameIdenticalQuery, PublicKeyContent, RevokeCertificateDTO};
 use crate::util::error::Error;
 use validator::Validate;
 use crate::application::datakey::KeyService;
-use crate::domain::datakey::entity::{DataKey, Visibility};
+use crate::domain::datakey::entity::{DataKey, KeyType, X509RevokeReason};
 use super::model::user::dto::UserIdentity;
 
 /// Create new key
 ///
-/// This will generate either a pgp private/public key pairs or a x509 private/public/cert keys.
+/// This will generate either a pgp key pairs or a x509 private/public/cert keys.
 /// ## Naming convention
-/// The name of the key should be unique, and if you want to create a private key, the name will be prefixed with your email address automatically,
-/// for example you will get `youremail@address.com:some-private-key-name` when you specify the private key named `some-private-key-name`.
+/// The name of the key should be unique.
 /// ## Generate pgp key
 /// To generate a pgp key the required parameters in `attributes` are:
 /// 1. **digest_algorithm**: the digest algorithm used for pgp, for example: sha2_256
@@ -46,7 +45,6 @@ use super::model::user::dto::UserIdentity;
 ///   "name": "test-pgp",
 ///   "description": "hello world",
 ///   "key_type": "pgp",
-///   "visibility": "public",
 ///   "attributes": {
 ///     "digest_algorithm": "sha2_256",
 ///     "key_type": "rsa",
@@ -70,13 +68,19 @@ use super::model::user::dto::UserIdentity;
 /// 7. **organization**: organization (organizationName, O), used for certificate.
 /// 8. **organizational_unit**: organizational unit (organizationalUnitName, OU), used for certificate.
 /// 9. **province_name**: state or province name (stateOrProvinceName, ST), used for certificate.
+///
+/// There are three different keys regarding X509, they are:
+///     1. X509CA: Root CA key, used for issue intermediate CA certificate.
+///     2. X509ICA: Intermediate CA key, used for issue end entity certificate.
+///     3. X509EE: End entity key, used for sign object.
+/// You have to specify the parent_id: when you create a X509ICA or X509EE key.
 /// ### Request body example:
 /// ```json
 /// {
 ///   "name": "test-x509",
 ///   "description": "hello world",
-///   "key_type": "x509",
-///   "visibility": "public",
+///   "key_type": "x509CA",
+///   "parent_id": "1111",
 ///   "attributes": {
 ///     "digest_algorithm": "sha2_256",
 ///     "key_type": "rsa",
@@ -128,7 +132,7 @@ async fn create_data_key(user: UserIdentity, key_service: web::Data<dyn KeyServi
     get,
     path = "/api/v1/keys/",
     params(
-        KeyQuery
+        ListKeyQuery
     ),
     security(
     ("Authorization" = [])
@@ -139,9 +143,12 @@ async fn create_data_key(user: UserIdentity, key_service: web::Data<dyn KeyServi
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn list_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, key_query: web::Query<KeyQuery>) -> Result<impl Responder, Error> {
-    let key_visibility = Visibility::from_str(key_query.visibility.as_str())?;
-    let keys = key_service.into_inner().get_by_visibility(Some(user), key_visibility).await?;
+async fn list_data_key(_user: UserIdentity, key_service: web::Data<dyn KeyService>, key: web::Query<ListKeyQuery>) -> Result<impl Responder, Error> {
+    let key_type = match key.key_type {
+        Some(ref k) => Some(KeyType::from_str(k)?),
+        None => None,
+    };
+    let keys = key_service.into_inner().get_all(key_type).await?;
     let mut results = vec![];
     for k in keys {
         results.push(DataKeyDTO::try_from(k)?)
@@ -149,18 +156,18 @@ async fn list_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService
     Ok(HttpResponse::Ok().json(results))
 }
 
-/// Get detail of specific key by id from database
+/// Get detail of specific key by id or name from database
 ///
 /// ## Example
 /// Call the api endpoint with following curl.
 /// ```text
-/// curl https://domain:port/api/v1/keys/{id}
+/// curl https://domain:port/api/v1/keys/{id_or_name}
 /// ```
 #[utoipa::path(
     get,
-    path = "/api/v1/keys/{id}",
+    path = "/api/v1/keys/{id_or_name}",
     params(
-        ("id" = i32, Path, description = "Key id"),
+        ("id_or_name" = String, Path, description = "Key id or key name"),
     ),
     security(
     ("Authorization" = [])
@@ -174,23 +181,24 @@ async fn list_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn show_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, id: web::Path<String>) -> Result<impl Responder, Error> {
-    let key = key_service.into_inner().get_one(Some(user), id.parse::<i32>()?).await?;
+async fn show_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, id_or_name: web::Path<String>) -> Result<impl Responder, Error> {
+    let key = key_service.into_inner().get_one(Some(user), id_or_name.into_inner()).await?;
     Ok(HttpResponse::Ok().json(DataKeyDTO::try_from(key)?))
 }
 
-/// Delete specific key by id from database, only **disabled** key can be deleted.
+/// Delete specific key by id or name from database
 ///
+/// only **disabled** key can be deleted.
 /// ## Example
 /// Call the api endpoint with following curl.
 /// ```text
-/// curl -X POST https://domain:port/api/v1/keys/{id}/request_delete
+/// curl -X POST https://domain:port/api/v1/keys/{id_or_name}/actions/request_delete
 /// ```
 #[utoipa::path(
     post,
-    path = "/api/v1/keys/{id}/request_delete",
+    path = "/api/v1/keys/{id_or_name}/actions/request_delete",
     params(
-        ("id" = i32, Path, description = "Key id"),
+        ("id_or_name" = String, Path, description = "Key id or key name"),
     ),
     security(
         ("Authorization" = [])
@@ -204,27 +212,28 @@ async fn show_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn delete_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, id: web::Path<String>) -> Result<impl Responder, Error> {
-    key_service.into_inner().request_delete(user, id.parse::<i32>()?).await?;
+async fn delete_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, id_or_name: web::Path<String>) -> Result<impl Responder, Error> {
+    key_service.into_inner().request_delete(user, id_or_name.into_inner()).await?;
     Ok(HttpResponse::Ok())
 }
 
-/// Cancel deletion of specific key by id from database, it only works for **public key**.
+/// Cancel deletion of specific key by id or name from database
 ///
+/// only **pending_delete** key can be canceled.
 /// ## Example
 /// Call the api endpoint with following curl.
 /// ```text
-/// curl -X POST https://domain:port/api/v1/keys/{id}/cancel_delete
+/// curl -X POST https://domain:port/api/v1/keys/{id_or_name}/actions/cancel_delete
 /// ```
 #[utoipa::path(
-post,
-path = "/api/v1/keys/{id}/cancel_delete",
+    post,
+    path = "/api/v1/keys/{id_or_name}/actions/cancel_delete",
     params(
-        ("id" = i32, Path, description = "Key id"),
-        ),
+        ("id_or_name" = String, Path, description = "Key id or key name"),
+    ),
     security(
         ("Authorization" = [])
-        ),
+    ),
     responses(
         (status = 200, description = "Key deletion canceled successfully"),
         (status = 400, description = "Bad request", body = ErrorMessage),
@@ -232,31 +241,33 @@ path = "/api/v1/keys/{id}/cancel_delete",
         (status = 403, description = "Forbidden", body = ErrorMessage),
         (status = 404, description = "Key not found", body = ErrorMessage),
         (status = 500, description = "Server internal error", body = ErrorMessage)
-)
+    )
 )]
-async fn cancel_delete_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, id: web::Path<String>) -> Result<impl Responder, Error> {
-    key_service.into_inner().cancel_delete(user, id.parse::<i32>()?).await?;
+async fn cancel_delete_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, id_or_name: web::Path<String>) -> Result<impl Responder, Error> {
+    key_service.into_inner().cancel_delete(user, id_or_name.into_inner()).await?;
     Ok(HttpResponse::Ok())
 }
 
-/// Export content of specific key
+/// Revoke a certificate by id or name from database.
 ///
+/// only **disabled** or **pending_revoke** and X509EE/X509ICA key can be revoked.
 /// ## Example
 /// Call the api endpoint with following curl.
 /// ```text
-/// curl -X POST https://domain:port/api/v1/keys/{id}/export
+/// curl -X POST https://domain:port/api/v1/keys/{id_or_name}/actions/request_revoke
 /// ```
 #[utoipa::path(
     post,
-    path = "/api/v1/keys/{id}/export",
+    path = "/api/v1/keys/{id_or_name}/actions/request_revoke",
     params(
-        ("id" = i32, Path, description = "Key id"),
+        ("id_or_name" = String, Path, description = "Key id or key name"),
     ),
+    request_body = RevokeCertificateDTO,
     security(
         ("Authorization" = [])
     ),
     responses(
-        (status = 200, description = "Key successfully exported", body = ExportKey),
+        (status = 200, description = "Key successfully revoked"),
         (status = 400, description = "Bad request", body = ErrorMessage),
         (status = 401, description = "Unauthorized", body = ErrorMessage),
         (status = 403, description = "Forbidden", body = ErrorMessage),
@@ -264,22 +275,146 @@ async fn cancel_delete_data_key(user: UserIdentity, key_service: web::Data<dyn K
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn export_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, id: web::Path<String>) -> Result<impl Responder, Error> {
-    Ok(HttpResponse::Ok().json(ExportKey::try_from(key_service.export_one(Some(user), id.parse::<i32>()?).await?)?))
+async fn revoke_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, id_or_name: web::Path<String>, reason: web::Json<RevokeCertificateDTO>) -> Result<impl Responder, Error> {
+    key_service.into_inner().request_revoke(user, id_or_name.into_inner(), X509RevokeReason::from_str(&reason.reason)?).await?;
+    Ok(HttpResponse::Ok())
 }
 
-/// Enable specific key
+/// Cancel revoke a certificate by id or name from database.
+///
+/// only **pending_revoke** and X509EE/X509ICA key can be cancel revoked.
+/// ## Example
+/// Call the api endpoint with following curl.
+/// ```text
+/// curl -X POST https://domain:port/api/v1/keys/{id_or_name}/actions/cancel_revoke
+/// ```
+#[utoipa::path(
+    post,
+    path = "/api/v1/keys/{id_or_name}/actions/cancel_revoke",
+    params(
+        ("id_or_name" = String, Path, description = "Key id or key name"),
+    ),
+    security(
+        ("Authorization" = [])
+    ),
+    responses(
+        (status = 200, description = "Key successfully deleted"),
+        (status = 400, description = "Bad request", body = ErrorMessage),
+        (status = 401, description = "Unauthorized", body = ErrorMessage),
+        (status = 403, description = "Forbidden", body = ErrorMessage),
+        (status = 404, description = "Key not found", body = ErrorMessage),
+        (status = 500, description = "Server internal error", body = ErrorMessage)
+    )
+)]
+async fn cancel_revoke_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, id_or_name: web::Path<String>) -> Result<impl Responder, Error> {
+    key_service.into_inner().cancel_revoke(user, id_or_name.into_inner()).await?;
+    Ok(HttpResponse::Ok())
+}
+
+/// Get public key content of specific key by id or name from database
 ///
 /// ## Example
 /// Call the api endpoint with following curl.
 /// ```text
-/// curl -X POST https://domain:port/api/v1/keys/{id}/enable
+/// curl -X POST https://domain:port/api/v1/keys/{id_or_name}/public_key
+/// ```
+/// ## Note: this endpoint is public for public keys, for private keys, it requires authentication.
+#[utoipa::path(
+    post,
+    path = "/api/v1/keys/{id_or_name}/public_key",
+    params(
+        ("id_or_name" = String, Path, description = "Key id or key name"),
+    ),
+    responses(
+        (status = 200, description = "Key successfully exported",),
+        (status = 400, description = "Bad request", body = ErrorMessage),
+        (status = 401, description = "Unauthorized", body = ErrorMessage),
+        (status = 403, description = "Forbidden", body = ErrorMessage),
+        (status = 404, description = "Key not found", body = ErrorMessage),
+        (status = 500, description = "Server internal error", body = ErrorMessage)
+    )
+)]
+async fn export_public_key(user: Option<UserIdentity>, key_service: web::Data<dyn KeyService>, id_or_name: web::Path<String>) -> Result<impl Responder, Error> {
+    let data_key = key_service.export_one(user, id_or_name.into_inner()).await?;
+    if data_key.key_type != KeyType::OpenPGP {
+        return Ok(HttpResponse::Forbidden().finish())
+    }
+    Ok(HttpResponse::Ok().content_type("text/plain").body(PublicKeyContent::try_from(data_key)?.content))
+}
+
+/// Get certificate content of specific key by id or name from database
+///
+/// ## Example
+/// Call the api endpoint with following curl.
+/// ```text
+/// curl -X POST https://domain:port/api/v1/keys/{id_or_name}/certificate
+/// ```
+/// ## Note: this endpoint is public for public keys, for private keys, it requires authentication.
+#[utoipa::path(
+    post,
+    path = "/api/v1/keys/{id_or_name}/certificate",
+    params(
+        ("id_or_name" = String, Path, description = "Key id or key name"),
+    ),
+    responses(
+        (status = 200, description = "Key successfully exported"),
+        (status = 400, description = "Bad request", body = ErrorMessage),
+        (status = 401, description = "Unauthorized", body = ErrorMessage),
+        (status = 403, description = "Forbidden", body = ErrorMessage),
+        (status = 404, description = "Key not found", body = ErrorMessage),
+        (status = 500, description = "Server internal error", body = ErrorMessage)
+    )
+)]
+async fn export_certificate(user: Option<UserIdentity>, key_service: web::Data<dyn KeyService>, id_or_name: web::Path<String>) -> Result<impl Responder, Error> {
+    let data_key = key_service.export_one(user, id_or_name.into_inner()).await?;
+    if data_key.key_type == KeyType::OpenPGP {
+        return Ok(HttpResponse::Forbidden().finish())
+    }
+    Ok(HttpResponse::Ok().content_type("text/plain").body(CertificateContent::try_from(data_key)?.content))
+}
+
+/// Get Client Revoke List content of specific key(cert) by id or name from database
+///
+/// ## Example
+/// Call the api endpoint with following curl.
+/// ```text
+/// curl -X POST https://domain:port/api/v1/keys/{id_or_name}/crl
+/// ```
+/// ## Note: this endpoint is public for public keys, for private keys, it requires authentication.
+#[utoipa::path(
+    post,
+    path = "/api/v1/keys/{id_or_name}/crl",
+    params(
+        ("id_or_name" = String, Path, description = "Key id or key name"),
+    ),
+    responses(
+        (status = 200, description = "Key successfully exported"),
+        (status = 400, description = "Bad request", body = ErrorMessage),
+        (status = 401, description = "Unauthorized", body = ErrorMessage),
+        (status = 403, description = "Forbidden", body = ErrorMessage),
+        (status = 404, description = "Key not found", body = ErrorMessage),
+        (status = 500, description = "Server internal error", body = ErrorMessage)
+    )
+)]
+async fn export_crl(user: Option<UserIdentity>, key_service: web::Data<dyn KeyService>, id_or_name: web::Path<String>) -> Result<impl Responder, Error> {
+    //note: we could not get any crl content by a openpgp id.
+    let crl_content = key_service.export_cert_crl(user, id_or_name.into_inner()).await?;
+    Ok(HttpResponse::Ok().content_type("text/plain").body(CRLContent::try_from(crl_content)?.content))
+}
+
+
+/// Enable specific key by id or name from database
+///
+/// ## Example
+/// Call the api endpoint with following curl.
+/// ```text
+/// curl -X POST https://domain:port/api/v1/keys/{id_or_name}/actions/enable
 /// ```
 #[utoipa::path(
     post,
-    path = "/api/v1/keys/{id}/enable",
+    path = "/api/v1/keys/{id_or_name}/actions/enable",
     params(
-        ("id" = i32, Path, description = "Key id"),
+        ("id_or_name" = String, Path, description = "Key id or key name"),
     ),
     security(
         ("Authorization" = [])
@@ -293,23 +428,23 @@ async fn export_data_key(user: UserIdentity, key_service: web::Data<dyn KeyServi
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn enable_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, id: web::Path<String>) -> Result<impl Responder, Error> {
-    key_service.enable(Some(user), id.parse::<i32>()?).await?;
+async fn enable_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, id_or_name: web::Path<String>) -> Result<impl Responder, Error> {
+    key_service.enable(Some(user), id_or_name.into_inner()).await?;
     Ok(HttpResponse::Ok())
 }
 
-/// Disable specific key
+/// Disable specific key by id or name from database
 ///
 /// ## Example
 /// Call the api endpoint with following curl.
 /// ```text
-/// curl -X POST https://domain:port/api/v1/keys/{id}/disable
+/// curl -X POST https://domain:port/api/v1/keys/{id_or_name}/actions/disable
 /// ```
 #[utoipa::path(
     post,
-    path = "/api/v1/keys/{id}/disable",
+    path = "/api/v1/keys/{id_or_name}/actions/disable",
     params(
-        ("id" = i32, Path, description = "Key id"),
+        ("id_or_name" = String, Path, description = "Key id or key name"),
     ),
     security(
         ("Authorization" = [])
@@ -323,19 +458,19 @@ async fn enable_data_key(user: UserIdentity, key_service: web::Data<dyn KeyServi
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn disable_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, id: web::Path<String>) -> Result<impl Responder, Error> {
-    key_service.disable(Some(user), id.parse::<i32>()?).await?;
+async fn disable_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, id_or_name: web::Path<String>) -> Result<impl Responder, Error> {
+    key_service.disable(Some(user), id_or_name.into_inner()).await?;
     Ok(HttpResponse::Ok())
 }
 
 /// Check whether a key name already exists
 ///
 /// Use this API to check whether the key name exists in database.
-/// `name` and `visibility` are required
+/// `name` are required
 /// ## Example
 /// Call the api endpoint with following curl.
 /// ```text
-/// curl -X HEAD https://domain:port/api/v1/keys/name_identical?name=xxx&visibility=xxx
+/// curl -X HEAD https://domain:port/api/v1/keys/name_identical?name=xxx
 /// ```
 #[utoipa::path(
     head,
@@ -352,11 +487,11 @@ async fn disable_data_key(user: UserIdentity, key_service: web::Data<dyn KeyServ
         (status = 409, description = "Conflict in name")
     )
 )]
-async fn key_name_identical(user: UserIdentity, key_service: web::Data<dyn KeyService>, name_exist: web::Query<NameIdenticalQuery>,) -> Result<impl Responder, Error> {
+async fn key_name_identical(_user: UserIdentity, key_service: web::Data<dyn KeyService>, name_exist: web::Query<NameIdenticalQuery>,) -> Result<impl Responder, Error> {
     name_exist.validate()?;
-    match key_service.into_inner().key_name_exists(&name_exist.get_key_name(&user)).await? {
-        true => Ok(HttpResponse::Conflict()),
-        false => Ok(HttpResponse::Ok()),
+    match key_service.into_inner().get_by_name(&name_exist.name.clone()).await {
+        Ok(_) => Ok(HttpResponse::Conflict()),
+        Err(_) => Ok(HttpResponse::Ok()),
     }
 }
 
@@ -425,7 +560,7 @@ async fn key_name_identical(user: UserIdentity, key_service: web::Data<dyn KeySe
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn import_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, datakey: web::Json<ImportDataKeyDTO>,) -> Result<impl Responder, Error> {
+async fn import_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, datakey: web::Json<ImportDataKeyDTO>) -> Result<impl Responder, Error> {
     datakey.validate()?;
     let mut key = DataKey::import_from(datakey.0, user)?;
     Ok(HttpResponse::Created().json(DataKeyDTO::try_from(key_service.into_inner().import(&mut key).await?)?))
@@ -440,10 +575,14 @@ pub fn get_scope() -> Scope {
                 .route(web::post().to(create_data_key)))
         .service( web::resource("/import").route(web::post().to(import_data_key)))
         .service( web::resource("/name_identical").route(web::head().to(key_name_identical)))
-        .service( web::resource("/{id}").route(web::get().to(show_data_key)))
-        .service( web::resource("/{id}/export").route(web::post().to(export_data_key)))
-        .service( web::resource("/{id}/enable").route(web::post().to(enable_data_key)))
-        .service( web::resource("/{id}/disable").route(web::post().to(disable_data_key)))
-        .service( web::resource("/{id}/request_delete").route(web::post().to(delete_data_key)))
-        .service( web::resource("/{id}/cancel_delete").route(web::post().to(cancel_delete_data_key)))
+        .service( web::resource("/{id_or_name}").route(web::get().to(show_data_key)))
+        .service( web::resource("/{id_or_name}/public_key").route(web::post().to(export_public_key)))
+        .service( web::resource("/{id_or_name}/certificate").route(web::post().to(export_certificate)))
+        .service( web::resource("/{id_or_name}/crl").route(web::post().to(export_crl)))
+        .service( web::resource("/{id_or_name}/actions/enable").route(web::post().to(enable_data_key)))
+        .service( web::resource("/{id_or_name}/actions/disable").route(web::post().to(disable_data_key)))
+        .service( web::resource("/{id_or_name}/actions/request_delete").route(web::post().to(delete_data_key)))
+        .service( web::resource("/{id_or_name}/actions/cancel_delete").route(web::post().to(cancel_delete_data_key)))
+        .service( web::resource("/{id_or_name}/actions/request_revoke").route(web::post().to(revoke_data_key)))
+        .service( web::resource("/{id_or_name}/actions/cancel_revoke").route(web::post().to(cancel_revoke_data_key)))
 }

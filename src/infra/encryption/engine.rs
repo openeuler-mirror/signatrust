@@ -163,6 +163,9 @@ where
     }
 
     async fn encode(&self, content: Vec<u8>) -> Result<Vec<u8>> {
+        if content.is_empty() {
+            return Ok(content);
+        }
         //always use latest cluster key to encode data
         let mut secret = self
             .encryptor
@@ -171,6 +174,9 @@ where
     }
 
     async fn decode(&self, content: Vec<u8>) -> Result<Vec<u8>> {
+        if content.is_empty() {
+            return Ok(content);
+        }
         //1. obtain cluster key id from content
         //2. use cluster key to decrypt data
         let sec_cluster_key = self.get_used_sec_cluster_key(&content[0..KEY_SIZE]).await?;

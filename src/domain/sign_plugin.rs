@@ -16,7 +16,8 @@
 
 use crate::util::error::Result;
 use std::collections::HashMap;
-use crate::domain::datakey::entity::{DataKey, DataKeyContent, SecDataKey};
+use chrono::{DateTime, Utc};
+use crate::domain::datakey::entity::{DataKey, DataKeyContent, KeyType, RevokedKey, SecDataKey};
 
 pub trait SignPlugins: Send + Sync {
     fn new(db: SecDataKey) -> Result<Self>
@@ -32,10 +33,7 @@ pub trait SignPlugins: Send + Sync {
     ) -> HashMap<String, String>
         where
             Self: Sized;
-    fn generate_keys(
-        attributes: &HashMap<String, String>,
-    ) -> Result<DataKeyContent>
-        where
-            Self: Sized;
+    fn generate_keys(&self, key_type: &KeyType, infra_configs: &HashMap<String, String>) -> Result<DataKeyContent>;
     fn sign(&self, content: Vec<u8>, options: HashMap<String, String>) -> Result<Vec<u8>>;
+    fn generate_crl_content(&self, revoked_keys: Vec<RevokedKey>, last_update: DateTime<Utc>, next_update: DateTime<Utc>) -> Result<Vec<u8>>;
 }

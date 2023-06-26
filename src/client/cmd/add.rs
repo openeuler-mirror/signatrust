@@ -87,7 +87,6 @@ pub struct CommandAddHandler {
     detached: bool,
     max_concurrency: usize,
     sign_type: SignType,
-    token: String,
 }
 
 impl CommandAddHandler {
@@ -168,7 +167,6 @@ impl SignCommand for CommandAddHandler {
             detached: command.detached,
             max_concurrency: config.read()?.get_string("max_concurrency")?.parse()?,
             sign_type: command.sign_type,
-            token: config.read()?.get_string("token").unwrap_or("".to_string()),
         })
     }
 
@@ -204,7 +202,7 @@ impl SignCommand for CommandAddHandler {
         runtime.block_on(async {
             let channel = ChannelFactory::new(
                 &lb_config).await.unwrap().get_channel().unwrap();
-            let mut signer = RemoteSigner::new(channel, self.buffer_size, self.token.clone());
+            let mut signer = RemoteSigner::new(channel, self.buffer_size);
             //split file
             let send_handlers = files.into_iter().map(|file|{
                 let task_split_s = split_s.clone();

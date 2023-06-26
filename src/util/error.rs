@@ -94,6 +94,8 @@ pub enum Error {
     GeneratingKeyError(String),
     #[error("not enough privileges")]
     UnprivilegedError,
+    #[error("operation disallowed: {0}")]
+    ActionsNotAllowedError(String),
 
     //client error
     #[error("file extension {0} not supported for file {1}")]
@@ -143,6 +145,12 @@ impl ResponseError for Error {
             Error::UnauthorizedError => {
                 warn!("unauthorized: {}", self.to_string());
                 HttpResponse::Unauthorized().json(ErrorMessage{
+                    detail: self.to_string()
+                })
+            }
+            Error::ActionsNotAllowedError(_) => {
+                warn!("unprivileged: {}", self.to_string());
+                HttpResponse::Forbidden().json(ErrorMessage{
                     detail: self.to_string()
                 })
             }

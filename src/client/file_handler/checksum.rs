@@ -103,7 +103,7 @@ mod test {
         let result = handler.validate_options(&options);
         assert!(result.is_ok());
 
-        options.insert(options::KEY_TYPE.to_string(), KeyType::X509.to_string());
+        options.insert(options::KEY_TYPE.to_string(), KeyType::X509EE.to_string());
         let result = handler.validate_options(&options);
         assert!(result.is_err());
         assert_eq!(
