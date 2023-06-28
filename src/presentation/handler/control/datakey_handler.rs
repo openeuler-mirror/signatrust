@@ -320,7 +320,7 @@ async fn cancel_revoke_data_key(user: UserIdentity, key_service: web::Data<dyn K
 /// ```
 /// ## Note: this endpoint is public for public keys, for private keys, it requires authentication.
 #[utoipa::path(
-    post,
+    get,
     path = "/api/v1/keys/{id_or_name}/public_key",
     params(
         ("id_or_name" = String, Path, description = "Key id or key name"),
@@ -351,7 +351,7 @@ async fn export_public_key(user: Option<UserIdentity>, key_service: web::Data<dy
 /// ```
 /// ## Note: this endpoint is public for public keys, for private keys, it requires authentication.
 #[utoipa::path(
-    post,
+    get,
     path = "/api/v1/keys/{id_or_name}/certificate",
     params(
         ("id_or_name" = String, Path, description = "Key id or key name"),
@@ -382,7 +382,7 @@ async fn export_certificate(user: Option<UserIdentity>, key_service: web::Data<d
 /// ```
 /// ## Note: this endpoint is public for public keys, for private keys, it requires authentication.
 #[utoipa::path(
-    post,
+    get,
     path = "/api/v1/keys/{id_or_name}/crl",
     params(
         ("id_or_name" = String, Path, description = "Key id or key name"),
@@ -576,9 +576,9 @@ pub fn get_scope() -> Scope {
         .service( web::resource("/import").route(web::post().to(import_data_key)))
         .service( web::resource("/name_identical").route(web::head().to(key_name_identical)))
         .service( web::resource("/{id_or_name}").route(web::get().to(show_data_key)))
-        .service( web::resource("/{id_or_name}/public_key").route(web::post().to(export_public_key)))
-        .service( web::resource("/{id_or_name}/certificate").route(web::post().to(export_certificate)))
-        .service( web::resource("/{id_or_name}/crl").route(web::post().to(export_crl)))
+        .service( web::resource("/{id_or_name}/public_key").route(web::get().to(export_public_key)))
+        .service( web::resource("/{id_or_name}/certificate").route(web::get().to(export_certificate)))
+        .service( web::resource("/{id_or_name}/crl").route(web::get().to(export_crl)))
         .service( web::resource("/{id_or_name}/actions/enable").route(web::post().to(enable_data_key)))
         .service( web::resource("/{id_or_name}/actions/disable").route(web::post().to(disable_data_key)))
         .service( web::resource("/{id_or_name}/actions/request_delete").route(web::post().to(delete_data_key)))
