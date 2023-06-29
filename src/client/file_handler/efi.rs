@@ -80,12 +80,97 @@ impl FileHandler for EfiFileHandler {
         let new_pe = pe.set_authenticode(signatures)?;
 
         let mut file = std::fs::File::create(&temp_file)?;
-    
+
         file.write_all(&new_pe)?;
 
         Ok((
             temp_file.as_path().display().to_string(),
             path.display().to_string(),
         ))
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::env;
+
+    #[test]
+    fn test_validate_options() {
+        let mut options = HashMap::new();
+        options.insert(options::DETACHED.to_string(), "true".to_string());
+        let handler: EfiFileHandler = EfiFileHandler::new();
+        let result = handler.validate_options(&options);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            Error::InvalidArgumentError(
+                "EFI image not support detached signature, you may need remove the --detach argument".to_string(),
+            ).to_string()
+        );
+
+        options.remove(options::DETACHED);
+        options.insert(options::KEY_TYPE.to_string(), KeyType::X509EE.to_string());
+        options.insert(
+            options::SIGN_TYPE.to_string(),
+            SignType::Authenticode.to_string(),
+        );
+        let result = handler.validate_options(&options);
+        assert!(result.is_ok());
+
+        *options
+            .get_mut(options::KEY_TYPE.to_string().as_str())
+            .unwrap() = KeyType::Pgp.to_string();
+        let result = handler.validate_options(&options);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            Error::InvalidArgumentError("EFI image only support x509 key type".to_string())
+                .to_string()
+        );
+
+        *options
+            .get_mut(options::KEY_TYPE.to_string().as_str())
+            .unwrap() = KeyType::X509EE.to_string();
+        *options
+            .get_mut(options::SIGN_TYPE.to_string().as_str())
+            .unwrap() = SignType::PKCS7.to_string();
+        let result = handler.validate_options(&options);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            Error::InvalidArgumentError(
+                "EFI image only support authenticode sign type".to_string()
+            )
+            .to_string()
+        );
+    }
+
+    #[tokio::test]
+    async fn test_assemble_data() {
+        let current_dir = env::current_dir().expect("get current dir failed");
+        let signature_buf = read(current_dir.join("test_assets").join("efi.sign")).unwrap();
+
+        let handler = EfiFileHandler::new();
+        let mut options = HashMap::new();
+        options.insert(options::KEY_TYPE.to_string(), KeyType::X509EE.to_string());
+        options.insert(
+            options::SIGN_TYPE.to_string(),
+            SignType::Authenticode.to_string(),
+        );
+        let path = PathBuf::from(current_dir.join("test_assets").join("shimx64.efi"));
+
+        let temp_dir = env::temp_dir();
+        let result = handler
+            .assemble_data(&path, vec![signature_buf], &temp_dir, &options)
+            .await;
+        assert!(result.is_ok());
+        let (temp_file, file_name) = result.expect("efi sign should work");
+        assert_eq!(temp_file.starts_with(temp_dir.to_str().unwrap()), true);
+        assert_eq!(file_name.ends_with("shimx64.efi"), true);
+        assert_eq!(
+            read(temp_file).unwrap(),
+            read(current_dir.join("test_assets").join("shimx64.efi.signed")).unwrap()
+        );
     }
 }

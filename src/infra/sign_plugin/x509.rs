@@ -12,7 +12,7 @@
  *  * // NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
  *  * // See the Mulan PSL v2 for more details.
  *
- */
+*/
 
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -382,7 +382,8 @@ impl SignPlugins for X509Plugin {
                     content,
                     p7b,
                     private_key.private_key_to_pem_pkcs8()?,
-                    None)?.encode()?)
+                    None,
+                    efi_signer::DigestAlgorithm::Sha256)?.encode()?)
             }
             SignType::PKCS7 => {
                 let pkcs7 = Pkcs7::sign(
@@ -445,8 +446,9 @@ impl SignPlugins for X509Plugin {
 
 #[cfg(test)]
 mod test {
-    use super::*;
     use chrono::{Duration, Utc};
+    use std::env;
+    use super::*;
     use secstr::SecVec;
     use crate::domain::datakey::entity::{KeyState, ParentKey, Visibility, X509RevokeReason};
     use crate::domain::datakey::entity::{KeyType};
@@ -514,6 +516,61 @@ mod test {
             datakey.key_type = key;
         }
         datakey
+    }
+
+    /// helper function to get a usable X509plugin
+    async fn get_default_plugin() -> X509Plugin {
+        let parameter = get_default_parameter();
+        let dummy_engine = get_encryption_engine();
+        let infra_config = get_infra_config();
+        // create ca
+        let ca_key = get_default_datakey(
+            Some("fake ca".to_string()), Some(parameter.clone()), Some(KeyType::X509CA));
+        let sec_datakey = SecDataKey::load(
+            &ca_key, &dummy_engine).await.expect("load sec datakey successfully");
+        let plugin = X509Plugin::new(sec_datakey).expect("create plugin successfully");
+        let ca_content = plugin.generate_keys(&KeyType::X509CA, &infra_config).expect(format!("generate ca key with no passphrase successfully").as_str());
+
+        // create ica
+        let mut ica_key = get_default_datakey(
+            Some("fake ica".to_string()), Some(parameter.clone()), Some(KeyType::X509CA));
+        ica_key.parent_key = Some(ParentKey{
+            name: "fake ca".to_string(),
+            private_key: ca_content.private_key,
+            public_key: ca_content.public_key,
+            certificate: ca_content.certificate,
+            attributes: ca_key.attributes.clone(),
+        });
+        let sec_datakey = SecDataKey::load(
+            &ica_key, &dummy_engine).await.expect("load sec datakey successfully");
+        let plugin = X509Plugin::new(sec_datakey).expect("create plugin successfully");
+        let ica_content = plugin.generate_keys(&KeyType::X509ICA, &infra_config).expect(format!("generate ica key with no passphrase successfully").as_str());
+
+        //create ee
+        let mut ee_key = get_default_datakey(
+            Some("fake ee".to_string()), Some(parameter.clone()), Some(KeyType::X509CA));
+        ee_key.parent_key = Some(ParentKey{
+            name: "fake ca".to_string(),
+            private_key: ica_content.private_key,
+            public_key: ica_content.public_key,
+            certificate: ica_content.certificate,
+            attributes: ica_key.attributes.clone(),
+        });
+        let sec_datakey = SecDataKey::load(
+            &ica_key, &dummy_engine).await.expect("load sec datakey successfully");
+        let plugin = X509Plugin::new(sec_datakey).expect("create plugin successfully");
+        let ee_content = plugin.generate_keys(&KeyType::X509EE, &infra_config).expect(format!("generate ee key with no passphrase successfully").as_str());
+
+        let sec_keys = SecDataKey {
+            name: "".to_string(),
+            private_key: SecVec::new(ee_content.private_key.clone()),
+            public_key: SecVec::new(ee_content.public_key.clone()),
+            certificate: SecVec::new(ee_content.certificate.clone()),
+            identity: "".to_string(),
+            attributes: Default::default(),
+            parent: None,
+        };
+        X509Plugin::new(sec_keys).expect("create x509 instance successfully")
     }
 
     #[test]
@@ -716,57 +773,8 @@ X5BboR/QJakEK+H+EUQAiDs=
     #[tokio::test]
     async fn test_sign_whole_process_successful() {
         let parameter = get_default_parameter();
-        let dummy_engine = get_encryption_engine();
-        let infra_config = get_infra_config();
         let content = "hello world".as_bytes();
-        // create ca
-        let ca_key = get_default_datakey(
-            Some("fake ca".to_string()), Some(parameter.clone()), Some(KeyType::X509CA));
-        let sec_datakey = SecDataKey::load(
-            &ca_key, &dummy_engine).await.expect("load sec datakey successfully");
-        let plugin = X509Plugin::new(sec_datakey).expect("create plugin successfully");
-        let ca_content = plugin.generate_keys(&KeyType::X509CA, &infra_config).expect(format!("generate ca key with no passphrase successfully").as_str());
-
-        // create ica
-        let mut ica_key = get_default_datakey(
-            Some("fake ica".to_string()), Some(parameter.clone()), Some(KeyType::X509CA));
-        ica_key.parent_key = Some(ParentKey{
-            name: "fake ca".to_string(),
-            private_key: ca_content.private_key,
-            public_key: ca_content.public_key,
-            certificate: ca_content.certificate,
-            attributes: ca_key.attributes.clone(),
-        });
-        let sec_datakey = SecDataKey::load(
-            &ica_key, &dummy_engine).await.expect("load sec datakey successfully");
-        let plugin = X509Plugin::new(sec_datakey).expect("create plugin successfully");
-        let ica_content = plugin.generate_keys(&KeyType::X509ICA, &infra_config).expect(format!("generate ica key with no passphrase successfully").as_str());
-
-        //create ee
-        let mut ee_key = get_default_datakey(
-            Some("fake ee".to_string()), Some(parameter.clone()), Some(KeyType::X509CA));
-        ee_key.parent_key = Some(ParentKey{
-            name: "fake ca".to_string(),
-            private_key: ica_content.private_key,
-            public_key: ica_content.public_key,
-            certificate: ica_content.certificate,
-            attributes: ica_key.attributes.clone(),
-        });
-        let sec_datakey = SecDataKey::load(
-            &ica_key, &dummy_engine).await.expect("load sec datakey successfully");
-        let plugin = X509Plugin::new(sec_datakey).expect("create plugin successfully");
-        let ee_content = plugin.generate_keys(&KeyType::X509EE, &infra_config).expect(format!("generate ee key with no passphrase successfully").as_str());
-
-        let sec_keys = SecDataKey {
-            name: "".to_string(),
-            private_key: SecVec::new(ee_content.private_key.clone()),
-            public_key: SecVec::new(ee_content.public_key.clone()),
-            certificate: SecVec::new(ee_content.certificate.clone()),
-            identity: "".to_string(),
-            attributes: Default::default(),
-            parent: None,
-        };
-        let instance = X509Plugin::new(sec_keys).expect("create x509 instance successfully");
+        let instance = get_default_plugin().await;
         let _signature = instance.sign(content.to_vec(), parameter).expect("sign successfully");
     }
 
@@ -812,5 +820,27 @@ X5BboR/QJakEK+H+EUQAiDs=
         assert_eq!(revoked.serial_number().to_owned().expect("convert to asn1 number work") == Asn1Integer::from_bn(&serial_number).expect("convert from bn number should work"), true);
         assert_eq!(revoked.revocation_date().to_owned()==Asn1Time::from_unix(revoke_time.naive_utc().timestamp()).expect("convert to asn1 time successfully"), true);
 
+    }
+
+    #[tokio::test]
+    async fn test_sign_authenticode() {
+        let instance = get_default_plugin().await;
+
+        let current_dir = env::current_dir().expect("get current dir failed");
+        let efi_file = tokio::fs::read(current_dir.join("test_assets").join("shimx64.efi"))
+            .await
+            .unwrap();
+
+        let file_hash = efi_signer::EfiImage::parse(&efi_file)
+            .unwrap()
+            .compute_digest(efi_signer::DigestAlgorithm::Sha256)
+            .unwrap();
+        let mut opts = HashMap::new();
+
+        opts.insert(
+            options::SIGN_TYPE.to_string(),
+            SignType::Authenticode.to_string(),
+        );
+        instance.sign(file_hash, opts).unwrap();
     }
 }
