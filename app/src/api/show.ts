@@ -2,116 +2,149 @@
 import http from './request';
 
 // 换取token
-export const getToken = () => http({
-    method:'get',
-    url:'/api/v1/users/info',
-
-});
+export const getToken = () =>
+  http({
+    method: 'get',
+    url: '/api/v1/users/info',
+  });
 
 // 退出登录
 
-export const queryIDToken = () => http({
-    method:'post',
-    url:'/api/v1/users/logout',
-
-
-});
+export const queryIDToken = () =>
+  http({
+    method: 'post',
+    url: '/api/v1/users/logout',
+  });
 
 // 跳转
-export const queryCourse = () => http({
-    method:'get',
-    url:'/api/v1/users/login',
-});
+export const queryCourse = () =>
+  http({
+    method: 'get',
+    url: '/api/v1/users/login',
+  });
 // 详细信息
-export const queryPermissions = (param:any) => http({
-    method:'get',
-    url:'/api/v1/users/',
-    params:param
-
-});
+export const queryPermissions = (param: any) =>
+  http({
+    method: 'get',
+    url: '/api/v1/users/',
+    params: param,
+  });
 // 获取表格数据
-export const queryAllData = (param:any) => http({
-    method:'get',
-    url:'/api/v1/keys/',
-    params:param
-
-});
+export const queryAllData = (param: any) =>
+  http({
+    method: 'get',
+    url: '/api/v1/keys/',
+    params: param,
+  });
 
 //创建新的key
-export const queryNewKey = (param:any) => http({
-    method:'post',
-    url:'/api/v1/keys/',
+export const queryNewKey = (param: any) =>
+  http({
+    method: 'post',
+    url: '/api/v1/keys/',
     data: param,
-
-});
+  });
 //注入key
-export const queryImportKey = (param:any) => http({
-    method:'post',
-    url:'/api/v1/keys/import',
+export const queryImportKey = (param: any) =>
+  http({
+    method: 'post',
+    url: '/api/v1/keys/import',
     data: param,
-
-});
+  });
 //删除key
-export const queryDeleteKey = (param:any) => http({
-    method:'post',
-    url:`/api/v1/keys/${param}/cancel_delete`,
-
-
-});
+export const queryDeleteKey = (param: any) =>
+  http({
+    method: 'post',
+    url: `/api/v1/keys/${param}/actions/cancel_delete`,
+  });
 //无效化key
-export const queryDisableKey = (param:any) => http({
-    method:'post',
-    url:`/api/v1/keys/${param}/disable`,
-
-});
+export const queryDisableKey = (param: any) =>
+  http({
+    method: 'post',
+    url: `/api/v1/keys/${param}/actions/disable`,
+  });
 //激活key
-export const queryEnableKey = (param:any) => http({
-    method:'post',
-    url:`/api/v1/keys/${param}/enable`,
-
+export const queryEnableKey = (param: any) =>
+  http({
+    method: 'post',
+    url: `/api/v1/keys/${param}/actions/enable`,
+  });
+//吊销key
+export const queryRevokeKey = (param: any, val: any) =>
+  http({
+    method: 'post',
+    url: `/api/v1/keys/${param}/actions/request_revoke`,
+    data: val,
+  });
+//取消吊销key
+export const queryCancelRevoke = (param: any) =>
+http({
+  method: 'post',
+  url: `/api/v1/keys/${param}/actions/cancel_revoke`,
 });
 //导出key
-export const queryExportKey = (param:any) => http({
-    method:'post',
-    url:`/api/v1/keys/${param}/export`,
-
-
-});
+export const queryExportKey = (param: any) =>
+  http({
+    method: 'post',
+    url: `/api/v1/keys/${param}/actions/export`,
+  });
 //请求删除key
-export const queryRequestKey = (param:any) => http({
-    method:'post',
-    url:`/api/v1/keys/${param}/request_delete`,
-
-
-});
+export const queryRequestKey = (param: any) =>
+  http({
+    method: 'post',
+    url: `/api/v1/keys/${param}/actions/request_delete`,
+  });
 
 //获取api_keys列表
 
-export const queryApiKeys = () => http({
-    method:'get',
-    url:'/api/v1/users/api_keys',
-
-});
+export const queryApiKeys = () =>
+  http({
+    method: 'get',
+    url: '/api/v1/users/api_keys',
+  });
 
 // 删除api_keys
 
-export const deleteApiKeys = (param:any) => http({
-    method:'delete',
-    url:`/api/v1/users/api_keys/${param}`,
-
-});
+export const deleteApiKeys = (param: any) =>
+  http({
+    method: 'delete',
+    url: `/api/v1/users/api_keys/${param}`,
+  });
 //注册api_keys
 
-export const getApiKeys = (param:any) => http({
-    method:'post',
-    url:'/api/v1/users/api_keys',
+export const getApiKeys = (param: any) =>
+  http({
+    method: 'post',
+    url: '/api/v1/users/api_keys',
     data: param,
-});
+  });
 
 //姓名查重
 
-export const headName = (param:any) => http({
-    method:'head',
-    url:'/api/v1/keys/name_identical',
+export const headName = (param: any) =>
+  http({
+    method: 'head',
+    url: '/api/v1/keys/name_identical',
     params: param,
-});
+  });
+
+//certificate
+export const queryCertificate = (param: any) =>
+  http({
+    method: 'get',
+    url: `/api/v1/keys/${param}/certificate`,
+  });
+
+//crl
+export const queryCrl = (param: any) =>
+  http({
+    method: 'get',
+    url: `/api/v1/keys/${param}/crl`,
+  });
+
+//public_key
+export const queryPublicKey = (param: any) =>
+  http({
+    method: 'get',
+    url: `/api/v1/keys/${param}/public_key`,
+  });
