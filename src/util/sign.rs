@@ -35,7 +35,7 @@ impl FromStr for SignType {
 #[derive(clap::ValueEnum, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum FileType {
     Rpm,
-    CheckSum,
+    Generic,
     KernelModule,
     EfiImage,
 }
@@ -44,7 +44,7 @@ impl Display for FileType {
     fn fmt(&self, f: &mut Formatter) -> fmtResult {
         match self {
             FileType::Rpm => write!(f, "rpm"),
-            FileType::CheckSum => write!(f, "checksum"),
+            FileType::Generic => write!(f, "generic"),
             FileType::KernelModule => write!(f, "ko"),
             FileType::EfiImage => write!(f, "efi"),
         }

@@ -39,4 +39,5 @@ pub trait Repository: Send + Sync {
     async fn upsert_x509_crl(&self, crl: X509CRL) -> Result<()>;
     async fn get_keys_for_crl_update(&self, duration: Duration) -> Result<Vec<DataKey>>;
     async fn get_revoked_serial_number_by_parent_id(&self, id: i32) -> Result<Vec<RevokedKey>>;
+    async fn get_by_parent_id(&self, parent_id: i32) -> Result<Vec<DataKey>>;
 }

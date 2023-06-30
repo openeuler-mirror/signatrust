@@ -1,6 +1,6 @@
 # Integrate Signatrust with COPR
 ## Background
-COPR use obs-sign project as their sign backend. obs-sign is a project that widely used in the package build system and
+COPR use the obs-sign project as their sign backend. obs-sign is a project that widely used in the package build system and
 supports rpm and kernel module files, in order to replace obs-sign with Signatrust, we need to find out all the scenarios
 that obs-sign used and make sure Signatrust can support them all.
 
@@ -132,7 +132,7 @@ def ping():
     return Response("pong\n", content_type="text/plain;charset=UTF-8")
 ```
 6. Delete user related key pairs. it's missing in COPR project currently, but also needs to be considered.
-7. Prolong the expiring key pairs, this is an administrative tool used in COPR  [code](https://github.com/fedora-copr/copr/blob/main/keygen/run/gpg-copr-prolong)
+7. Prolong the expiring key pairs, this is an administrative tool used in COPR [code](https://github.com/fedora-copr/copr/blob/main/keygen/run/gpg-copr-prolong)
 
 # Requirements for Signatrust
 

@@ -1,7 +1,7 @@
 # Background
 For the background of EFI signature, please refer to [this](how%20to%20sign%20EFI%20file.md) document.
 # Prerequisite
-- Create a x509 key in data server if you do not have one
+- Create an x509 key in data server if you do not have one
     ```bash
     curl -X 'POST' \
     'http://10.0.0.139:8080/api/v1/keys/' \
@@ -76,23 +76,14 @@ For the background of EFI signature, please refer to [this](how%20to%20sign%20EF
     - get key certificate by id
     ```
     curl -X 'POST' \
-        'http://10.0.0.139:8080/api/v1/keys/5/export' \
+        'http://10.0.0.139:8080/api/v1/keys/5/certificate' \
         -H 'accept: application/json' \
         -H 'Authorization: G2fmAfnLUT4R5TDaQhpCWvGznme0zaA0YQFBKJIc' \
         -d ''
     ```
     
     ```
-    {
-        "public_key": "-----BEGIN PUBLIC KEY-----\nMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA5xd/p5oqJBpfZlU3WmdK\nfFS7ZwdUAssXyQDxXTUHe4LoZ3imFcpQed41Yu/rBxKQzLtSmHkpZ9Bw6bDplQrv\nuTYaeLtfiDUAa2kZVCBzDnFFx4J6v5jkoC4i1SYeGPtEW4D5m8xn8G5aCslEnpvL\nYQ1oXi14vORHzuC7uMfkDh+/JTOYkRw083lFjZEXEh5Jjf0mZNLN9PhBzOCzDalA\nBGhpcOATtkKxEDtXcyVNJEqf8sfpz7FKNpNBNIKb3EZX168OFp+yeK3pd1dhAc+F\nFkmZmwN+Qb065znGfdltxh9F75yPB1CeJEedirTVj/QvALSSkFlKS9TFgRgh7T2z\nKlj7Bw+fC9cXJCjUevgnl6pFvrEqVTu+topmWcEPKPJiI1xPVtFcRjEEgTnkTRcp\nfoDxKngh3oj1+5szBXwMKnnk1wc7TK8zqTcxEbLeSkiTxU5ptWasnkhqHoJyzO9w\njc7qasvSKxUou0+VD0W/EID4KkLgomkwiFUGFeYstpbpiC0FJS3M/JOLIibPRXK5\n4YMxw23bHqDP4J02J6NdmrLLiKXaRy2MCcxlovckswqYz/4xjT9ye9dc8DMengLn\n5+iDpxzCdBjvTdGXejY3gTvQ68JKz6TznBcz+ooh6K/bH950Kr3JDwZkCTpuZKQn\nXSWZhXVN1sHbZJn7IneyPKkCAwEAAQ==\n-----END PUBLIC KEY-----\n",
-        "certificate": "-----BEGIN CERTIFICATE-----\nMIIFTTCCAzWgAwIBAgIBADANBgkqhkiG9w0BAQ4FADBqMRMwEQYDVQQDDApFRkkg\nc2lnbmVyMQ4wDAYDVQQLDAVpbmZyYTESMBAGA1UECgwJb3BlbkV1bGVyMRAwDgYD\nVQQHDAdDaGVuZ2R1MRAwDgYDVQQIDAdTaWNodWFuMQswCQYDVQQGEwJDTjAeFw0y\nMzA1MDQwOTI0MDJaFw0yNDA1MTIwOTI0MDJaMGoxEzARBgNVBAMMCkVGSSBzaWdu\nZXIxDjAMBgNVBAsMBWluZnJhMRIwEAYDVQQKDAlvcGVuRXVsZXIxEDAOBgNVBAcM\nB0NoZW5nZHUxEDAOBgNVBAgMB1NpY2h1YW4xCzAJBgNVBAYTAkNOMIICIjANBgkq\nhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA5xd/p5oqJBpfZlU3WmdKfFS7ZwdUAssX\nyQDxXTUHe4LoZ3imFcpQed41Yu/rBxKQzLtSmHkpZ9Bw6bDplQrvuTYaeLtfiDUA\na2kZVCBzDnFFx4J6v5jkoC4i1SYeGPtEW4D5m8xn8G5aCslEnpvLYQ1oXi14vORH\nzuC7uMfkDh+/JTOYkRw083lFjZEXEh5Jjf0mZNLN9PhBzOCzDalABGhpcOATtkKx\nEDtXcyVNJEqf8sfpz7FKNpNBNIKb3EZX168OFp+yeK3pd1dhAc+FFkmZmwN+Qb06\n5znGfdltxh9F75yPB1CeJEedirTVj/QvALSSkFlKS9TFgRgh7T2zKlj7Bw+fC9cX\nJCjUevgnl6pFvrEqVTu+topmWcEPKPJiI1xPVtFcRjEEgTnkTRcpfoDxKngh3oj1\n+5szBXwMKnnk1wc7TK8zqTcxEbLeSkiTxU5ptWasnkhqHoJyzO9wjc7qasvSKxUo\nu0+VD0W/EID4KkLgomkwiFUGFeYstpbpiC0FJS3M/JOLIibPRXK54YMxw23bHqDP\n4J02J6NdmrLLiKXaRy2MCcxlovckswqYz/4xjT9ye9dc8DMengLn5+iDpxzCdBjv\nTdGXejY3gTvQ68JKz6TznBcz+ooh6K/bH950Kr3JDwZkCTpuZKQnXSWZhXVN1sHb\nZJn7IneyPKkCAwEAATANBgkqhkiG9w0BAQ4FAAOCAgEAObCqV91IlCpELDyDdVm1\nyc2xYlwbleeamI4lRQ9dbUxJgmoEvHrigTy6+QddTWTvq1ClB66FFr4CmP4R44ew\nOOnkUhdynZy23+qR0f9RKLpM/bQFzFAJJGkjVaz9OA0nD6lbGHxlljB0palnpeQN\nbXT42I9+pKQ+jmLQeUM5G2OYmEiOeATh5fDG50/Mi71vcjJBpcqoGy0eJQnbpTLr\nH3q3TjffpI4VmB4XZCdv4M8mTeZrT9fz40/tknUpGrD1ZDnOeAEX54KxCDhMpDPd\nJzhZAsd1zT23gEVyiJzXjnJb+ooCjLskFgIDRwim4/P8oMrmYJLC3PTf33AHiIsZ\nxka4Io7xNc58pAZPef1MLMRRxvZL2sHocZ1u3imPW0/9NdICLLCw+kCuXXZyjzsb\n3AhivrkA4pHuEakYcKZ7m4cbEdhn+A8VH+cZ6F8dOt683a3h/1KMUA9RgbmkRfOY\nBd0ifVYZNlL2P7+aRB5MYYdjvtFTjvuYnaiCsk0rfKeFcLRcdqH/LwsnmYI58ak+\noBg1q7IwUKiMMQJXv80sYpulMVNf4yogMwxuDb8aKSMoYYHqwpc/APxpxxIYqals\njm/mYiBzbODW1CkAXzFKlDxwbOHbYE/BjtQka4UKGoJbmhSRae9axKxj1bBj4Vud\ntTN6jZmbEb/Bmclsaooig1g=\n-----END CERTIFICATE-----\n"
-    }
-    ```
-    - save the `certificate` filed as a PEM file
-    ```
-    $ echo "-----BEGIN CERTIFICATE-----\nMIIFTTCCAzWgAwIBAgIBADANBgkqhkiG9w0BAQ4FADBqMRMwEQYDVQQDDApFRkkg\nc2lnbmVyMQ4wDAYDVQQLDAVpbmZyYTESMBAGA1UECgwJb3BlbkV1bGVyMRAwDgYD\nVQQHDAdDaGVuZ2R1MRAwDgYDVQQIDAdTaWNodWFuMQswCQYDVQQGEwJDTjAeFw0y\nMzA1MDQwOTI0MDJaFw0yNDA1MTIwOTI0MDJaMGoxEzARBgNVBAMMCkVGSSBzaWdu\nZXIxDjAMBgNVBAsMBWluZnJhMRIwEAYDVQQKDAlvcGVuRXVsZXIxEDAOBgNVBAcM\nB0NoZW5nZHUxEDAOBgNVBAgMB1NpY2h1YW4xCzAJBgNVBAYTAkNOMIICIjANBgkq\nhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA5xd/p5oqJBpfZlU3WmdKfFS7ZwdUAssX\nyQDxXTUHe4LoZ3imFcpQed41Yu/rBxKQzLtSmHkpZ9Bw6bDplQrvuTYaeLtfiDUA\na2kZVCBzDnFFx4J6v5jkoC4i1SYeGPtEW4D5m8xn8G5aCslEnpvLYQ1oXi14vORH\nzuC7uMfkDh+/JTOYkRw083lFjZEXEh5Jjf0mZNLN9PhBzOCzDalABGhpcOATtkKx\nEDtXcyVNJEqf8sfpz7FKNpNBNIKb3EZX168OFp+yeK3pd1dhAc+FFkmZmwN+Qb06\n5znGfdltxh9F75yPB1CeJEedirTVj/QvALSSkFlKS9TFgRgh7T2zKlj7Bw+fC9cX\nJCjUevgnl6pFvrEqVTu+topmWcEPKPJiI1xPVtFcRjEEgTnkTRcpfoDxKngh3oj1\n+5szBXwMKnnk1wc7TK8zqTcxEbLeSkiTxU5ptWasnkhqHoJyzO9wjc7qasvSKxUo\nu0+VD0W/EID4KkLgomkwiFUGFeYstpbpiC0FJS3M/JOLIibPRXK54YMxw23bHqDP\n4J02J6NdmrLLiKXaRy2MCcxlovckswqYz/4xjT9ye9dc8DMengLn5+iDpxzCdBjv\nTdGXejY3gTvQ68JKz6TznBcz+ooh6K/bH950Kr3JDwZkCTpuZKQnXSWZhXVN1sHb\nZJn7IneyPKkCAwEAATANBgkqhkiG9w0BAQ4FAAOCAgEAObCqV91IlCpELDyDdVm1\nyc2xYlwbleeamI4lRQ9dbUxJgmoEvHrigTy6+QddTWTvq1ClB66FFr4CmP4R44ew\nOOnkUhdynZy23+qR0f9RKLpM/bQFzFAJJGkjVaz9OA0nD6lbGHxlljB0palnpeQN\nbXT42I9+pKQ+jmLQeUM5G2OYmEiOeATh5fDG50/Mi71vcjJBpcqoGy0eJQnbpTLr\nH3q3TjffpI4VmB4XZCdv4M8mTeZrT9fz40/tknUpGrD1ZDnOeAEX54KxCDhMpDPd\nJzhZAsd1zT23gEVyiJzXjnJb+ooCjLskFgIDRwim4/P8oMrmYJLC3PTf33AHiIsZ\nxka4Io7xNc58pAZPef1MLMRRxvZL2sHocZ1u3imPW0/9NdICLLCw+kCuXXZyjzsb\n3AhivrkA4pHuEakYcKZ7m4cbEdhn+A8VH+cZ6F8dOt683a3h/1KMUA9RgbmkRfOY\nBd0ifVYZNlL2P7+aRB5MYYdjvtFTjvuYnaiCsk0rfKeFcLRcdqH/LwsnmYI58ak+\noBg1q7IwUKiMMQJXv80sYpulMVNf4yogMwxuDb8aKSMoYYHqwpc/APxpxxIYqals\njm/mYiBzbODW1CkAXzFKlDxwbOHbYE/BjtQka4UKGoJbmhSRae9axKxj1bBj4Vud\ntTN6jZmbEb/Bmclsaooig1g=\n-----END CERTIFICATE-----\n" | sed -E 's|\\\n|\n|g' > certificate.pem
-    $ cat certificate
-    -----BEGIN CERTIFICATE-----
+       -----BEGIN CERTIFICATE-----
     MIIFTTCCAzWgAwIBAgIBADANBgkqhkiG9w0BAQ4FADBqMRMwEQYDVQQDDApFRkkg
     c2lnbmVyMQ4wDAYDVQQLDAVpbmZyYTESMBAGA1UECgwJb3BlbkV1bGVyMRAwDgYD
     VQQHDAdDaGVuZ2R1MRAwDgYDVQQIDAdTaWNodWFuMQswCQYDVQQGEwJDTjAeFw0y
@@ -123,7 +114,9 @@ For the background of EFI signature, please refer to [this](how%20to%20sign%20EF
     jm/mYiBzbODW1CkAXzFKlDxwbOHbYE/BjtQka4UKGoJbmhSRae9axKxj1bBj4Vud
     tTN6jZmbEb/Bmclsaooig1g=
     -----END CERTIFICATE-----
+    
     ```
+    - save it into the `certificate` file.
 
 # Sign a EFI file
 ```

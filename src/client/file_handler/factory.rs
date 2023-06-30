@@ -16,7 +16,7 @@
 
 use super::rpm::RpmFileHandler;
 use super::efi::EfiFileHandler;
-use super::checksum::CheckSumFileHandler;
+use super::generic::GenericFileHandler;
 use super::kernel_module::KernelModuleFileHandler;
 use crate::util::sign::FileType;
 use super::traits::FileHandler;
@@ -30,8 +30,8 @@ impl FileHandlerFactory {
             FileType::Rpm => {
                 Box::new(RpmFileHandler::new())
             },
-            FileType::CheckSum => {
-                Box::new(CheckSumFileHandler::new())
+            FileType::Generic => {
+                Box::new(GenericFileHandler::new())
             },
             FileType::KernelModule => {
                 Box::new(KernelModuleFileHandler::new())

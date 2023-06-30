@@ -181,7 +181,7 @@ impl FileHandler for KernelModuleFileHandler {
         Ok(vec![self.get_raw_content(path, sign_options)?])
     }
 
-    /* when assemble checksum signature when only create another .asc file separately */
+    /* when assemble generic signature when only create another .asc file separately */
     async fn assemble_data(
         &self,
         path: &PathBuf,

@@ -1,4 +1,4 @@
-# How to sign an KernelModule(ko) file
+# How to sign a KernelModule (ko) file
 
 ## Background
 
@@ -14,7 +14,7 @@ The layout of signed KernelModule file is describe as below:
 1. The raw content of kernel module file.
 2. The CMS signature, and signature is a DER encoded PKCS#7 structure. The PKCS#7 structure contains the certificate and the signature of the file.
 3. The ModuleSignature structure is appended after in the PKCS#7 structure, which contains the information of the signature.
-4. The Module Magic string("~Module signature appended~\n"), and it will be appended after the ModuleSignature structure, which is used to identify the signature.
+4. The Module Magic string ("~Module signature appended~\n"), and it will be appended after the ModuleSignature structure, which is used to identify the signature.
 
 
 
@@ -109,10 +109,10 @@ if you add the `--detached` flag, the signature will be detached from the file a
 
 ## Verify the Signature of KernelModule file
 In order to verify the signature of KernelModule file, you need to extract the signature from the file first, and then verify the signature with the extracted signature and the original file.
-1. Download the certificate from signatrust control-server and save into local file(new.cert as below) in pem format:
+1. Download the certificate from signatrust control-server and save it into local file(new.cert as below) in pem format:
 ```shell
 curl -X 'POST' \
-  'https://localhost:8080/api/v1/keys/<key-id>/export' \
+  'https://localhost:8080/api/v1/keys/<key-id>/certificate' \
   -H 'accept: application/json' \
   -H 'Authorization: cBnLPLXl1fA7fKDZnjg9fd9dSWw2RXtUH3MGFUtq' \
   -d ''

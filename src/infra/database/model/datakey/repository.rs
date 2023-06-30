@@ -243,6 +243,27 @@ impl Repository for DataKeyRepository {
         Ok(DataKey::try_from(dto)?)
     }
 
+    async fn get_by_parent_id(&self, parent_id: i32) -> Result<Vec<DataKey>> {
+        let dtos: Vec<DataKeyDTO> = sqlx::query_as(
+            "SELECT D.*, U.email AS user_email, GROUP_CONCAT(R.user_email) as request_delete_users, \
+            GROUP_CONCAT(K.user_email) as request_revoke_users \
+            FROM data_key D \
+            INNER JOIN user U ON D.user = U.id \
+            LEFT JOIN pending_operation R ON D.id = R.key_id and R.request_type = 'delete' \
+            LEFT JOIN pending_operation K ON D.id = K.key_id and K.request_type = 'revoke' \
+            WHERE D.parent_id = ? AND D.key_state != ? \
+            GROUP BY D.id")
+            .bind(parent_id)
+            .bind(KeyState::Deleted.to_string())
+            .fetch_all(&self.db_pool)
+            .await?;
+        let mut results = vec![];
+        for dto in dtos.into_iter() {
+            results.push(DataKey::try_from(dto)?);
+        }
+        Ok(results)
+    }
+
     async fn get_by_name(&self, name: &str) -> Result<DataKey> {
         let dto: DataKeyDTO = sqlx::query_as(
             "SELECT D.*, U.email AS user_email, GROUP_CONCAT(R.user_email) as request_delete_users, \

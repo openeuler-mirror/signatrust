@@ -1,0 +1,3046 @@
+{
+  "bomFormat" : "CycloneDX",
+  "specVersion" : "1.4",
+  "version" : 1,
+  "serialNumber" : "urn:uuid:04fd0589-0da7-4727-a24f-78a528036e8d",
+  "metadata" : {
+    "timestamp" : "2023-03-07 16:42:21",
+    "tools" : [ { } ],
+    "manufacture" : {
+      "name" : "OpenHarmony"
+    },
+    "component" : {
+      "type" : "operating-system",
+      "name" : "OpenHarmony/Master_Version/dayu200/OpenHarmony_4.0.2.2/20230112_071050",
+      "version" : "OpenHarmony_4.0.2.2"
+    },
+    "licenses" : [ { } ]
+  },
+  "components" : [ {
+    "type" : "library",
+    "name" : "ability_base",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/ability_ability_base@weekly_20230110?revision=0375be2beddf27944eebcf3d9f585d50a1e662d0",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/ability_ability_base/tree/0375be2beddf27944eebcf3d9f585d50a1e662d0",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "ability_base"
+  }, {
+    "type" : "library",
+    "name" : "accessibility",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/accessibility@weekly_20230110?revision=113022f48692b1ac1ff805de98f706cc77d3715d",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/accessibility/tree/113022f48692b1ac1ff805de98f706cc77d3715d",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "accessibility"
+  }, {
+    "type" : "library",
+    "name" : "access_token",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/security_access_token@weekly_20230110?revision=8570d29339173d88ed7b048d891b744a793ca8a5",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/security_access_token/tree/8570d29339173d88ed7b048d891b744a793ca8a5",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "access_token"
+  }, {
+    "type" : "library",
+    "name" : "app_file_service",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/filemanagement_app_file_service@weekly_20230110?revision=29ba1efd6fbaa9792ba742dad8fbaac06bdf309d",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/filemanagement_app_file_service/tree/29ba1efd6fbaa9792ba742dad8fbaac06bdf309d",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "app_file_service"
+  }, {
+    "type" : "library",
+    "name" : "appspawn",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/startup_appspawn@weekly_20230110?revision=3b1c6edd1dcc1cbce25a1aff76e3e62904fd45b1",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/startup_appspawn/tree/3b1c6edd1dcc1cbce25a1aff76e3e62904fd45b1",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "appspawn"
+  }, {
+    "type" : "library",
+    "name" : "appverify",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/security_appverify@weekly_20230110?revision=da468747dce1c4ea151793394f8e40c18e645534",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/security_appverify/tree/da468747dce1c4ea151793394f8e40c18e645534",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "appverify"
+  }, {
+    "type" : "library",
+    "name" : "background_task_mgr",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/resourceschedule_background_task_mgr@weekly_20230110?revision=9730581f62b76213348b33e11ec8b1c5f81edf0f",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/resourceschedule_background_task_mgr/tree/9730581f62b76213348b33e11ec8b1c5f81edf0f",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "background_task_mgr"
+  }, {
+    "type" : "library",
+    "name" : "battery_manager",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/powermgr_battery_manager@weekly_20230110?revision=d8255d4d898d7c8518eceb030096ac4757d99413",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/powermgr_battery_manager/tree/d8255d4d898d7c8518eceb030096ac4757d99413",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "battery_manager"
+  }, {
+    "type" : "library",
+    "name" : "battery_statistics",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/powermgr_battery_statistics@weekly_20230110?revision=ce00b6dda5e067dd7965931e48ddd207e9876929",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/powermgr_battery_statistics/tree/ce00b6dda5e067dd7965931e48ddd207e9876929",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "battery_statistics"
+  }, {
+    "type" : "library",
+    "name" : "bluetooth",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/communication_bluetooth@weekly_20230110?revision=e11e615541078b009855ab13ba8be8ba239a377a",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/communication_bluetooth/tree/e11e615541078b009855ab13ba8be8ba239a377a",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "bluetooth"
+  }, {
+    "type" : "library",
+    "name" : "bounds_checking_function",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "https://gitee.com/openeuler/libboundscheck",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "MulanPSL-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/third_party_bounds_checking_function@weekly_20230110?revision=bf0d75295fe2efdd9f6368c4fbd5dc16eea576c1",
+    "externalReferences" : [ {
+      "url" : "https://gitee.com/openeuler/libboundscheck",
+      "type" : "vcs"
+    }, {
+      "url" : "https://openharmony.gitee.com/openharmony/third_party_bounds_checking_function/tree/bf0d75295fe2efdd9f6368c4fbd5dc16eea576c1",
+      "type" : "distribution"
+    } ],
+    "components" : [ {
+      "type" : "library",
+      "name" : "bounds_checking_function",
+      "version" : "v1.1.10",
+      "purl" : "pkg:generic/bounds_checking_function@v1.1.10?download_url=https%3A%2F%2Fgitee.com%2Fopeneuler%2Flibboundscheck",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "bounds_checking_function"
+  }, {
+    "type" : "library",
+    "name" : "call_manager",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/telephony_call_manager@weekly_20230110?revision=88185c1b1a79626c0f8d0758680be169ef4acfeb",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/telephony_call_manager/tree/88185c1b1a79626c0f8d0758680be169ef4acfeb",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "call_manager"
+  }, {
+    "type" : "library",
+    "name" : "cellular_call",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/telephony_cellular_call@weekly_20230110?revision=c96fd1aacd5a757eda45a5fea3da64a4aa6a7b1f",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/telephony_cellular_call/tree/c96fd1aacd5a757eda45a5fea3da64a4aa6a7b1f",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "cellular_call"
+  }, {
+    "type" : "library",
+    "name" : "cellular_data",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/telephony_cellular_data@weekly_20230110?revision=c6c7c25e490d5f07080534a103f80a97e089798c",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/telephony_cellular_data/tree/c6c7c25e490d5f07080534a103f80a97e089798c",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "cellular_data"
+  }, {
+    "type" : "library",
+    "name" : "certificate_manager",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/security_certificate_manager@weekly_20230110?revision=4202c73aa1f63667216fe488eb27c1c66114d4e5",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/security_certificate_manager/tree/4202c73aa1f63667216fe488eb27c1c66114d4e5",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "certificate_manager"
+  }, {
+    "type" : "library",
+    "name" : "cjson",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "https://github.com/DaveGamble/cJSON/releases",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "MIT"
+    } ],
+    "copyright" : "Copyright (c) 2009-2017 Dave Gamble and cJSON contributors",
+    "purl" : "pkg:gitee/openharmony/third_party_cJSON@weekly_20230110?revision=abca1971cae57d7150a943c9eeda33f177fcaf4a",
+    "externalReferences" : [ {
+      "url" : "https://github.com/DaveGamble/cJSON/releases",
+      "type" : "vcs"
+    }, {
+      "url" : "https://openharmony.gitee.com/openharmony/third_party_cJSON/tree/abca1971cae57d7150a943c9eeda33f177fcaf4a",
+      "type" : "distribution"
+    } ],
+    "components" : [ {
+      "type" : "library",
+      "name" : "cJSON",
+      "version" : "1.7.15",
+      "purl" : "pkg:generic/cJSON@1.7.15?download_url=https%3A%2F%2Fgithub.com%2FDaveGamble%2FcJSON%2Freleases",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "cjson"
+  }, {
+    "type" : "library",
+    "name" : "config_policy",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/customization_config_policy@weekly_20230110?revision=8d490a6aa507705473dedc400e9df9db02cf3b31",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/customization_config_policy/tree/8d490a6aa507705473dedc400e9df9db02cf3b31",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "config_policy"
+  }, {
+    "type" : "library",
+    "name" : "contacts_data_hap",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ { } ],
+    "purl" : "pkg:gitee/openharmony/applications_contactsdata@weekly_20230110?revision=4c043c5fb9d7f3f0ae7b142e8ecb16c6ad7a4bce",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/applications_contactsdata/tree/4c043c5fb9d7f3f0ae7b142e8ecb16c6ad7a4bce",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "contacts_data_hap"
+  }, {
+    "type" : "library",
+    "name" : "core_service",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/telephony_core_service@weekly_20230110?revision=3223a69b4bc4df5c786c596e3a0f4b0eb291ccc6",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/telephony_core_service/tree/3223a69b4bc4df5c786c596e3a0f4b0eb291ccc6",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "core_service"
+  }, {
+    "type" : "library",
+    "name" : "crypto_framework",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/security_crypto_framework@weekly_20230110?revision=232756f06442d22e55b598f3402e26c22ae29108",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/security_crypto_framework/tree/232756f06442d22e55b598f3402e26c22ae29108",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "crypto_framework"
+  }, {
+    "type" : "library",
+    "name" : "curl",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "http://curl.haxx.se/",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "curl"
+    } ],
+    "copyright" : "Copyright (c) 1998, 1999 Kungliga Tekniska Hogskolan",
+    "purl" : "pkg:gitee/openharmony/third_party_curl@weekly_20230110?revision=82d3c8eb4d2e61a3873e7ecbb6e822e66657263c",
+    "externalReferences" : [ {
+      "url" : "http://curl.haxx.se/",
+      "type" : "vcs"
+    }, {
+      "url" : "https://openharmony.gitee.com/openharmony/third_party_curl/tree/82d3c8eb4d2e61a3873e7ecbb6e822e66657263c",
+      "type" : "distribution"
+    } ],
+    "components" : [ {
+      "type" : "library",
+      "name" : "curl",
+      "version" : "7.78.0",
+      "purl" : "pkg:generic/curl@7.78.0?download_url=http%3A%2F%2Fcurl.haxx.se%2F",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "curl"
+  }, {
+    "type" : "library",
+    "name" : "c_utils",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/commonlibrary_c_utils@weekly_20230110?revision=209f60d3690e80efe14320bca44b56d7204be549",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/commonlibrary_c_utils/tree/209f60d3690e80efe14320bca44b56d7204be549",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "c_utils"
+  }, {
+    "type" : "library",
+    "name" : "dataclassification",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/security_dataclassification@weekly_20230110?revision=b1afbf7040ed53db486fa5cc42e6e0f7672e65d7",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/security_dataclassification/tree/b1afbf7040ed53db486fa5cc42e6e0f7672e65d7",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "dataclassification"
+  }, {
+    "type" : "library",
+    "name" : "data_share",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/distributeddatamgr_data_share@weekly_20230110?revision=24e777d3c2469dfa2ea37a5af7ae330c31c44f9c",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/distributeddatamgr_data_share/tree/24e777d3c2469dfa2ea37a5af7ae330c31c44f9c",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "data_share"
+  }, {
+    "type" : "library",
+    "name" : "device_attest",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/xts_device_attest@weekly_20230110?revision=5e4ebd4bd3f2b71c4ca03b32864a40ce61930d98",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/xts_device_attest/tree/5e4ebd4bd3f2b71c4ca03b32864a40ce61930d98",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "device_attest"
+  }, {
+    "type" : "library",
+    "name" : "device_auth",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/security_device_auth@weekly_20230110?revision=ca9e342b1b1716f1c757fddb97206e4b2ab47618",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/security_device_auth/tree/ca9e342b1b1716f1c757fddb97206e4b2ab47618",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "device_auth"
+  }, {
+    "type" : "library",
+    "name" : "device_security_level",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/security_device_security_level@weekly_20230110?revision=d85dc51282b7d3527a60b685ed73acca181c9de0",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/security_device_security_level/tree/d85dc51282b7d3527a60b685ed73acca181c9de0",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "device_security_level"
+  }, {
+    "type" : "library",
+    "name" : "device_status",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/msdp_device_status@weekly_20230110?revision=a374552f6601460afdd3b32f9a9f7d09a62a14c2",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/msdp_device_status/tree/a374552f6601460afdd3b32f9a9f7d09a62a14c2",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "device_status"
+  }, {
+    "type" : "library",
+    "name" : "device_usage_statistics",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/resourceschedule_device_usage_statistics@weekly_20230110?revision=63b461954e751fe17c98fe6284a2e1d570a46619",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/resourceschedule_device_usage_statistics/tree/63b461954e751fe17c98fe6284a2e1d570a46619",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "device_usage_statistics"
+  }, {
+    "type" : "library",
+    "name" : "dfs_service",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/filemanagement_dfs_service@weekly_20230110?revision=b6a0c64adaab7b5511f180ce1ae23e22b0e8c217",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/filemanagement_dfs_service/tree/b6a0c64adaab7b5511f180ce1ae23e22b0e8c217",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "dfs_service"
+  }, {
+    "type" : "library",
+    "name" : "display_manager",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/powermgr_display_manager@weekly_20230110?revision=7d58f2a5fa477fc1354eb46f909ef3967ea0910f",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/powermgr_display_manager/tree/7d58f2a5fa477fc1354eb46f909ef3967ea0910f",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "display_manager"
+  }, {
+    "type" : "library",
+    "name" : "drivers_peripheral_power",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "copyright" : "Copyright (c) 2020-2022 Huawei Device Co., Ltd.",
+    "purl" : "pkg:gitee/openharmony/drivers_peripheral@weekly_20230110?revision=17e45f6fb95c5ea3054b603f84e568d811f6fa24#power",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/drivers_peripheral/tree/17e45f6fb95c5ea3054b603f84e568d811f6fa24",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "drivers_peripheral_power"
+  }, {
+    "type" : "library",
+    "name" : "dsoftbus",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/communication_dsoftbus@weekly_20230110?revision=d81f5a756c1bf64e8d9cb339d3f2c75edc2e8772",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/communication_dsoftbus/tree/d81f5a756c1bf64e8d9cb339d3f2c75edc2e8772",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "dsoftbus"
+  }, {
+    "type" : "library",
+    "name" : "e2fsprogs",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "http://e2fsprogs.sourceforge.net",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "GPL-2.0-only"
+    } ],
+    "copyright" : "Copyright (c) 1989, 1991 Free Software Foundation, Inc.",
+    "purl" : "pkg:gitee/openharmony/third_party_e2fsprogs@weekly_20230110?revision=14d9c4d9ed8eafd0a586f322b90187856c18d23c",
+    "externalReferences" : [ {
+      "url" : "http://e2fsprogs.sourceforge.net",
+      "type" : "vcs"
+    }, {
+      "url" : "https://openharmony.gitee.com/openharmony/third_party_e2fsprogs/tree/14d9c4d9ed8eafd0a586f322b90187856c18d23c",
+      "type" : "distribution"
+    } ],
+    "components" : [ {
+      "type" : "library",
+      "name" : "e2fsprogs",
+      "version" : "1.46.4",
+      "purl" : "pkg:generic/e2fsprogs@1.46.4?download_url=http%3A%2F%2Fe2fsprogs.sourceforge.net",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "e2fsprogs"
+  }, {
+    "type" : "library",
+    "name" : "ejdb",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "https://github.com/Softmotions/ejdb",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "MIT"
+    } ],
+    "copyright" : "Copyright (c) 2012-2021 Softmotions Ltd <info@softmotions.com>",
+    "purl" : "pkg:gitee/openharmony/third_party_ejdb@weekly_20230110?revision=9c7bcad027670190e41b3d33e31349389c563ac1",
+    "externalReferences" : [ {
+      "url" : "https://github.com/Softmotions/ejdb",
+      "type" : "vcs"
+    }, {
+      "url" : "https://openharmony.gitee.com/openharmony/third_party_ejdb/tree/9c7bcad027670190e41b3d33e31349389c563ac1",
+      "type" : "distribution"
+    } ],
+    "components" : [ {
+      "type" : "library",
+      "name" : "EJDB2",
+      "version" : "v2.0.59",
+      "purl" : "pkg:generic/EJDB2@v2.0.59?download_url=https%3A%2F%2Fgithub.com%2FSoftmotions%2Fejdb",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "ejdb"
+  }, {
+    "type" : "library",
+    "name" : "enterprise_device_management",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/customization_enterprise_device_management@weekly_20230110?revision=6b7c2e88b2173ef1b1682b26c2e6d00db0ea1901",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/customization_enterprise_device_management/tree/6b7c2e88b2173ef1b1682b26c2e6d00db0ea1901",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "enterprise_device_management"
+  }, {
+    "type" : "library",
+    "name" : "ets_runtime",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/arkcompiler_ets_runtime@weekly_20230110?revision=e9765dd70f5a6c93fde503fec14e92f0a685a4ea",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/arkcompiler_ets_runtime/tree/e9765dd70f5a6c93fde503fec14e92f0a685a4ea",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "ets_runtime"
+  }, {
+    "type" : "library",
+    "name" : "eventhandler",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/notification_eventhandler@weekly_20230110?revision=fe9134216bb1625aef62aa779049af16a7e1bd65",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/notification_eventhandler/tree/fe9134216bb1625aef62aa779049af16a7e1bd65",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "eventhandler"
+  }, {
+    "type" : "library",
+    "name" : "f2fs_tools",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "https://git.kernel.org/pub/scm/linux/kernel/git/jaegeuk/f2fs-tools.git/tag/?h=v1.14.0",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "GPL-2.0-only"
+    } ],
+    "purl" : "pkg:gitee/openharmony/third_party_f2fs-tools@weekly_20230110?revision=a0c3a2401d8063f9e3fca97ae03d25ec3c92df34",
+    "externalReferences" : [ {
+      "url" : "https://git.kernel.org/pub/scm/linux/kernel/git/jaegeuk/f2fs-tools.git/tag/?h=v1.14.0",
+      "type" : "vcs"
+    }, {
+      "url" : "https://openharmony.gitee.com/openharmony/third_party_f2fs-tools/tree/a0c3a2401d8063f9e3fca97ae03d25ec3c92df34",
+      "type" : "distribution"
+    } ],
+    "components" : [ {
+      "type" : "library",
+      "name" : "f2fs-tools",
+      "version" : "1.14.0?download_url=https://git.kernel.org/pub/scm/linux/kernel/git/jaegeuk/f2fs-tools.git/tag",
+      "purl" : "pkg:generic/f2fs-tools@1.14.0%3Fdownload_url%3Dhttps%3A%2F%2Fgit.kernel.org%2Fpub%2Fscm%2Flinux%2Fkernel%2Fgit%2Fjaegeuk%2Ff2fs-tools.git%2Ftag?h=v1.14.0",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "f2fs_tools"
+  }, {
+    "type" : "library",
+    "name" : "faultloggerd",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/hiviewdfx_faultloggerd@weekly_20230110?revision=81b714f96448bcbc29a210f566621e4e1a0348bf",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/hiviewdfx_faultloggerd/tree/81b714f96448bcbc29a210f566621e4e1a0348bf",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "faultloggerd"
+  }, {
+    "type" : "library",
+    "name" : "ffmpeg",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "http://www.ffmpeg.org/",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ { } ],
+    "purl" : "pkg:gitee/openharmony/third_party_ffmpeg@weekly_20230110?revision=eda32382a105b3e4813256848e65451ccca6f284",
+    "externalReferences" : [ {
+      "url" : "http://www.ffmpeg.org/",
+      "type" : "vcs"
+    }, {
+      "url" : "https://openharmony.gitee.com/openharmony/third_party_ffmpeg/tree/eda32382a105b3e4813256848e65451ccca6f284",
+      "type" : "distribution"
+    } ],
+    "components" : [ {
+      "type" : "library",
+      "name" : "FFmpeg",
+      "version" : "4.4.1",
+      "purl" : "pkg:generic/FFmpeg@4.4.1?download_url=http%3A%2F%2Fwww.ffmpeg.org%2F",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "ffmpeg"
+  }, {
+    "type" : "library",
+    "name" : "file_api",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/filemanagement_file_api@weekly_20230110?revision=9b902c8f095646a1b5ae87a22d12a8db4757b049",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/filemanagement_file_api/tree/9b902c8f095646a1b5ae87a22d12a8db4757b049",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "file_api"
+  }, {
+    "type" : "library",
+    "name" : "flutter",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "https://flutter.dev/",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "BSD-3-Clause"
+    } ],
+    "copyright" : "Copyright 2017 The Chromium Authors",
+    "purl" : "pkg:gitee/openharmony/third_party_flutter@weekly_20230110?revision=53d887f5e0c91d40eccf0646b89da452eb3fd9f8",
+    "externalReferences" : [ {
+      "url" : "https://flutter.dev/",
+      "type" : "vcs"
+    }, {
+      "url" : "https://skia.org",
+      "type" : "vcs"
+    }, {
+      "url" : "http://angleproject.org",
+      "type" : "vcs"
+    }, {
+      "url" : "https://dawn.googlesource.com/dawn",
+      "type" : "vcs"
+    }, {
+      "url" : "https://android.googlesource.com/platform/frameworks/native/+/master/opengl/",
+      "type" : "vcs"
+    }, {
+      "url" : "https://www.freetype.org",
+      "type" : "vcs"
+    }, {
+      "url" : "http://harfbuzz.org/",
+      "type" : "vcs"
+    }, {
+      "url" : "https://github.com/unicode-org/icu",
+      "type" : "vcs"
+    }, {
+      "url" : "https://travis-ci.org/ocornut/imgui",
+      "type" : "vcs"
+    }, {
+      "url" : "http://libjpeg-turbo.org/",
+      "type" : "vcs"
+    }, {
+      "url" : "http://www.libpng.org",
+      "type" : "vcs"
+    }, {
+      "url" : "http://developers.google.com/speed/webp",
+      "type" : "vcs"
+    }, {
+      "url" : "https://skia.googlesource.com/external/github.com/GPUOpen-Tools/common-lib-amd-APPSDK-3.0/",
+      "type" : "vcs"
+    }, {
+      "url" : "https://android.googlesource.com/platform/external/piex/",
+      "type" : "vcs"
+    }, {
+      "url" : "http://www.libsdl.org/",
+      "type" : "vcs"
+    }, {
+      "url" : "https://github.com/rillig/sfntly",
+      "type" : "vcs"
+    }, {
+      "url" : "https://skia.org/",
+      "type" : "vcs"
+    }, {
+      "url" : "https://www.khronos.org/registry/spir-v/",
+      "type" : "vcs"
+    }, {
+      "url" : "https://travis-ci.org/KhronosGroup/SPIRV-Tools",
+      "type" : "vcs"
+    }, {
+      "url" : "https://wuffs.org/",
+      "type" : "vcs"
+    }, {
+      "url" : "http://zlib.net/",
+      "type" : "vcs"
+    }, {
+      "url" : "https://openharmony.gitee.com/openharmony/third_party_flutter/tree/53d887f5e0c91d40eccf0646b89da452eb3fd9f8",
+      "type" : "distribution"
+    } ],
+    "components" : [ {
+      "type" : "library",
+      "name" : "flutter",
+      "version" : "v1.9.1+hotfix.1",
+      "purl" : "pkg:generic/flutter@v1.9.1+hotfix.1?download_url=https%3A%2F%2Fflutter.dev%2F",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    }, {
+      "type" : "library",
+      "name" : "skia",
+      "version" : "4b567cd679ab964b5f6281a67a96c694c950f597",
+      "purl" : "pkg:generic/skia@4b567cd679ab964b5f6281a67a96c694c950f597?download_url=https%3A%2F%2Fskia.org",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    }, {
+      "type" : "library",
+      "name" : "ANGLE",
+      "version" : "cdecd97ceefa28409793d04caf873e7b0d0d723c",
+      "purl" : "pkg:generic/ANGLE@cdecd97ceefa28409793d04caf873e7b0d0d723c?download_url=http%3A%2F%2Fangleproject.org",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    }, {
+      "type" : "library",
+      "name" : "Dawn",
+      "version" : "472bd1ec29d8d4e03404bf4b4e0233e4fc6031ce",
+      "purl" : "pkg:generic/Dawn@472bd1ec29d8d4e03404bf4b4e0233e4fc6031ce?download_url=https%3A%2F%2Fdawn.googlesource.com%2Fdawn",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    }, {
+      "type" : "library",
+      "name" : "etc1",
+      "version" : "01cc538b",
+      "purl" : "pkg:generic/etc1@01cc538b?download_url=https%3A%2F%2Fandroid.googlesource.com%2Fplatform%2Fframeworks%2Fnative%2F+%2Fmaster%2Fopengl%2F",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    }, {
+      "type" : "library",
+      "name" : "freetype",
+      "version" : "2.10.1",
+      "purl" : "pkg:generic/freetype@2.10.1?download_url=https%3A%2F%2Fwww.freetype.org",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    }, {
+      "type" : "library",
+      "name" : "harfbuzz",
+      "version" : "1bada656a86e9cb27d4a6b9fcc50748f0bd9c1d9",
+      "purl" : "pkg:generic/harfbuzz@1bada656a86e9cb27d4a6b9fcc50748f0bd9c1d9?download_url=http%3A%2F%2Fharfbuzz.org%2F",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    }, {
+      "type" : "library",
+      "name" : "icu",
+      "version" : "63.1",
+      "purl" : "pkg:generic/icu@63.1?download_url=https%3A%2F%2Fgithub.com%2Funicode-org%2Ficu",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    }, {
+      "type" : "library",
+      "name" : "imgui",
+      "version" : "d38d7c6628bebd02692cfdd6fa76b4d992a35b75",
+      "purl" : "pkg:generic/imgui@d38d7c6628bebd02692cfdd6fa76b4d992a35b75?download_url=https%3A%2F%2Ftravis-ci.org%2Focornut%2Fimgui",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    }, {
+      "type" : "library",
+      "name" : "libjpeg-turbo",
+      "version" : "574f3a772c96dc9db2c98ef24706feb3f6dbda9a",
+      "purl" : "pkg:generic/libjpeg-turbo@574f3a772c96dc9db2c98ef24706feb3f6dbda9a?download_url=http%3A%2F%2Flibjpeg-turbo.org%2F",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    }, {
+      "type" : "library",
+      "name" : "libpng",
+      "version" : "386707c6d19b974ca2e3db7f5c61873813c6fe44",
+      "purl" : "pkg:generic/libpng@386707c6d19b974ca2e3db7f5c61873813c6fe44?download_url=http%3A%2F%2Fwww.libpng.org",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    }, {
+      "type" : "library",
+      "name" : "libwebp",
+      "version" : "0fe1a89dbf1930fc2554dbe76adad5d962054ead",
+      "purl" : "pkg:generic/libwebp@0fe1a89dbf1930fc2554dbe76adad5d962054ead?download_url=http%3A%2F%2Fdevelopers.google.com%2Fspeed%2Fwebp",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    }, {
+      "type" : "library",
+      "name" : "opencl-lib",
+      "version" : "4e6d30e406d2e5a65e1d65e404fe6df5f772a32b",
+      "purl" : "pkg:generic/opencl-lib@4e6d30e406d2e5a65e1d65e404fe6df5f772a32b?download_url=https%3A%2F%2Fskia.googlesource.com%2Fexternal%2Fgithub.com%2FGPUOpen-Tools%2Fcommon-lib-amd-APPSDK-3.0%2F",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    }, {
+      "type" : "library",
+      "name" : "piex",
+      "version" : "bb217acdca1cc0c16b704669dd6f91a1b509c406",
+      "purl" : "pkg:generic/piex@bb217acdca1cc0c16b704669dd6f91a1b509c406?download_url=https%3A%2F%2Fandroid.googlesource.com%2Fplatform%2Fexternal%2Fpiex%2F",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    }, {
+      "type" : "library",
+      "name" : "sdl",
+      "version" : "5d7cfcca344034aff9327f77fc181ae3754e7a90",
+      "purl" : "pkg:generic/sdl@5d7cfcca344034aff9327f77fc181ae3754e7a90?download_url=http%3A%2F%2Fwww.libsdl.org%2F",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    }, {
+      "type" : "library",
+      "name" : "sfntly",
+      "version" : "b55ff303ea2f9e26702b514cf6a3196a2e3e2974",
+      "purl" : "pkg:generic/sfntly@b55ff303ea2f9e26702b514cf6a3196a2e3e2974?download_url=https%3A%2F%2Fgithub.com%2Frillig%2Fsfntly",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    }, {
+      "type" : "library",
+      "name" : "skcms",
+      "version" : "958fec279ed59ff630770dc0482eb10f30367a83",
+      "purl" : "pkg:generic/skcms@958fec279ed59ff630770dc0482eb10f30367a83?download_url=https%3A%2F%2Fskia.org%2F",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    }, {
+      "type" : "library",
+      "name" : "spirv-headers",
+      "version" : "661ad91124e6af2272afd00f804d8aa276e17107",
+      "purl" : "pkg:generic/spirv-headers@661ad91124e6af2272afd00f804d8aa276e17107?download_url=https%3A%2F%2Fwww.khronos.org%2Fregistry%2Fspir-v%2F",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    }, {
+      "type" : "library",
+      "name" : "spirv-tools",
+      "version" : "e9e4393b1c5aad7553c05782acefbe32b42644bd",
+      "purl" : "pkg:generic/spirv-tools@e9e4393b1c5aad7553c05782acefbe32b42644bd?download_url=https%3A%2F%2Ftravis-ci.org%2FKhronosGroup%2FSPIRV-Tools",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    }, {
+      "type" : "library",
+      "name" : "wuffs",
+      "version" : "6ad7d00a262e862549e4963b4a43d148a8285e50",
+      "purl" : "pkg:generic/wuffs@6ad7d00a262e862549e4963b4a43d148a8285e50?download_url=https%3A%2F%2Fwuffs.org%2F",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    }, {
+      "type" : "library",
+      "name" : "zlib",
+      "version" : "1.2.11",
+      "purl" : "pkg:generic/zlib@1.2.11?download_url=http%3A%2F%2Fzlib.net%2F",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "flutter"
+  }, {
+    "type" : "library",
+    "name" : "form_fwk",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/ability_form_fwk@weekly_20230110?revision=db3e40ef27f87569c2d0f0640ae9113ecaf9eb7e",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/ability_form_fwk/tree/db3e40ef27f87569c2d0f0640ae9113ecaf9eb7e",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "form_fwk"
+  }, {
+    "type" : "library",
+    "name" : "frame_aware_sched",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/frame_aware_sched@weekly_20230110?revision=8579def26ed75047657c82361b74c947ead3c4b0",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/frame_aware_sched/tree/8579def26ed75047657c82361b74c947ead3c4b0",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "frame_aware_sched"
+  }, {
+    "type" : "library",
+    "name" : "hicollie_native",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ { } ],
+    "purl" : "pkg:gitee/openharmony/hiviewdfx_hicollie@weekly_20230110?revision=d3c4bf62cf7439197bd6588606bc6becfa6e0f95",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/hiviewdfx_hicollie/tree/d3c4bf62cf7439197bd6588606bc6becfa6e0f95",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "hicollie_native"
+  }, {
+    "type" : "library",
+    "name" : "hidumper",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/hiviewdfx_hidumper@weekly_20230110?revision=3b5f5fc31f79647dc9d7ab3ddb80617a0210fe6b",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/hiviewdfx_hidumper/tree/3b5f5fc31f79647dc9d7ab3ddb80617a0210fe6b",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "hidumper"
+  }, {
+    "type" : "library",
+    "name" : "hiperf",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/developtools_hiperf@weekly_20230110?revision=23cd9920c1e2e45530d28c555df44b5a63b8793d",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/developtools_hiperf/tree/23cd9920c1e2e45530d28c555df44b5a63b8793d",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "hiperf"
+  }, {
+    "type" : "library",
+    "name" : "hisysevent_native",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ { } ],
+    "purl" : "pkg:gitee/openharmony/hiviewdfx_hisysevent@weekly_20230110?revision=9a9636e7d71079fcaf3f1892cde2905c912200e9",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/hiviewdfx_hisysevent/tree/9a9636e7d71079fcaf3f1892cde2905c912200e9",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "hisysevent_native"
+  }, {
+    "type" : "library",
+    "name" : "hitrace_native",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/hiviewdfx_hitrace@weekly_20230110?revision=b0de0d999e3c4009b1670ba62ca21e981df08d2c",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/hiviewdfx_hitrace/tree/b0de0d999e3c4009b1670ba62ca21e981df08d2c",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "hitrace_native"
+  }, {
+    "type" : "library",
+    "name" : "hiview",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "copyright" : "Copyright (c) 2021 Huawei Device Co., Ltd.",
+    "purl" : "pkg:gitee/openharmony/hiviewdfx_hiview@weekly_20230110?revision=df027d1338434c304332f7dfeb9575b8f389fd2f",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/hiviewdfx_hiview/tree/df027d1338434c304332f7dfeb9575b8f389fd2f",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "hiview"
+  }, {
+    "type" : "library",
+    "name" : "huks",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/security_huks@weekly_20230110?revision=f8096c58853510c5f4fe2bff4167701715e4667a",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/security_huks/tree/f8096c58853510c5f4fe2bff4167701715e4667a",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "huks"
+  }, {
+    "type" : "library",
+    "name" : "icu",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "https://github.com/unicode-org/icu/archive/release-69-1.tar.gz",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "ICU"
+    } ],
+    "copyright" : "Copyright (c) 1991-2020 Unicode, Inc.",
+    "purl" : "pkg:gitee/openharmony/third_party_icu@weekly_20230110?revision=edc07950129f1d91603aac3b0ddbeb35dca3b8ef",
+    "externalReferences" : [ {
+      "url" : "https://github.com/unicode-org/icu/archive/release-69-1.tar.gz",
+      "type" : "vcs"
+    }, {
+      "url" : "https://openharmony.gitee.com/openharmony/third_party_icu/tree/edc07950129f1d91603aac3b0ddbeb35dca3b8ef",
+      "type" : "distribution"
+    } ],
+    "components" : [ {
+      "type" : "library",
+      "name" : "International Components for Unicode",
+      "version" : "69.1",
+      "purl" : "pkg:generic/International+Components+for+Unicode@69.1?download_url=https%3A%2F%2Fgithub.com%2Funicode-org%2Ficu%2Farchive%2Frelease-69-1.tar.gz",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "icu"
+  }, {
+    "type" : "library",
+    "name" : "init",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/startup_init_lite@weekly_20230110?revision=13b22aee654064b3a272c2e86e11210b1ab14687",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/startup_init_lite/tree/13b22aee654064b3a272c2e86e11210b1ab14687",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "init"
+  }, {
+    "type" : "library",
+    "name" : "input",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/multimodalinput_input@weekly_20230110?revision=fe4218cfdf9baa01a7d9586e127025f8993d4544",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/multimodalinput_input/tree/fe4218cfdf9baa01a7d9586e127025f8993d4544",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "input"
+  }, {
+    "type" : "library",
+    "name" : "iowow",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "https://github.com/Softmotions/iowow",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "MIT"
+    } ],
+    "copyright" : "Copyright (c) 2012-2020 Softmotions Ltd <info@softmotions.com>",
+    "purl" : "pkg:gitee/openharmony/third_party_iowow@weekly_20230110?revision=c60235ae323094fb20d1973d0ef4b495366d486f",
+    "externalReferences" : [ {
+      "url" : "https://github.com/Softmotions/iowow",
+      "type" : "vcs"
+    }, {
+      "url" : "https://openharmony.gitee.com/openharmony/third_party_iowow/tree/c60235ae323094fb20d1973d0ef4b495366d486f",
+      "type" : "distribution"
+    } ],
+    "components" : [ {
+      "type" : "library",
+      "name" : "IOWOW",
+      "version" : "v1.4.10",
+      "purl" : "pkg:generic/IOWOW@v1.4.10?download_url=https%3A%2F%2Fgithub.com%2FSoftmotions%2Fiowow",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "iowow"
+  }, {
+    "type" : "library",
+    "name" : "ipc",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/communication_ipc@weekly_20230110?revision=b1746d8e22287d8e05ffdc42915cfaf8e5ce1dde",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/communication_ipc/tree/b1746d8e22287d8e05ffdc42915cfaf8e5ce1dde",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "ipc"
+  }, {
+    "type" : "library",
+    "name" : "jsoncpp",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "https://github.com/open-source-parsers/jsoncpp/archive/00.11.0.tar.gz",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Public Domain"
+    } ],
+    "copyright" : "Copyright (c) 2007-2010 by Baptiste Lepilleur and The JsonCpp Authors",
+    "purl" : "pkg:gitee/openharmony/third_party_jsoncpp@weekly_20230110?revision=fb474c547c678bb1d4164ac23925cf0a476accf7",
+    "externalReferences" : [ {
+      "url" : "https://github.com/open-source-parsers/jsoncpp/archive/00.11.0.tar.gz",
+      "type" : "vcs"
+    }, {
+      "url" : "https://openharmony.gitee.com/openharmony/third_party_jsoncpp/tree/fb474c547c678bb1d4164ac23925cf0a476accf7",
+      "type" : "distribution"
+    } ],
+    "components" : [ {
+      "type" : "library",
+      "name" : "jsonCpp",
+      "version" : "00.11.0",
+      "purl" : "pkg:generic/jsonCpp@00.11.0?download_url=https%3A%2F%2Fgithub.com%2Fopen-source-parsers%2Fjsoncpp%2Farchive%2F00.11.0.tar.gz",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "jsoncpp"
+  }, {
+    "type" : "library",
+    "name" : "kv_store",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/distributeddatamgr_kv_store@weekly_20230110?revision=53c3f0c1c0d5c9cfa083b924c80b8f1bcdf5712a",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/distributeddatamgr_kv_store/tree/53c3f0c1c0d5c9cfa083b924c80b8f1bcdf5712a",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "kv_store"
+  }, {
+    "type" : "library",
+    "name" : "libdrm",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "https://dri.freedesktop.org/libdrm/libdrm-2.4.102.tar.xz",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "MIT"
+    } ],
+    "purl" : "pkg:gitee/openharmony/third_party_libdrm@weekly_20230110?revision=bccd7815181b76220db12606a46ba119790ccc7b",
+    "externalReferences" : [ {
+      "url" : "https://dri.freedesktop.org/libdrm/libdrm-2.4.102.tar.xz",
+      "type" : "vcs"
+    }, {
+      "url" : "https://openharmony.gitee.com/openharmony/third_party_libdrm/tree/bccd7815181b76220db12606a46ba119790ccc7b",
+      "type" : "distribution"
+    } ],
+    "components" : [ {
+      "type" : "library",
+      "name" : "libdrm",
+      "version" : "2.4.102",
+      "purl" : "pkg:generic/libdrm@2.4.102?download_url=https%3A%2F%2Fdri.freedesktop.org%2Flibdrm%2Flibdrm-2.4.102.tar.xz",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "libdrm"
+  }, {
+    "type" : "library",
+    "name" : "libphonenumber",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "https://github.com/googlei18n/libphonenumber/",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "copyright" : "Copyright (c) 2011 The Libphonenumber Authors",
+    "purl" : "pkg:gitee/openharmony/third_party_libphonenumber@weekly_20230110?revision=0cf06f42f8948aca0c7b6685c941336f28009dcc",
+    "externalReferences" : [ {
+      "url" : "https://github.com/googlei18n/libphonenumber/",
+      "type" : "vcs"
+    }, {
+      "url" : "https://openharmony.gitee.com/openharmony/third_party_libphonenumber/tree/0cf06f42f8948aca0c7b6685c941336f28009dcc",
+      "type" : "distribution"
+    } ],
+    "components" : [ {
+      "type" : "library",
+      "name" : "libphonenumber",
+      "version" : "8.12.48",
+      "purl" : "pkg:generic/libphonenumber@8.12.48?download_url=https%3A%2F%2Fgithub.com%2Fgooglei18n%2Flibphonenumber%2F",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "libphonenumber"
+  }, {
+    "type" : "library",
+    "name" : "libpng",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "http://www.libpng.org/pub/png/libpng.html",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Libpng"
+    } ],
+    "copyright" : "Copyright (c) 1995-2019 The PNG Reference Library Authors",
+    "purl" : "pkg:gitee/openharmony/third_party_libpng@weekly_20230110?revision=56f105c91512fdcff46ae97f340999333a5eb853",
+    "externalReferences" : [ {
+      "url" : "http://www.libpng.org/pub/png/libpng.html",
+      "type" : "vcs"
+    }, {
+      "url" : "https://openharmony.gitee.com/openharmony/third_party_libpng/tree/56f105c91512fdcff46ae97f340999333a5eb853",
+      "type" : "distribution"
+    } ],
+    "components" : [ {
+      "type" : "library",
+      "name" : "libpng",
+      "version" : "1.6.37",
+      "purl" : "pkg:generic/libpng@1.6.37?download_url=http%3A%2F%2Fwww.libpng.org%2Fpub%2Fpng%2Flibpng.html",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "libpng"
+  }, {
+    "type" : "library",
+    "name" : "libuv",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "https://github.com/libuv/libuv",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "MIT"
+    } ],
+    "copyright" : "Copyright (c) 2015-present libuv project contributors",
+    "purl" : "pkg:gitee/openharmony/third_party_libuv@weekly_20230110?revision=312f1ab1f92a6b5363dffcf744738152fe554dc2",
+    "externalReferences" : [ {
+      "url" : "https://github.com/libuv/libuv",
+      "type" : "vcs"
+    }, {
+      "url" : "https://openharmony.gitee.com/openharmony/third_party_libuv/tree/312f1ab1f92a6b5363dffcf744738152fe554dc2",
+      "type" : "distribution"
+    } ],
+    "components" : [ {
+      "type" : "library",
+      "name" : "libuv",
+      "version" : "v1.44.1",
+      "purl" : "pkg:generic/libuv@v1.44.1?download_url=https%3A%2F%2Fgithub.com%2Flibuv%2Flibuv",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "libuv"
+  }, {
+    "type" : "library",
+    "name" : "libxml2",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "https://gitlab.gnome.org/GNOME/libxml2/-/archive/v2.9.13/libxml2-v2.9.13.tar.gz",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "MIT"
+    } ],
+    "copyright" : "Copyright (c) 1998-2012 Daniel Veillard",
+    "purl" : "pkg:gitee/openharmony/third_party_libxml2@weekly_20230110?revision=7cac8a3ddb0baa61b9dab6968f006ffacef50c78",
+    "externalReferences" : [ {
+      "url" : "https://gitlab.gnome.org/GNOME/libxml2/-/archive/v2.9.13/libxml2-v2.9.13.tar.gz",
+      "type" : "vcs"
+    }, {
+      "url" : "https://openharmony.gitee.com/openharmony/third_party_libxml2/tree/7cac8a3ddb0baa61b9dab6968f006ffacef50c78",
+      "type" : "distribution"
+    } ],
+    "components" : [ {
+      "type" : "library",
+      "name" : "libxml2",
+      "version" : "2.9.13",
+      "purl" : "pkg:generic/libxml2@2.9.13?download_url=https%3A%2F%2Fgitlab.gnome.org%2FGNOME%2Flibxml2%2F-%2Farchive%2Fv2.9.13%2Flibxml2-v2.9.13.tar.gz",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "libxml2"
+  }, {
+    "type" : "library",
+    "name" : "location",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/base_location@weekly_20230110?revision=0124fb54af5c05eeeddde79ba83daad4cbeb9e3c",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/base_location/tree/0124fb54af5c05eeeddde79ba83daad4cbeb9e3c",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "location"
+  }, {
+    "type" : "library",
+    "name" : "media_library",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/multimedia_medialibrary_standard@weekly_20230110?revision=9a83ad99e63359c4073ee9f348a514d5a22011dc",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/multimedia_medialibrary_standard/tree/9a83ad99e63359c4073ee9f348a514d5a22011dc",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "media_library"
+  }, {
+    "type" : "library",
+    "name" : "memmgr",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/resourceschedule_memmgr@weekly_20230110?revision=e3a164d9cb89cb447e93513c024095e01f10d922",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/resourceschedule_memmgr/tree/e3a164d9cb89cb447e93513c024095e01f10d922",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "memmgr"
+  }, {
+    "type" : "library",
+    "name" : "memory_utils",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/utils_memory@weekly_20230110?revision=c253768728f1df13105b3b68f3cf5ac79b71af69",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/utils_memory/tree/c253768728f1df13105b3b68f3cf5ac79b71af69",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "memory_utils"
+  }, {
+    "type" : "library",
+    "name" : "miscdevice",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/sensors_miscdevice@weekly_20230110?revision=3fe062103292313bf844a5789a6f96f9747253c3",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/sensors_miscdevice/tree/3fe062103292313bf844a5789a6f96f9747253c3",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "miscdevice"
+  }, {
+    "type" : "library",
+    "name" : "multimedia_av_session",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ { } ],
+    "purl" : "pkg:gitee/openharmony/multimedia_av_session@weekly_20230110?revision=c21d559eb74747da671d7f071ef069fe8a9a3a53",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/multimedia_av_session/tree/c21d559eb74747da671d7f071ef069fe8a9a3a53",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "multimedia_av_session"
+  }, {
+    "type" : "library",
+    "name" : "multimedia_histreamer",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ { } ],
+    "purl" : "pkg:gitee/openharmony/multimedia_histreamer@weekly_20230110?revision=bdc2c8aaa26a3be41a4de607e1761c3313682601",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/multimedia_histreamer/tree/bdc2c8aaa26a3be41a4de607e1761c3313682601",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "multimedia_histreamer"
+  }, {
+    "type" : "library",
+    "name" : "multimedia_image_framework",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ { } ],
+    "purl" : "pkg:gitee/openharmony/multimedia_image_framework@weekly_20230110?revision=8f71709fbe3f851390ac36541cd51b1bb2444351",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/multimedia_image_framework/tree/8f71709fbe3f851390ac36541cd51b1bb2444351",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "multimedia_image_framework"
+  }, {
+    "type" : "library",
+    "name" : "netmanager_base",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/communication_netmanager_base@weekly_20230110?revision=1a1c9530ea1e9a8c6710cd3dd6db04042a7e4b3e",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/communication_netmanager_base/tree/1a1c9530ea1e9a8c6710cd3dd6db04042a7e4b3e",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "netmanager_base"
+  }, {
+    "type" : "library",
+    "name" : "netmanager_ext",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/communication_netmanager_ext@weekly_20230110?revision=82bc862c2e14e0c312dc4490a3bac369673f0883",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/communication_netmanager_ext/tree/82bc862c2e14e0c312dc4490a3bac369673f0883",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "netmanager_ext"
+  }, {
+    "type" : "library",
+    "name" : "netstack",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/communication_netstack@weekly_20230110?revision=e952db69e8060d356bf938b05113db05ef030e87",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/communication_netstack/tree/e952db69e8060d356bf938b05113db05ef030e87",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "netstack"
+  }, {
+    "type" : "library",
+    "name" : "os_account",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/account_os_account@weekly_20230110?revision=cac8e4b5e823327f6c2c9f2f869bcf8635b05527",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/account_os_account/tree/cac8e4b5e823327f6c2c9f2f869bcf8635b05527",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "os_account"
+  }, {
+    "type" : "library",
+    "name" : "pin_auth",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/useriam_pin_auth@weekly_20230110?revision=2536a82280994ec9c2bc8ac1d1057403961c6968",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/useriam_pin_auth/tree/2536a82280994ec9c2bc8ac1d1057403961c6968",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "pin_auth"
+  }, {
+    "type" : "library",
+    "name" : "power_manager",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/powermgr_power_manager@weekly_20230110?revision=5a7c86aa05ad3e696dfbec90000f1acb15a26345",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/powermgr_power_manager/tree/5a7c86aa05ad3e696dfbec90000f1acb15a26345",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "power_manager"
+  }, {
+    "type" : "library",
+    "name" : "preferences",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/distributeddatamgr_preferences@weekly_20230110?revision=f112b25a7b77b8eb4175cfcbcd0157b72a3c924e",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/distributeddatamgr_preferences/tree/f112b25a7b77b8eb4175cfcbcd0157b72a3c924e",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "preferences"
+  }, {
+    "type" : "library",
+    "name" : "profiler",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ { } ],
+    "purl" : "pkg:gitee/openharmony/developtools_profiler@weekly_20230110?revision=d62b6899c989aaac247fd6f4e9ecf06d353961d4",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/developtools_profiler/tree/d62b6899c989aaac247fd6f4e9ecf06d353961d4",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "profiler"
+  }, {
+    "type" : "library",
+    "name" : "relational_store",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/distributeddatamgr_relational_store@weekly_20230110?revision=47aaac6c5237a5376bfb9ac08d602d28060cc8e5",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/distributeddatamgr_relational_store/tree/47aaac6c5237a5376bfb9ac08d602d28060cc8e5",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "relational_store"
+  }, {
+    "type" : "library",
+    "name" : "ril_adapter",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/telephony_ril_adapter@weekly_20230110?revision=e33e8c7e203067f58ff56249680e84e8be9d406e",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/telephony_ril_adapter/tree/e33e8c7e203067f58ff56249680e84e8be9d406e",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "ril_adapter"
+  }, {
+    "type" : "library",
+    "name" : "selinux",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/security_selinux@weekly_20230110?revision=934c79a0a113b8de4ee3970b8e1d8666beac286e",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/security_selinux/tree/934c79a0a113b8de4ee3970b8e1d8666beac286e",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "selinux"
+  }, {
+    "type" : "library",
+    "name" : "sensor",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/sensors_sensor@weekly_20230110?revision=94dbec620c05ae89d1b4864e2245b801ea2e37d6",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/sensors_sensor/tree/94dbec620c05ae89d1b4864e2245b801ea2e37d6",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "sensor"
+  }, {
+    "type" : "library",
+    "name" : "settings_standard",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ { } ],
+    "purl" : "pkg:gitee/openharmony/applications_settings@weekly_20230110?revision=8a98f703bba5e4d44dc00fd96a2ecc02766b8a79",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/applications_settings/tree/8a98f703bba5e4d44dc00fd96a2ecc02766b8a79",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "settings_standard"
+  }, {
+    "type" : "library",
+    "name" : "sms_mms",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/telephony_sms_mms@weekly_20230110?revision=4d367220ec1fa43a66f04f32f52d627717bcb3a3",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/telephony_sms_mms/tree/4d367220ec1fa43a66f04f32f52d627717bcb3a3",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "sms_mms"
+  }, {
+    "type" : "library",
+    "name" : "soc_perf",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/resourceschedule_resource_schedule_service@weekly_20230110?revision=06c92f320672ded87844cd8f6408bfffbc3e99ad#soc_perf",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/resourceschedule_resource_schedule_service/tree/06c92f320672ded87844cd8f6408bfffbc3e99ad",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "soc_perf"
+  }, {
+    "type" : "library",
+    "name" : "state_registry",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/telephony_state_registry@weekly_20230110?revision=c094f33e1b5bdb2948df4e6fe28527932e5d7d66",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/telephony_state_registry/tree/c094f33e1b5bdb2948df4e6fe28527932e5d7d66",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "state_registry"
+  }, {
+    "type" : "library",
+    "name" : "storage_service",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/filemanagement_storage_service@weekly_20230110?revision=dd11277a49005233c051a630abc3edf146ce2954",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/filemanagement_storage_service/tree/dd11277a49005233c051a630abc3edf146ce2954",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "storage_service"
+  }, {
+    "type" : "library",
+    "name" : "syscap_codec",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/developtools_syscap_codec@weekly_20230110?revision=209a49ca59cea56dee8bace54e42f03cb5180ea9",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/developtools_syscap_codec/tree/209a49ca59cea56dee8bace54e42f03cb5180ea9",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "syscap_codec"
+  }, {
+    "type" : "library",
+    "name" : "sys_installer",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/update_sys_installer@weekly_20230110?revision=63ea38614cb4d5284b235c26c8482f81ae2186a9",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/update_sys_installer/tree/63ea38614cb4d5284b235c26c8482f81ae2186a9",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "sys_installer"
+  }, {
+    "type" : "library",
+    "name" : "telephony_data",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/telephony_data_storage@weekly_20230110?revision=716ced482b67147efb50fd18e21f3a04e169643f",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/telephony_data_storage/tree/716ced482b67147efb50fd18e21f3a04e169643f",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "telephony_data"
+  }, {
+    "type" : "library",
+    "name" : "thermal_manager",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/powermgr_thermal_manager@weekly_20230110?revision=c51221d8912267e28537467892cafaa8eba2855d",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/powermgr_thermal_manager/tree/c51221d8912267e28537467892cafaa8eba2855d",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "thermal_manager"
+  }, {
+    "type" : "library",
+    "name" : "thirdparty_giflib",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "https://sourceforge.net/projects/giflib/files/giflib-5.2.1.tar.gz",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "MIT"
+    } ],
+    "purl" : "pkg:gitee/openharmony/third_party_giflib@weekly_20230110?revision=9a0d622e6be1d42fb1027d10e33a750f6d6bb253",
+    "externalReferences" : [ {
+      "url" : "https://sourceforge.net/projects/giflib/files/giflib-5.2.1.tar.gz",
+      "type" : "vcs"
+    }, {
+      "url" : "https://openharmony.gitee.com/openharmony/third_party_giflib/tree/9a0d622e6be1d42fb1027d10e33a750f6d6bb253",
+      "type" : "distribution"
+    } ],
+    "components" : [ {
+      "type" : "library",
+      "name" : "giflib",
+      "version" : "5.2.1",
+      "purl" : "pkg:generic/giflib@5.2.1?download_url=https%3A%2F%2Fsourceforge.net%2Fprojects%2Fgiflib%2Ffiles%2Fgiflib-5.2.1.tar.gz",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "thirdparty_giflib"
+  }, {
+    "type" : "library",
+    "name" : "thirdparty_nghttp2",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "https://nghttp2.org",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ { } ],
+    "purl" : "pkg:gitee/openharmony/third_party_nghttp2@weekly_20230110?revision=133f4795dd6fb50fea99835f90c21fc2d693e008",
+    "externalReferences" : [ {
+      "url" : "https://nghttp2.org",
+      "type" : "vcs"
+    }, {
+      "url" : "https://openharmony.gitee.com/openharmony/third_party_nghttp2/tree/133f4795dd6fb50fea99835f90c21fc2d693e008",
+      "type" : "distribution"
+    } ],
+    "components" : [ {
+      "type" : "library",
+      "name" : "nghttp2",
+      "version" : "1.43.0",
+      "purl" : "pkg:generic/nghttp2@1.43.0?download_url=https%3A%2F%2Fnghttp2.org",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "thirdparty_nghttp2"
+  }, {
+    "type" : "library",
+    "name" : "toolchain",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ { } ],
+    "purl" : "pkg:gitee/openharmony/arkcompiler_toolchain@weekly_20230110?revision=a4f771eae4afdb2da351647e3aa5badecd158691",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/arkcompiler_toolchain/tree/a4f771eae4afdb2da351647e3aa5badecd158691",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "toolchain"
+  }, {
+    "type" : "library",
+    "name" : "updater",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "copyright" : "Copyright (c) 2021 Huawei Device Co., Ltd.",
+    "purl" : "pkg:gitee/openharmony/update_updater@weekly_20230110?revision=2b55567c85919f2676ea969d8ae1a76464d50795",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/update_updater/tree/2b55567c85919f2676ea969d8ae1a76464d50795",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "updater"
+  }, {
+    "type" : "library",
+    "name" : "update_service",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ { } ],
+    "purl" : "pkg:gitee/openharmony/update_updateservice@weekly_20230110?revision=1e56737221eb55aeb8bc8138c9edc9b18f52a771",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/update_updateservice/tree/1e56737221eb55aeb8bc8138c9edc9b18f52a771",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "update_service"
+  }, {
+    "type" : "library",
+    "name" : "user_file_service",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/filemanagement_user_file_service@weekly_20230110?revision=69381ebc9937399c7c1f427acfd5305c6d2ca2bd",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/filemanagement_user_file_service/tree/69381ebc9937399c7c1f427acfd5305c6d2ca2bd",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "user_file_service"
+  }, {
+    "type" : "library",
+    "name" : "webview",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/web_webview@weekly_20230110?revision=48a7fddf1e50d8abc2f04fcb212a13bb5e3e4d0d",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/web_webview/tree/48a7fddf1e50d8abc2f04fcb212a13bb5e3e4d0d",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "webview"
+  }, {
+    "type" : "library",
+    "name" : "work_scheduler",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "OpenHarmony",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ {
+      "expression" : "Apache-2.0"
+    } ],
+    "purl" : "pkg:gitee/openharmony/resourceschedule_work_scheduler@weekly_20230110?revision=8e5e571a53f8d3fb17d28a16d1d1792bbbee6476",
+    "externalReferences" : [ {
+      "url" : "https://openharmony.gitee.com/openharmony/resourceschedule_work_scheduler/tree/8e5e571a53f8d3fb17d28a16d1d1792bbbee6476",
+      "type" : "distribution"
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "work_scheduler"
+  }, {
+    "type" : "library",
+    "name" : "zlib",
+    "supplier" : {
+      "name" : "OpenHarmony"
+    },
+    "author" : "https://github.com/madler/zlib/archive/refs/tags/v1.2.12.tar.gz",
+    "group" : "openharmony",
+    "version" : "weekly_20230110",
+    "licenses" : [ { } ],
+    "purl" : "pkg:gitee/openharmony/third_party_zlib@weekly_20230110?revision=bb66036fee27f2e10707633e36214a17cba32bde",
+    "externalReferences" : [ {
+      "url" : "https://github.com/madler/zlib/archive/refs/tags/v1.2.12.tar.gz",
+      "type" : "vcs"
+    }, {
+      "url" : "https://openharmony.gitee.com/openharmony/third_party_zlib/tree/bb66036fee27f2e10707633e36214a17cba32bde",
+      "type" : "distribution"
+    } ],
+    "components" : [ {
+      "type" : "library",
+      "name" : "zlib",
+      "version" : "v1.2.12",
+      "purl" : "pkg:generic/zlib@v1.2.12?download_url=https%3A%2F%2Fgithub.com%2Fmadler%2Fzlib%2Farchive%2Frefs%2Ftags%2Fv1.2.12.tar.gz",
+      "properties" : [ {
+        "name" : "RelationCategory",
+        "value" : "PROVIDE_MANAGER"
+      } ]
+    } ],
+    "properties" : [ {
+      "name" : "summary",
+      "value" : null
+    } ],
+    "bom-ref" : "zlib"
+  } ],
+  "dependencies" : [ {
+    "ref" : "ability_base",
+    "dependsOn" : [ "ability_base", "bounds_checking_function", "c_utils", "ipc", "jsoncpp", "zlib" ]
+  }, {
+    "ref" : "accessibility",
+    "dependsOn" : [ "ability_base", "accessibility", "access_token", "bounds_checking_function", "c_utils", "display_manager", "eventhandler", "hisysevent_native", "hitrace_native", "init", "input", "ipc", "libuv", "os_account", "preferences" ]
+  }, {
+    "ref" : "access_token",
+    "dependsOn" : [ "ability_base", "access_token", "bounds_checking_function", "c_utils", "dsoftbus", "eventhandler", "hicollie_native", "hisysevent_native", "hitrace_native", "init", "ipc", "libuv" ]
+  }, {
+    "ref" : "app_file_service",
+    "dependsOn" : [ "ability_base", "access_token", "bounds_checking_function", "c_utils", "data_share", "file_api", "ipc", "libuv" ]
+  }, {
+    "ref" : "appspawn",
+    "dependsOn" : [ "bounds_checking_function", "c_utils", "hisysevent_native", "hitrace_native", "init", "netmanager_base", "selinux" ]
+  }, {
+    "ref" : "appverify",
+    "dependsOn" : [ "bounds_checking_function", "c_utils", "huks", "init" ]
+  }, {
+    "ref" : "background_task_mgr",
+    "dependsOn" : [ "ability_base", "access_token", "background_task_mgr", "bounds_checking_function", "c_utils", "eventhandler", "hitrace_native", "icu", "init", "ipc", "libuv", "os_account" ]
+  }, {
+    "ref" : "battery_manager",
+    "dependsOn" : [ "ability_base", "battery_manager", "bounds_checking_function", "c_utils", "eventhandler", "hicollie_native", "hisysevent_native", "ipc", "jsoncpp", "libuv", "miscdevice", "power_manager" ]
+  }, {
+    "ref" : "battery_statistics",
+    "dependsOn" : [ "ability_base", "battery_manager", "battery_statistics", "bounds_checking_function", "c_utils", "eventhandler", "hicollie_native", "hisysevent_native", "ipc", "jsoncpp", "os_account", "power_manager" ]
+  }, {
+    "ref" : "bluetooth",
+    "dependsOn" : [ "ability_base", "access_token", "bluetooth", "bounds_checking_function", "call_manager", "core_service", "c_utils", "eventhandler", "hisysevent_native", "hitrace_native", "huks", "ipc", "libuv", "libxml2", "state_registry" ]
+  }, {
+    "ref" : "bounds_checking_function",
+    "dependsOn" : [ "c_utils" ]
+  }, {
+    "ref" : "call_manager",
+    "dependsOn" : [ "ability_base", "bluetooth", "bounds_checking_function", "call_manager", "core_service", "c_utils", "data_share", "eventhandler", "hisysevent_native", "hitrace_native", "init", "ipc", "libphonenumber", "libuv", "power_manager", "sms_mms" ]
+  }, {
+    "ref" : "cellular_call",
+    "dependsOn" : [ "ability_base", "bounds_checking_function", "core_service", "c_utils", "eventhandler", "hisysevent_native", "hitrace_native", "init", "ipc", "libphonenumber" ]
+  }, {
+    "ref" : "cellular_data",
+    "dependsOn" : [ "ability_base", "bounds_checking_function", "cellular_data", "core_service", "c_utils", "data_share", "eventhandler", "hisysevent_native", "hitrace_native", "init", "ipc", "libuv", "netmanager_base", "relational_store" ]
+  }, {
+    "ref" : "certificate_manager",
+    "dependsOn" : [ "ability_base", "access_token", "bounds_checking_function", "certificate_manager", "crypto_framework", "c_utils", "hisysevent_native", "huks", "ipc", "os_account" ]
+  }, {
+    "ref" : "cjson",
+    "dependsOn" : [ "c_utils" ]
+  }, {
+    "ref" : "config_policy",
+    "dependsOn" : [ "bounds_checking_function", "config_policy", "c_utils", "hisysevent_native", "libuv" ]
+  }, {
+    "ref" : "contacts_data_hap"
+  }, {
+    "ref" : "core_service",
+    "dependsOn" : [ "ability_base", "access_token", "battery_manager", "bounds_checking_function", "config_policy", "core_service", "c_utils", "data_share", "eventhandler", "hisysevent_native", "huks", "init", "ipc", "jsoncpp", "libphonenumber", "libuv", "netmanager_ext", "power_manager", "preferences", "relational_store" ]
+  }, {
+    "ref" : "crypto_framework",
+    "dependsOn" : [ "bounds_checking_function", "crypto_framework", "c_utils", "huks" ]
+  }, {
+    "ref" : "curl",
+    "dependsOn" : [ "c_utils", "profiler", "thirdparty_nghttp2", "zlib" ]
+  }, {
+    "ref" : "c_utils",
+    "dependsOn" : [ "bounds_checking_function", "c_utils" ]
+  }, {
+    "ref" : "dataclassification",
+    "dependsOn" : [ "bounds_checking_function", "c_utils" ]
+  }, {
+    "ref" : "data_share",
+    "dependsOn" : [ "ability_base", "access_token", "bounds_checking_function", "c_utils", "data_share", "hitrace_native", "ipc", "libuv" ]
+  }, {
+    "ref" : "device_attest",
+    "dependsOn" : [ "bounds_checking_function", "cjson", "c_utils", "device_attest", "dsoftbus", "huks", "init", "ipc", "netmanager_base", "profiler" ]
+  }, {
+    "ref" : "device_auth",
+    "dependsOn" : [ "access_token", "bounds_checking_function", "cjson", "c_utils", "dsoftbus", "hisysevent_native", "hitrace_native", "huks", "init", "ipc", "os_account" ]
+  }, {
+    "ref" : "device_security_level",
+    "dependsOn" : [ "bounds_checking_function", "cjson", "c_utils", "device_auth", "dsoftbus", "hisysevent_native", "hitrace_native", "huks", "ipc" ]
+  }, {
+    "ref" : "device_status",
+    "dependsOn" : [ "access_token", "bounds_checking_function", "c_utils", "device_status", "eventhandler", "hisysevent_native", "hitrace_native", "huks", "ipc", "jsoncpp", "libuv", "sensor" ]
+  }, {
+    "ref" : "device_usage_statistics",
+    "dependsOn" : [ "ability_base", "access_token", "background_task_mgr", "bounds_checking_function", "c_utils", "device_usage_statistics", "eventhandler", "init", "ipc", "libuv", "os_account", "power_manager", "relational_store" ]
+  }, {
+    "ref" : "dfs_service",
+    "dependsOn" : [ "ability_base", "bounds_checking_function", "c_utils", "dataclassification", "device_auth", "dfs_service", "dsoftbus", "init", "ipc" ]
+  }, {
+    "ref" : "display_manager",
+    "dependsOn" : [ "bounds_checking_function", "c_utils", "display_manager", "eventhandler", "hicollie_native", "hisysevent_native", "ipc", "libuv", "power_manager", "sensor" ]
+  }, {
+    "ref" : "drivers_peripheral_power",
+    "dependsOn" : [ "bounds_checking_function", "c_utils", "ipc", "libxml2" ]
+  }, {
+    "ref" : "dsoftbus",
+    "dependsOn" : [ "ability_base", "access_token", "bluetooth", "bounds_checking_function", "cjson", "c_utils", "data_share", "device_auth", "dsoftbus", "hicollie_native", "hisysevent_native", "huks", "init", "ipc", "os_account" ]
+  }, {
+    "ref" : "e2fsprogs",
+    "dependsOn" : [ "c_utils", "e2fsprogs", "selinux" ]
+  }, {
+    "ref" : "ejdb",
+    "dependsOn" : [ "c_utils", "iowow" ]
+  }, {
+    "ref" : "enterprise_device_management",
+    "dependsOn" : [ "ability_base", "access_token", "bounds_checking_function", "c_utils", "data_share", "enterprise_device_management", "eventhandler", "hisysevent_native", "init", "ipc", "jsoncpp", "libuv", "os_account" ]
+  }, {
+    "ref" : "ets_runtime",
+    "dependsOn" : [ "c_utils", "faultloggerd", "hitrace_native", "icu" ]
+  }, {
+    "ref" : "eventhandler",
+    "dependsOn" : [ "bounds_checking_function", "c_utils", "eventhandler", "hitrace_native", "libuv" ]
+  }, {
+    "ref" : "f2fs_tools",
+    "dependsOn" : [ "c_utils", "e2fsprogs", "f2fs_tools" ]
+  }, {
+    "ref" : "faultloggerd",
+    "dependsOn" : [ "bounds_checking_function", "c_utils", "faultloggerd", "init" ]
+  }, {
+    "ref" : "ffmpeg",
+    "dependsOn" : [ "c_utils" ]
+  }, {
+    "ref" : "file_api",
+    "dependsOn" : [ "ability_base", "access_token", "bounds_checking_function", "c_utils", "data_share", "file_api", "huks", "ipc", "libuv" ]
+  }, {
+    "ref" : "flutter",
+    "dependsOn" : [ "bounds_checking_function", "c_utils", "icu" ]
+  }, {
+    "ref" : "form_fwk",
+    "dependsOn" : [ "ability_base", "access_token", "bounds_checking_function", "c_utils", "device_usage_statistics", "eventhandler", "form_fwk", "hicollie_native", "hitrace_native", "ipc", "jsoncpp", "kv_store", "libuv", "power_manager", "relational_store" ]
+  }, {
+    "ref" : "frame_aware_sched",
+    "dependsOn" : [ "bounds_checking_function", "c_utils", "eventhandler", "hitrace_native", "libxml2" ]
+  }, {
+    "ref" : "hicollie_native",
+    "dependsOn" : [ "bounds_checking_function", "c_utils", "eventhandler", "hisysevent_native" ]
+  }, {
+    "ref" : "hidumper",
+    "dependsOn" : [ "bounds_checking_function", "c_utils", "eventhandler", "hidumper", "init", "ipc" ]
+  }, {
+    "ref" : "hiperf",
+    "dependsOn" : [ "bounds_checking_function", "c_utils", "init" ]
+  }, {
+    "ref" : "hisysevent_native",
+    "dependsOn" : [ "access_token", "bounds_checking_function", "c_utils", "hisysevent_native", "hitrace_native", "ipc", "jsoncpp", "libuv" ]
+  }, {
+    "ref" : "hitrace_native",
+    "dependsOn" : [ "bounds_checking_function", "c_utils", "hitrace_native", "init", "libuv" ]
+  }, {
+    "ref" : "hiview",
+    "dependsOn" : [ "access_token", "battery_statistics", "bounds_checking_function", "c_utils", "device_usage_statistics", "ejdb", "faultloggerd", "hidumper", "hisysevent_native", "hiview", "init", "iowow", "ipc", "jsoncpp", "libxml2", "os_account", "power_manager" ]
+  }, {
+    "ref" : "huks",
+    "dependsOn" : [ "ability_base", "access_token", "bounds_checking_function", "c_utils", "dsoftbus", "hisysevent_native", "hitrace_native", "huks", "ipc", "libuv", "os_account" ]
+  }, {
+    "ref" : "icu",
+    "dependsOn" : [ "c_utils", "icu" ]
+  }, {
+    "ref" : "init",
+    "dependsOn" : [ "access_token", "bounds_checking_function", "cjson", "c_utils", "dsoftbus", "init", "ipc", "libuv", "selinux" ]
+  }, {
+    "ref" : "input",
+    "dependsOn" : [ "ability_base", "access_token", "bounds_checking_function", "cjson", "config_policy", "c_utils", "eventhandler", "hicollie_native", "hisysevent_native", "hitrace_native", "init", "input", "ipc", "libuv", "multimedia_image_framework" ]
+  }, {
+    "ref" : "iowow",
+    "dependsOn" : [ "c_utils" ]
+  }, {
+    "ref" : "ipc",
+    "dependsOn" : [ "access_token", "bounds_checking_function", "c_utils", "dsoftbus", "hitrace_native", "ipc" ]
+  }, {
+    "ref" : "jsoncpp",
+    "dependsOn" : [ "c_utils" ]
+  }, {
+    "ref" : "kv_store",
+    "dependsOn" : [ "bounds_checking_function", "c_utils", "hisysevent_native", "hitrace_native", "huks", "ipc", "jsoncpp", "kv_store", "libuv", "zlib" ]
+  }, {
+    "ref" : "libdrm",
+    "dependsOn" : [ "c_utils" ]
+  }, {
+    "ref" : "libphonenumber",
+    "dependsOn" : [ "c_utils", "icu", "libphonenumber", "profiler" ]
+  }, {
+    "ref" : "libpng",
+    "dependsOn" : [ "c_utils" ]
+  }, {
+    "ref" : "libuv",
+    "dependsOn" : [ "c_utils" ]
+  }, {
+    "ref" : "libxml2",
+    "dependsOn" : [ "c_utils" ]
+  }, {
+    "ref" : "location",
+    "dependsOn" : [ "ability_base", "access_token", "bounds_checking_function", "cellular_data", "core_service", "c_utils", "eventhandler", "hisysevent_native", "init", "ipc", "libuv", "location", "os_account" ]
+  }, {
+    "ref" : "media_library",
+    "dependsOn" : [ "ability_base", "access_token", "battery_manager", "bounds_checking_function", "c_utils", "data_share", "device_auth", "device_security_level", "eventhandler", "hitrace_native", "huks", "init", "ipc", "kv_store", "libuv", "media_library", "multimedia_image_framework", "relational_store", "selinux", "storage_service", "user_file_service" ]
+  }, {
+    "ref" : "memmgr",
+    "dependsOn" : [ "ability_base", "background_task_mgr", "bounds_checking_function", "c_utils", "eventhandler", "init", "ipc", "libxml2", "memmgr", "os_account" ]
+  }, {
+    "ref" : "memory_utils",
+    "dependsOn" : [ "bounds_checking_function", "c_utils" ]
+  }, {
+    "ref" : "miscdevice",
+    "dependsOn" : [ "access_token", "bounds_checking_function", "cjson", "c_utils", "hisysevent_native", "hitrace_native", "ipc", "miscdevice" ]
+  }, {
+    "ref" : "multimedia_av_session",
+    "dependsOn" : [ "ability_base", "access_token", "bounds_checking_function", "c_utils", "eventhandler", "hisysevent_native", "hitrace_native", "huks", "input", "ipc", "libuv", "multimedia_av_session", "multimedia_image_framework" ]
+  }, {
+    "ref" : "multimedia_histreamer",
+    "dependsOn" : [ "bounds_checking_function", "curl", "c_utils", "ffmpeg", "hitrace_native", "init" ]
+  }, {
+    "ref" : "multimedia_image_framework",
+    "dependsOn" : [ "bounds_checking_function", "c_utils", "flutter", "hitrace_native", "ipc", "libuv", "multimedia_image_framework", "thirdparty_giflib", "zlib" ]
+  }, {
+    "ref" : "netmanager_base",
+    "dependsOn" : [ "ability_base", "access_token", "bounds_checking_function", "core_service", "c_utils", "eventhandler", "hisysevent_native", "hitrace_native", "init", "ipc", "jsoncpp", "libuv", "netmanager_base" ]
+  }, {
+    "ref" : "netmanager_ext",
+    "dependsOn" : [ "bluetooth", "bounds_checking_function", "c_utils", "eventhandler", "hisysevent_native", "ipc", "libuv", "netmanager_base", "netmanager_ext" ]
+  }, {
+    "ref" : "netstack",
+    "dependsOn" : [ "curl", "c_utils", "huks", "jsoncpp", "libuv", "netstack", "profiler" ]
+  }, {
+    "ref" : "os_account",
+    "dependsOn" : [ "ability_base", "access_token", "bounds_checking_function", "c_utils", "dsoftbus", "eventhandler", "hicollie_native", "hisysevent_native", "hitrace_native", "init", "ipc", "kv_store", "libuv", "os_account", "pin_auth", "selinux", "storage_service" ]
+  }, {
+    "ref" : "pin_auth",
+    "dependsOn" : [ "access_token", "c_utils", "hisysevent_native", "huks", "ipc" ]
+  }, {
+    "ref" : "power_manager",
+    "dependsOn" : [ "ability_base", "access_token", "bounds_checking_function", "c_utils", "data_share", "display_manager", "eventhandler", "hicollie_native", "hisysevent_native", "hitrace_native", "init", "input", "ipc", "libuv", "libxml2", "power_manager", "sensor" ]
+  }, {
+    "ref" : "preferences",
+    "dependsOn" : [ "c_utils", "hitrace_native", "libuv", "libxml2", "preferences" ]
+  }, {
+    "ref" : "profiler",
+    "dependsOn" : [ "bounds_checking_function", "c_utils", "hidumper", "huks", "init", "libuv", "profiler" ]
+  }, {
+    "ref" : "relational_store",
+    "dependsOn" : [ "bounds_checking_function", "c_utils", "hitrace_native", "huks", "icu", "ipc", "kv_store", "libuv", "relational_store" ]
+  }, {
+    "ref" : "ril_adapter",
+    "dependsOn" : [ "bounds_checking_function", "c_utils", "init", "ril_adapter" ]
+  }, {
+    "ref" : "selinux",
+    "dependsOn" : [ "bounds_checking_function", "c_utils", "selinux" ]
+  }, {
+    "ref" : "sensor",
+    "dependsOn" : [ "access_token", "bounds_checking_function", "c_utils", "eventhandler", "hisysevent_native", "hitrace_native", "ipc", "libuv", "sensor" ]
+  }, {
+    "ref" : "settings_standard",
+    "dependsOn" : [ "ability_base", "c_utils", "data_share", "libuv", "relational_store" ]
+  }, {
+    "ref" : "sms_mms",
+    "dependsOn" : [ "ability_base", "bounds_checking_function", "core_service", "c_utils", "eventhandler", "hisysevent_native", "init", "ipc", "libuv", "relational_store", "sms_mms" ]
+  }, {
+    "ref" : "soc_perf",
+    "dependsOn" : [ "bounds_checking_function", "config_policy", "c_utils", "eventhandler", "hitrace_native", "ipc", "libxml2", "soc_perf" ]
+  }, {
+    "ref" : "state_registry",
+    "dependsOn" : [ "ability_base", "bounds_checking_function", "core_service", "c_utils", "eventhandler", "init", "ipc", "libuv", "state_registry" ]
+  }, {
+    "ref" : "storage_service",
+    "dependsOn" : [ "ability_base", "access_token", "bounds_checking_function", "c_utils", "data_share", "e2fsprogs", "file_api", "huks", "init", "ipc", "libuv", "media_library", "selinux", "storage_service" ]
+  }, {
+    "ref" : "syscap_codec",
+    "dependsOn" : [ "c_utils", "libuv" ]
+  }, {
+    "ref" : "sys_installer",
+    "dependsOn" : [ "cjson", "c_utils", "init", "ipc", "libuv", "selinux", "thirdparty_nghttp2" ]
+  }, {
+    "ref" : "telephony_data",
+    "dependsOn" : [ "ability_base", "config_policy", "c_utils", "jsoncpp", "preferences", "relational_store" ]
+  }, {
+    "ref" : "thermal_manager",
+    "dependsOn" : [ "ability_base", "battery_manager", "bounds_checking_function", "c_utils", "display_manager", "eventhandler", "hicollie_native", "hisysevent_native", "init", "ipc", "libuv", "libxml2", "power_manager", "thermal_manager" ]
+  }, {
+    "ref" : "thirdparty_giflib",
+    "dependsOn" : [ "c_utils" ]
+  }, {
+    "ref" : "thirdparty_nghttp2",
+    "dependsOn" : [ "c_utils" ]
+  }, {
+    "ref" : "toolchain",
+    "dependsOn" : [ "cjson", "c_utils", "ets_runtime", "huks", "libuv" ]
+  }, {
+    "ref" : "updater",
+    "dependsOn" : [ "cjson", "c_utils", "init" ]
+  }, {
+    "ref" : "update_service",
+    "dependsOn" : [ "access_token", "bounds_checking_function", "cjson", "curl", "c_utils", "hisysevent_native", "init", "ipc", "libuv" ]
+  }, {
+    "ref" : "user_file_service",
+    "dependsOn" : [ "ability_base", "access_token", "c_utils", "file_api", "hitrace_native", "ipc", "libuv", "user_file_service" ]
+  }, {
+    "ref" : "webview",
+    "dependsOn" : [ "ability_base", "battery_manager", "bounds_checking_function", "cellular_data", "core_service", "c_utils", "file_api", "init", "input", "ipc", "libuv", "multimedia_image_framework", "netmanager_base", "power_manager", "relational_store", "soc_perf", "webview" ]
+  }, {
+    "ref" : "work_scheduler",
+    "dependsOn" : [ "ability_base", "background_task_mgr", "bounds_checking_function", "c_utils", "device_usage_statistics", "eventhandler", "hisysevent_native", "ipc", "jsoncpp", "libuv", "os_account", "thermal_manager", "work_scheduler" ]
+  }, {
+    "ref" : "zlib",
+    "dependsOn" : [ "c_utils" ]
+  } ]
+}

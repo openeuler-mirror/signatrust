@@ -650,7 +650,6 @@ mod test {
             let plugin = X509Plugin::new(sec_datakey).expect("create plugin successfully");
             plugin.generate_keys(&KeyType::X509CA, &infra_config).expect(format!("generate ca key with digest {} successfully", hash).as_str());
         }
-
     }
 
     #[tokio::test]

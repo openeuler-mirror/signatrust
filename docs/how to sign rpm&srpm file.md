@@ -34,7 +34,7 @@ In order to verify the signature of rpm file, you need to download the openPGP p
 1. Download the public key from signatrust control-server and save into local file(new.key as below) in text format:
 ```shell
 curl -X 'POST' \
-  'https://localhost:8080/api/v1/keys/<key-id>/export' \
+  'https://localhost:8080/api/v1/keys/<key-id>/public_key' \
   -H 'accept: application/json' \
   -H 'Authorization: cBnLPLXl1fA7fKDZnjg9fd9dSWw2RXtUH3MGFUtq' \
   -d ''

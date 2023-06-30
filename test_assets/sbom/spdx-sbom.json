@@ -1,0 +1,5105 @@
+{
+  "SPDXID" : "04fd0589-0da7-4727-a24f-78a528036e8d",
+  "spdxVersion" : "SPDX-2.2",
+  "creationInfo" : {
+    "created" : "2023-03-07 16:42:21",
+    "creators" : [ "Organization: OpenHarmony" ]
+  },
+  "name" : null,
+  "dataLicense" : null,
+  "documentNamespace" : null,
+  "packages" : [ {
+    "SPDXID" : "ability_base",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/ability_ability_base/tree/0375be2beddf27944eebcf3d9f585d50a1e662d0",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/ability_ability_base@weekly_20230110?revision=0375be2beddf27944eebcf3d9f585d50a1e662d0"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "ability_base",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "accessibility",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/accessibility/tree/113022f48692b1ac1ff805de98f706cc77d3715d",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/accessibility@weekly_20230110?revision=113022f48692b1ac1ff805de98f706cc77d3715d"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "accessibility",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "access_token",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/security_access_token/tree/8570d29339173d88ed7b048d891b744a793ca8a5",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/security_access_token@weekly_20230110?revision=8570d29339173d88ed7b048d891b744a793ca8a5"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "access_token",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "app_file_service",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/filemanagement_app_file_service/tree/29ba1efd6fbaa9792ba742dad8fbaac06bdf309d",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/filemanagement_app_file_service@weekly_20230110?revision=29ba1efd6fbaa9792ba742dad8fbaac06bdf309d"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "app_file_service",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "appspawn",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/startup_appspawn/tree/3b1c6edd1dcc1cbce25a1aff76e3e62904fd45b1",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/startup_appspawn@weekly_20230110?revision=3b1c6edd1dcc1cbce25a1aff76e3e62904fd45b1"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "appspawn",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "appverify",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/security_appverify/tree/da468747dce1c4ea151793394f8e40c18e645534",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/security_appverify@weekly_20230110?revision=da468747dce1c4ea151793394f8e40c18e645534"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "appverify",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "background_task_mgr",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/resourceschedule_background_task_mgr/tree/9730581f62b76213348b33e11ec8b1c5f81edf0f",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/resourceschedule_background_task_mgr@weekly_20230110?revision=9730581f62b76213348b33e11ec8b1c5f81edf0f"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "background_task_mgr",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "battery_manager",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/powermgr_battery_manager/tree/d8255d4d898d7c8518eceb030096ac4757d99413",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/powermgr_battery_manager@weekly_20230110?revision=d8255d4d898d7c8518eceb030096ac4757d99413"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "battery_manager",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "battery_statistics",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/powermgr_battery_statistics/tree/ce00b6dda5e067dd7965931e48ddd207e9876929",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/powermgr_battery_statistics@weekly_20230110?revision=ce00b6dda5e067dd7965931e48ddd207e9876929"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "battery_statistics",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "bluetooth",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/communication_bluetooth/tree/e11e615541078b009855ab13ba8be8ba239a377a",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/communication_bluetooth@weekly_20230110?revision=e11e615541078b009855ab13ba8be8ba239a377a"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "bluetooth",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "bounds_checking_function",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/third_party_bounds_checking_function/tree/bf0d75295fe2efdd9f6368c4fbd5dc16eea576c1",
+    "externalRefs" : [ {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/bounds_checking_function@v1.1.10?download_url=https%3A%2F%2Fgitee.com%2Fopeneuler%2Flibboundscheck"
+    }, {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/third_party_bounds_checking_function@weekly_20230110?revision=bf0d75295fe2efdd9f6368c4fbd5dc16eea576c1"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "https://gitee.com/openeuler/libboundscheck"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "MulanPSL-2.0",
+    "licenseDeclared" : null,
+    "name" : "bounds_checking_function",
+    "originator" : "Organization: https://gitee.com/openeuler/libboundscheck",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "call_manager",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/telephony_call_manager/tree/88185c1b1a79626c0f8d0758680be169ef4acfeb",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/telephony_call_manager@weekly_20230110?revision=88185c1b1a79626c0f8d0758680be169ef4acfeb"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "call_manager",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "cellular_call",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/telephony_cellular_call/tree/c96fd1aacd5a757eda45a5fea3da64a4aa6a7b1f",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/telephony_cellular_call@weekly_20230110?revision=c96fd1aacd5a757eda45a5fea3da64a4aa6a7b1f"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "cellular_call",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "cellular_data",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/telephony_cellular_data/tree/c6c7c25e490d5f07080534a103f80a97e089798c",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/telephony_cellular_data@weekly_20230110?revision=c6c7c25e490d5f07080534a103f80a97e089798c"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "cellular_data",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "certificate_manager",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/security_certificate_manager/tree/4202c73aa1f63667216fe488eb27c1c66114d4e5",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/security_certificate_manager@weekly_20230110?revision=4202c73aa1f63667216fe488eb27c1c66114d4e5"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "certificate_manager",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "cjson",
+    "copyrightText" : "Copyright (c) 2009-2017 Dave Gamble and cJSON contributors",
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/third_party_cJSON/tree/abca1971cae57d7150a943c9eeda33f177fcaf4a",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/third_party_cJSON@weekly_20230110?revision=abca1971cae57d7150a943c9eeda33f177fcaf4a"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/cJSON@1.7.15?download_url=https%3A%2F%2Fgithub.com%2FDaveGamble%2FcJSON%2Freleases"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "https://github.com/DaveGamble/cJSON/releases"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "MIT",
+    "licenseDeclared" : null,
+    "name" : "cjson",
+    "originator" : "Organization: https://github.com/DaveGamble/cJSON/releases",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "config_policy",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/customization_config_policy/tree/8d490a6aa507705473dedc400e9df9db02cf3b31",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/customization_config_policy@weekly_20230110?revision=8d490a6aa507705473dedc400e9df9db02cf3b31"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "config_policy",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "contacts_data_hap",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/applications_contactsdata/tree/4c043c5fb9d7f3f0ae7b142e8ecb16c6ad7a4bce",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/applications_contactsdata@weekly_20230110?revision=4c043c5fb9d7f3f0ae7b142e8ecb16c6ad7a4bce"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : null,
+    "licenseDeclared" : null,
+    "name" : "contacts_data_hap",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "core_service",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/telephony_core_service/tree/3223a69b4bc4df5c786c596e3a0f4b0eb291ccc6",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/telephony_core_service@weekly_20230110?revision=3223a69b4bc4df5c786c596e3a0f4b0eb291ccc6"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "core_service",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "crypto_framework",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/security_crypto_framework/tree/232756f06442d22e55b598f3402e26c22ae29108",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/security_crypto_framework@weekly_20230110?revision=232756f06442d22e55b598f3402e26c22ae29108"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "crypto_framework",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "curl",
+    "copyrightText" : "Copyright (c) 1998, 1999 Kungliga Tekniska Hogskolan",
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/third_party_curl/tree/82d3c8eb4d2e61a3873e7ecbb6e822e66657263c",
+    "externalRefs" : [ {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/curl@7.78.0?download_url=http%3A%2F%2Fcurl.haxx.se%2F"
+    }, {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/third_party_curl@weekly_20230110?revision=82d3c8eb4d2e61a3873e7ecbb6e822e66657263c"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "http://curl.haxx.se/"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "curl",
+    "licenseDeclared" : null,
+    "name" : "curl",
+    "originator" : "Organization: http://curl.haxx.se/",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "c_utils",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/commonlibrary_c_utils/tree/209f60d3690e80efe14320bca44b56d7204be549",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/commonlibrary_c_utils@weekly_20230110?revision=209f60d3690e80efe14320bca44b56d7204be549"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "c_utils",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "dataclassification",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/security_dataclassification/tree/b1afbf7040ed53db486fa5cc42e6e0f7672e65d7",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/security_dataclassification@weekly_20230110?revision=b1afbf7040ed53db486fa5cc42e6e0f7672e65d7"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "dataclassification",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "data_share",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/distributeddatamgr_data_share/tree/24e777d3c2469dfa2ea37a5af7ae330c31c44f9c",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/distributeddatamgr_data_share@weekly_20230110?revision=24e777d3c2469dfa2ea37a5af7ae330c31c44f9c"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "data_share",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "device_attest",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/xts_device_attest/tree/5e4ebd4bd3f2b71c4ca03b32864a40ce61930d98",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/xts_device_attest@weekly_20230110?revision=5e4ebd4bd3f2b71c4ca03b32864a40ce61930d98"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "device_attest",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "device_auth",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/security_device_auth/tree/ca9e342b1b1716f1c757fddb97206e4b2ab47618",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/security_device_auth@weekly_20230110?revision=ca9e342b1b1716f1c757fddb97206e4b2ab47618"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "device_auth",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "device_security_level",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/security_device_security_level/tree/d85dc51282b7d3527a60b685ed73acca181c9de0",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/security_device_security_level@weekly_20230110?revision=d85dc51282b7d3527a60b685ed73acca181c9de0"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "device_security_level",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "device_status",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/msdp_device_status/tree/a374552f6601460afdd3b32f9a9f7d09a62a14c2",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/msdp_device_status@weekly_20230110?revision=a374552f6601460afdd3b32f9a9f7d09a62a14c2"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "device_status",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "device_usage_statistics",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/resourceschedule_device_usage_statistics/tree/63b461954e751fe17c98fe6284a2e1d570a46619",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/resourceschedule_device_usage_statistics@weekly_20230110?revision=63b461954e751fe17c98fe6284a2e1d570a46619"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "device_usage_statistics",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "dfs_service",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/filemanagement_dfs_service/tree/b6a0c64adaab7b5511f180ce1ae23e22b0e8c217",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/filemanagement_dfs_service@weekly_20230110?revision=b6a0c64adaab7b5511f180ce1ae23e22b0e8c217"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "dfs_service",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "display_manager",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/powermgr_display_manager/tree/7d58f2a5fa477fc1354eb46f909ef3967ea0910f",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/powermgr_display_manager@weekly_20230110?revision=7d58f2a5fa477fc1354eb46f909ef3967ea0910f"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "display_manager",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "drivers_peripheral_power",
+    "copyrightText" : "Copyright (c) 2020-2022 Huawei Device Co., Ltd.",
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/drivers_peripheral/tree/17e45f6fb95c5ea3054b603f84e568d811f6fa24",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/drivers_peripheral@weekly_20230110?revision=17e45f6fb95c5ea3054b603f84e568d811f6fa24#power"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "drivers_peripheral_power",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "dsoftbus",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/communication_dsoftbus/tree/d81f5a756c1bf64e8d9cb339d3f2c75edc2e8772",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/communication_dsoftbus@weekly_20230110?revision=d81f5a756c1bf64e8d9cb339d3f2c75edc2e8772"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "dsoftbus",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "e2fsprogs",
+    "copyrightText" : "Copyright (c) 1989, 1991 Free Software Foundation, Inc.",
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/third_party_e2fsprogs/tree/14d9c4d9ed8eafd0a586f322b90187856c18d23c",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/third_party_e2fsprogs@weekly_20230110?revision=14d9c4d9ed8eafd0a586f322b90187856c18d23c"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/e2fsprogs@1.46.4?download_url=http%3A%2F%2Fe2fsprogs.sourceforge.net"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "http://e2fsprogs.sourceforge.net"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "GPL-2.0-only",
+    "licenseDeclared" : null,
+    "name" : "e2fsprogs",
+    "originator" : "Organization: http://e2fsprogs.sourceforge.net",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "ejdb",
+    "copyrightText" : "Copyright (c) 2012-2021 Softmotions Ltd <info@softmotions.com>",
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/third_party_ejdb/tree/9c7bcad027670190e41b3d33e31349389c563ac1",
+    "externalRefs" : [ {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/EJDB2@v2.0.59?download_url=https%3A%2F%2Fgithub.com%2FSoftmotions%2Fejdb"
+    }, {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/third_party_ejdb@weekly_20230110?revision=9c7bcad027670190e41b3d33e31349389c563ac1"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "https://github.com/Softmotions/ejdb"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "MIT",
+    "licenseDeclared" : null,
+    "name" : "ejdb",
+    "originator" : "Organization: https://github.com/Softmotions/ejdb",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "enterprise_device_management",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/customization_enterprise_device_management/tree/6b7c2e88b2173ef1b1682b26c2e6d00db0ea1901",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/customization_enterprise_device_management@weekly_20230110?revision=6b7c2e88b2173ef1b1682b26c2e6d00db0ea1901"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "enterprise_device_management",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "ets_runtime",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/arkcompiler_ets_runtime/tree/e9765dd70f5a6c93fde503fec14e92f0a685a4ea",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/arkcompiler_ets_runtime@weekly_20230110?revision=e9765dd70f5a6c93fde503fec14e92f0a685a4ea"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "ets_runtime",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "eventhandler",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/notification_eventhandler/tree/fe9134216bb1625aef62aa779049af16a7e1bd65",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/notification_eventhandler@weekly_20230110?revision=fe9134216bb1625aef62aa779049af16a7e1bd65"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "eventhandler",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "f2fs_tools",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/third_party_f2fs-tools/tree/a0c3a2401d8063f9e3fca97ae03d25ec3c92df34",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/third_party_f2fs-tools@weekly_20230110?revision=a0c3a2401d8063f9e3fca97ae03d25ec3c92df34"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/f2fs-tools@1.14.0%3Fdownload_url%3Dhttps%3A%2F%2Fgit.kernel.org%2Fpub%2Fscm%2Flinux%2Fkernel%2Fgit%2Fjaegeuk%2Ff2fs-tools.git%2Ftag?h=v1.14.0"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "https://git.kernel.org/pub/scm/linux/kernel/git/jaegeuk/f2fs-tools.git/tag/?h=v1.14.0"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "GPL-2.0-only",
+    "licenseDeclared" : null,
+    "name" : "f2fs_tools",
+    "originator" : "Organization: https://git.kernel.org/pub/scm/linux/kernel/git/jaegeuk/f2fs-tools.git/tag/?h=v1.14.0",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "faultloggerd",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/hiviewdfx_faultloggerd/tree/81b714f96448bcbc29a210f566621e4e1a0348bf",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/hiviewdfx_faultloggerd@weekly_20230110?revision=81b714f96448bcbc29a210f566621e4e1a0348bf"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "faultloggerd",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "ffmpeg",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/third_party_ffmpeg/tree/eda32382a105b3e4813256848e65451ccca6f284",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/third_party_ffmpeg@weekly_20230110?revision=eda32382a105b3e4813256848e65451ccca6f284"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/FFmpeg@4.4.1?download_url=http%3A%2F%2Fwww.ffmpeg.org%2F"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "http://www.ffmpeg.org/"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : null,
+    "licenseDeclared" : null,
+    "name" : "ffmpeg",
+    "originator" : "Organization: http://www.ffmpeg.org/",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "file_api",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/filemanagement_file_api/tree/9b902c8f095646a1b5ae87a22d12a8db4757b049",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/filemanagement_file_api@weekly_20230110?revision=9b902c8f095646a1b5ae87a22d12a8db4757b049"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "file_api",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "flutter",
+    "copyrightText" : "Copyright 2017 The Chromium Authors",
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/third_party_flutter/tree/53d887f5e0c91d40eccf0646b89da452eb3fd9f8",
+    "externalRefs" : [ {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "https://travis-ci.org/KhronosGroup/SPIRV-Tools"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/skia@4b567cd679ab964b5f6281a67a96c694c950f597?download_url=https%3A%2F%2Fskia.org"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/spirv-headers@661ad91124e6af2272afd00f804d8aa276e17107?download_url=https%3A%2F%2Fwww.khronos.org%2Fregistry%2Fspir-v%2F"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/sfntly@b55ff303ea2f9e26702b514cf6a3196a2e3e2974?download_url=https%3A%2F%2Fgithub.com%2Frillig%2Fsfntly"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "https://dawn.googlesource.com/dawn"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "http://zlib.net/"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/libwebp@0fe1a89dbf1930fc2554dbe76adad5d962054ead?download_url=http%3A%2F%2Fdevelopers.google.com%2Fspeed%2Fwebp"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/flutter@v1.9.1+hotfix.1?download_url=https%3A%2F%2Fflutter.dev%2F"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/sdl@5d7cfcca344034aff9327f77fc181ae3754e7a90?download_url=http%3A%2F%2Fwww.libsdl.org%2F"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "http://libjpeg-turbo.org/"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "https://flutter.dev/"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "http://angleproject.org"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "https://skia.googlesource.com/external/github.com/GPUOpen-Tools/common-lib-amd-APPSDK-3.0/"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "https://github.com/unicode-org/icu"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/freetype@2.10.1?download_url=https%3A%2F%2Fwww.freetype.org"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/icu@63.1?download_url=https%3A%2F%2Fgithub.com%2Funicode-org%2Ficu"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "https://travis-ci.org/ocornut/imgui"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "https://wuffs.org/"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/ANGLE@cdecd97ceefa28409793d04caf873e7b0d0d723c?download_url=http%3A%2F%2Fangleproject.org"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/harfbuzz@1bada656a86e9cb27d4a6b9fcc50748f0bd9c1d9?download_url=http%3A%2F%2Fharfbuzz.org%2F"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "http://www.libpng.org"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "http://harfbuzz.org/"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "https://android.googlesource.com/platform/frameworks/native/+/master/opengl/"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "https://www.freetype.org"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/imgui@d38d7c6628bebd02692cfdd6fa76b4d992a35b75?download_url=https%3A%2F%2Ftravis-ci.org%2Focornut%2Fimgui"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "https://android.googlesource.com/platform/external/piex/"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/skcms@958fec279ed59ff630770dc0482eb10f30367a83?download_url=https%3A%2F%2Fskia.org%2F"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "http://developers.google.com/speed/webp"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "http://www.libsdl.org/"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/Dawn@472bd1ec29d8d4e03404bf4b4e0233e4fc6031ce?download_url=https%3A%2F%2Fdawn.googlesource.com%2Fdawn"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "https://skia.org"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/piex@bb217acdca1cc0c16b704669dd6f91a1b509c406?download_url=https%3A%2F%2Fandroid.googlesource.com%2Fplatform%2Fexternal%2Fpiex%2F"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/libjpeg-turbo@574f3a772c96dc9db2c98ef24706feb3f6dbda9a?download_url=http%3A%2F%2Flibjpeg-turbo.org%2F"
+    }, {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/third_party_flutter@weekly_20230110?revision=53d887f5e0c91d40eccf0646b89da452eb3fd9f8"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "https://github.com/rillig/sfntly"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/etc1@01cc538b?download_url=https%3A%2F%2Fandroid.googlesource.com%2Fplatform%2Fframeworks%2Fnative%2F+%2Fmaster%2Fopengl%2F"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/opencl-lib@4e6d30e406d2e5a65e1d65e404fe6df5f772a32b?download_url=https%3A%2F%2Fskia.googlesource.com%2Fexternal%2Fgithub.com%2FGPUOpen-Tools%2Fcommon-lib-amd-APPSDK-3.0%2F"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/zlib@1.2.11?download_url=http%3A%2F%2Fzlib.net%2F"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "https://www.khronos.org/registry/spir-v/"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/spirv-tools@e9e4393b1c5aad7553c05782acefbe32b42644bd?download_url=https%3A%2F%2Ftravis-ci.org%2FKhronosGroup%2FSPIRV-Tools"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/libpng@386707c6d19b974ca2e3db7f5c61873813c6fe44?download_url=http%3A%2F%2Fwww.libpng.org"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/wuffs@6ad7d00a262e862549e4963b4a43d148a8285e50?download_url=https%3A%2F%2Fwuffs.org%2F"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "https://skia.org/"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "BSD-3-Clause",
+    "licenseDeclared" : null,
+    "name" : "flutter",
+    "originator" : "Organization: https://flutter.dev/",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "form_fwk",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/ability_form_fwk/tree/db3e40ef27f87569c2d0f0640ae9113ecaf9eb7e",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/ability_form_fwk@weekly_20230110?revision=db3e40ef27f87569c2d0f0640ae9113ecaf9eb7e"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "form_fwk",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "frame_aware_sched",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/frame_aware_sched/tree/8579def26ed75047657c82361b74c947ead3c4b0",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/frame_aware_sched@weekly_20230110?revision=8579def26ed75047657c82361b74c947ead3c4b0"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "frame_aware_sched",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "hicollie_native",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/hiviewdfx_hicollie/tree/d3c4bf62cf7439197bd6588606bc6becfa6e0f95",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/hiviewdfx_hicollie@weekly_20230110?revision=d3c4bf62cf7439197bd6588606bc6becfa6e0f95"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : null,
+    "licenseDeclared" : null,
+    "name" : "hicollie_native",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "hidumper",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/hiviewdfx_hidumper/tree/3b5f5fc31f79647dc9d7ab3ddb80617a0210fe6b",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/hiviewdfx_hidumper@weekly_20230110?revision=3b5f5fc31f79647dc9d7ab3ddb80617a0210fe6b"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "hidumper",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "hiperf",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/developtools_hiperf/tree/23cd9920c1e2e45530d28c555df44b5a63b8793d",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/developtools_hiperf@weekly_20230110?revision=23cd9920c1e2e45530d28c555df44b5a63b8793d"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "hiperf",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "hisysevent_native",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/hiviewdfx_hisysevent/tree/9a9636e7d71079fcaf3f1892cde2905c912200e9",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/hiviewdfx_hisysevent@weekly_20230110?revision=9a9636e7d71079fcaf3f1892cde2905c912200e9"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : null,
+    "licenseDeclared" : null,
+    "name" : "hisysevent_native",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "hitrace_native",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/hiviewdfx_hitrace/tree/b0de0d999e3c4009b1670ba62ca21e981df08d2c",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/hiviewdfx_hitrace@weekly_20230110?revision=b0de0d999e3c4009b1670ba62ca21e981df08d2c"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "hitrace_native",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "hiview",
+    "copyrightText" : "Copyright (c) 2021 Huawei Device Co., Ltd.",
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/hiviewdfx_hiview/tree/df027d1338434c304332f7dfeb9575b8f389fd2f",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/hiviewdfx_hiview@weekly_20230110?revision=df027d1338434c304332f7dfeb9575b8f389fd2f"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "hiview",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "huks",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/security_huks/tree/f8096c58853510c5f4fe2bff4167701715e4667a",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/security_huks@weekly_20230110?revision=f8096c58853510c5f4fe2bff4167701715e4667a"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "huks",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "icu",
+    "copyrightText" : "Copyright (c) 1991-2020 Unicode, Inc.",
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/third_party_icu/tree/edc07950129f1d91603aac3b0ddbeb35dca3b8ef",
+    "externalRefs" : [ {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/International+Components+for+Unicode@69.1?download_url=https%3A%2F%2Fgithub.com%2Funicode-org%2Ficu%2Farchive%2Frelease-69-1.tar.gz"
+    }, {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/third_party_icu@weekly_20230110?revision=edc07950129f1d91603aac3b0ddbeb35dca3b8ef"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "https://github.com/unicode-org/icu/archive/release-69-1.tar.gz"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "ICU",
+    "licenseDeclared" : null,
+    "name" : "icu",
+    "originator" : "Organization: https://github.com/unicode-org/icu/archive/release-69-1.tar.gz",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "init",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/startup_init_lite/tree/13b22aee654064b3a272c2e86e11210b1ab14687",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/startup_init_lite@weekly_20230110?revision=13b22aee654064b3a272c2e86e11210b1ab14687"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "init",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "input",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/multimodalinput_input/tree/fe4218cfdf9baa01a7d9586e127025f8993d4544",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/multimodalinput_input@weekly_20230110?revision=fe4218cfdf9baa01a7d9586e127025f8993d4544"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "input",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "iowow",
+    "copyrightText" : "Copyright (c) 2012-2020 Softmotions Ltd <info@softmotions.com>",
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/third_party_iowow/tree/c60235ae323094fb20d1973d0ef4b495366d486f",
+    "externalRefs" : [ {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/IOWOW@v1.4.10?download_url=https%3A%2F%2Fgithub.com%2FSoftmotions%2Fiowow"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "https://github.com/Softmotions/iowow"
+    }, {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/third_party_iowow@weekly_20230110?revision=c60235ae323094fb20d1973d0ef4b495366d486f"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "MIT",
+    "licenseDeclared" : null,
+    "name" : "iowow",
+    "originator" : "Organization: https://github.com/Softmotions/iowow",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "ipc",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/communication_ipc/tree/b1746d8e22287d8e05ffdc42915cfaf8e5ce1dde",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/communication_ipc@weekly_20230110?revision=b1746d8e22287d8e05ffdc42915cfaf8e5ce1dde"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "ipc",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "jsoncpp",
+    "copyrightText" : "Copyright (c) 2007-2010 by Baptiste Lepilleur and The JsonCpp Authors",
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/third_party_jsoncpp/tree/fb474c547c678bb1d4164ac23925cf0a476accf7",
+    "externalRefs" : [ {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "https://github.com/open-source-parsers/jsoncpp/archive/00.11.0.tar.gz"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/jsonCpp@00.11.0?download_url=https%3A%2F%2Fgithub.com%2Fopen-source-parsers%2Fjsoncpp%2Farchive%2F00.11.0.tar.gz"
+    }, {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/third_party_jsoncpp@weekly_20230110?revision=fb474c547c678bb1d4164ac23925cf0a476accf7"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Public Domain",
+    "licenseDeclared" : null,
+    "name" : "jsoncpp",
+    "originator" : "Organization: https://github.com/open-source-parsers/jsoncpp/archive/00.11.0.tar.gz",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "kv_store",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/distributeddatamgr_kv_store/tree/53c3f0c1c0d5c9cfa083b924c80b8f1bcdf5712a",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/distributeddatamgr_kv_store@weekly_20230110?revision=53c3f0c1c0d5c9cfa083b924c80b8f1bcdf5712a"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "kv_store",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "libdrm",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/third_party_libdrm/tree/bccd7815181b76220db12606a46ba119790ccc7b",
+    "externalRefs" : [ {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "https://dri.freedesktop.org/libdrm/libdrm-2.4.102.tar.xz"
+    }, {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/third_party_libdrm@weekly_20230110?revision=bccd7815181b76220db12606a46ba119790ccc7b"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/libdrm@2.4.102?download_url=https%3A%2F%2Fdri.freedesktop.org%2Flibdrm%2Flibdrm-2.4.102.tar.xz"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "MIT",
+    "licenseDeclared" : null,
+    "name" : "libdrm",
+    "originator" : "Organization: https://dri.freedesktop.org/libdrm/libdrm-2.4.102.tar.xz",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "libphonenumber",
+    "copyrightText" : "Copyright (c) 2011 The Libphonenumber Authors",
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/third_party_libphonenumber/tree/0cf06f42f8948aca0c7b6685c941336f28009dcc",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/third_party_libphonenumber@weekly_20230110?revision=0cf06f42f8948aca0c7b6685c941336f28009dcc"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "https://github.com/googlei18n/libphonenumber/"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/libphonenumber@8.12.48?download_url=https%3A%2F%2Fgithub.com%2Fgooglei18n%2Flibphonenumber%2F"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "libphonenumber",
+    "originator" : "Organization: https://github.com/googlei18n/libphonenumber/",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "libpng",
+    "copyrightText" : "Copyright (c) 1995-2019 The PNG Reference Library Authors",
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/third_party_libpng/tree/56f105c91512fdcff46ae97f340999333a5eb853",
+    "externalRefs" : [ {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/libpng@1.6.37?download_url=http%3A%2F%2Fwww.libpng.org%2Fpub%2Fpng%2Flibpng.html"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "http://www.libpng.org/pub/png/libpng.html"
+    }, {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/third_party_libpng@weekly_20230110?revision=56f105c91512fdcff46ae97f340999333a5eb853"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Libpng",
+    "licenseDeclared" : null,
+    "name" : "libpng",
+    "originator" : "Organization: http://www.libpng.org/pub/png/libpng.html",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "libuv",
+    "copyrightText" : "Copyright (c) 2015-present libuv project contributors",
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/third_party_libuv/tree/312f1ab1f92a6b5363dffcf744738152fe554dc2",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/third_party_libuv@weekly_20230110?revision=312f1ab1f92a6b5363dffcf744738152fe554dc2"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/libuv@v1.44.1?download_url=https%3A%2F%2Fgithub.com%2Flibuv%2Flibuv"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "https://github.com/libuv/libuv"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "MIT",
+    "licenseDeclared" : null,
+    "name" : "libuv",
+    "originator" : "Organization: https://github.com/libuv/libuv",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "libxml2",
+    "copyrightText" : "Copyright (c) 1998-2012 Daniel Veillard",
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/third_party_libxml2/tree/7cac8a3ddb0baa61b9dab6968f006ffacef50c78",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/third_party_libxml2@weekly_20230110?revision=7cac8a3ddb0baa61b9dab6968f006ffacef50c78"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/libxml2@2.9.13?download_url=https%3A%2F%2Fgitlab.gnome.org%2FGNOME%2Flibxml2%2F-%2Farchive%2Fv2.9.13%2Flibxml2-v2.9.13.tar.gz"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "https://gitlab.gnome.org/GNOME/libxml2/-/archive/v2.9.13/libxml2-v2.9.13.tar.gz"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "MIT",
+    "licenseDeclared" : null,
+    "name" : "libxml2",
+    "originator" : "Organization: https://gitlab.gnome.org/GNOME/libxml2/-/archive/v2.9.13/libxml2-v2.9.13.tar.gz",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "location",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/base_location/tree/0124fb54af5c05eeeddde79ba83daad4cbeb9e3c",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/base_location@weekly_20230110?revision=0124fb54af5c05eeeddde79ba83daad4cbeb9e3c"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "location",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "media_library",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/multimedia_medialibrary_standard/tree/9a83ad99e63359c4073ee9f348a514d5a22011dc",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/multimedia_medialibrary_standard@weekly_20230110?revision=9a83ad99e63359c4073ee9f348a514d5a22011dc"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "media_library",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "memmgr",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/resourceschedule_memmgr/tree/e3a164d9cb89cb447e93513c024095e01f10d922",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/resourceschedule_memmgr@weekly_20230110?revision=e3a164d9cb89cb447e93513c024095e01f10d922"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "memmgr",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "memory_utils",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/utils_memory/tree/c253768728f1df13105b3b68f3cf5ac79b71af69",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/utils_memory@weekly_20230110?revision=c253768728f1df13105b3b68f3cf5ac79b71af69"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "memory_utils",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "miscdevice",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/sensors_miscdevice/tree/3fe062103292313bf844a5789a6f96f9747253c3",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/sensors_miscdevice@weekly_20230110?revision=3fe062103292313bf844a5789a6f96f9747253c3"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "miscdevice",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "multimedia_av_session",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/multimedia_av_session/tree/c21d559eb74747da671d7f071ef069fe8a9a3a53",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/multimedia_av_session@weekly_20230110?revision=c21d559eb74747da671d7f071ef069fe8a9a3a53"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : null,
+    "licenseDeclared" : null,
+    "name" : "multimedia_av_session",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "multimedia_histreamer",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/multimedia_histreamer/tree/bdc2c8aaa26a3be41a4de607e1761c3313682601",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/multimedia_histreamer@weekly_20230110?revision=bdc2c8aaa26a3be41a4de607e1761c3313682601"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : null,
+    "licenseDeclared" : null,
+    "name" : "multimedia_histreamer",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "multimedia_image_framework",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/multimedia_image_framework/tree/8f71709fbe3f851390ac36541cd51b1bb2444351",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/multimedia_image_framework@weekly_20230110?revision=8f71709fbe3f851390ac36541cd51b1bb2444351"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : null,
+    "licenseDeclared" : null,
+    "name" : "multimedia_image_framework",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "netmanager_base",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/communication_netmanager_base/tree/1a1c9530ea1e9a8c6710cd3dd6db04042a7e4b3e",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/communication_netmanager_base@weekly_20230110?revision=1a1c9530ea1e9a8c6710cd3dd6db04042a7e4b3e"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "netmanager_base",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "netmanager_ext",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/communication_netmanager_ext/tree/82bc862c2e14e0c312dc4490a3bac369673f0883",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/communication_netmanager_ext@weekly_20230110?revision=82bc862c2e14e0c312dc4490a3bac369673f0883"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "netmanager_ext",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "netstack",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/communication_netstack/tree/e952db69e8060d356bf938b05113db05ef030e87",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/communication_netstack@weekly_20230110?revision=e952db69e8060d356bf938b05113db05ef030e87"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "netstack",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "os_account",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/account_os_account/tree/cac8e4b5e823327f6c2c9f2f869bcf8635b05527",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/account_os_account@weekly_20230110?revision=cac8e4b5e823327f6c2c9f2f869bcf8635b05527"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "os_account",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "pin_auth",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/useriam_pin_auth/tree/2536a82280994ec9c2bc8ac1d1057403961c6968",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/useriam_pin_auth@weekly_20230110?revision=2536a82280994ec9c2bc8ac1d1057403961c6968"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "pin_auth",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "power_manager",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/powermgr_power_manager/tree/5a7c86aa05ad3e696dfbec90000f1acb15a26345",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/powermgr_power_manager@weekly_20230110?revision=5a7c86aa05ad3e696dfbec90000f1acb15a26345"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "power_manager",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "preferences",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/distributeddatamgr_preferences/tree/f112b25a7b77b8eb4175cfcbcd0157b72a3c924e",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/distributeddatamgr_preferences@weekly_20230110?revision=f112b25a7b77b8eb4175cfcbcd0157b72a3c924e"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "preferences",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "profiler",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/developtools_profiler/tree/d62b6899c989aaac247fd6f4e9ecf06d353961d4",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/developtools_profiler@weekly_20230110?revision=d62b6899c989aaac247fd6f4e9ecf06d353961d4"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : null,
+    "licenseDeclared" : null,
+    "name" : "profiler",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "relational_store",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/distributeddatamgr_relational_store/tree/47aaac6c5237a5376bfb9ac08d602d28060cc8e5",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/distributeddatamgr_relational_store@weekly_20230110?revision=47aaac6c5237a5376bfb9ac08d602d28060cc8e5"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "relational_store",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "ril_adapter",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/telephony_ril_adapter/tree/e33e8c7e203067f58ff56249680e84e8be9d406e",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/telephony_ril_adapter@weekly_20230110?revision=e33e8c7e203067f58ff56249680e84e8be9d406e"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "ril_adapter",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "selinux",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/security_selinux/tree/934c79a0a113b8de4ee3970b8e1d8666beac286e",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/security_selinux@weekly_20230110?revision=934c79a0a113b8de4ee3970b8e1d8666beac286e"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "selinux",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "sensor",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/sensors_sensor/tree/94dbec620c05ae89d1b4864e2245b801ea2e37d6",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/sensors_sensor@weekly_20230110?revision=94dbec620c05ae89d1b4864e2245b801ea2e37d6"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "sensor",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "settings_standard",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/applications_settings/tree/8a98f703bba5e4d44dc00fd96a2ecc02766b8a79",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/applications_settings@weekly_20230110?revision=8a98f703bba5e4d44dc00fd96a2ecc02766b8a79"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : null,
+    "licenseDeclared" : null,
+    "name" : "settings_standard",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "sms_mms",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/telephony_sms_mms/tree/4d367220ec1fa43a66f04f32f52d627717bcb3a3",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/telephony_sms_mms@weekly_20230110?revision=4d367220ec1fa43a66f04f32f52d627717bcb3a3"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "sms_mms",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "soc_perf",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/resourceschedule_resource_schedule_service/tree/06c92f320672ded87844cd8f6408bfffbc3e99ad",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/resourceschedule_resource_schedule_service@weekly_20230110?revision=06c92f320672ded87844cd8f6408bfffbc3e99ad#soc_perf"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "soc_perf",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "state_registry",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/telephony_state_registry/tree/c094f33e1b5bdb2948df4e6fe28527932e5d7d66",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/telephony_state_registry@weekly_20230110?revision=c094f33e1b5bdb2948df4e6fe28527932e5d7d66"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "state_registry",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "storage_service",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/filemanagement_storage_service/tree/dd11277a49005233c051a630abc3edf146ce2954",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/filemanagement_storage_service@weekly_20230110?revision=dd11277a49005233c051a630abc3edf146ce2954"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "storage_service",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "syscap_codec",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/developtools_syscap_codec/tree/209a49ca59cea56dee8bace54e42f03cb5180ea9",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/developtools_syscap_codec@weekly_20230110?revision=209a49ca59cea56dee8bace54e42f03cb5180ea9"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "syscap_codec",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "sys_installer",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/update_sys_installer/tree/63ea38614cb4d5284b235c26c8482f81ae2186a9",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/update_sys_installer@weekly_20230110?revision=63ea38614cb4d5284b235c26c8482f81ae2186a9"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "sys_installer",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "telephony_data",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/telephony_data_storage/tree/716ced482b67147efb50fd18e21f3a04e169643f",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/telephony_data_storage@weekly_20230110?revision=716ced482b67147efb50fd18e21f3a04e169643f"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "telephony_data",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "thermal_manager",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/powermgr_thermal_manager/tree/c51221d8912267e28537467892cafaa8eba2855d",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/powermgr_thermal_manager@weekly_20230110?revision=c51221d8912267e28537467892cafaa8eba2855d"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "thermal_manager",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "thirdparty_giflib",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/third_party_giflib/tree/9a0d622e6be1d42fb1027d10e33a750f6d6bb253",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/third_party_giflib@weekly_20230110?revision=9a0d622e6be1d42fb1027d10e33a750f6d6bb253"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/giflib@5.2.1?download_url=https%3A%2F%2Fsourceforge.net%2Fprojects%2Fgiflib%2Ffiles%2Fgiflib-5.2.1.tar.gz"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "https://sourceforge.net/projects/giflib/files/giflib-5.2.1.tar.gz"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "MIT",
+    "licenseDeclared" : null,
+    "name" : "thirdparty_giflib",
+    "originator" : "Organization: https://sourceforge.net/projects/giflib/files/giflib-5.2.1.tar.gz",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "thirdparty_nghttp2",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/third_party_nghttp2/tree/133f4795dd6fb50fea99835f90c21fc2d693e008",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/third_party_nghttp2@weekly_20230110?revision=133f4795dd6fb50fea99835f90c21fc2d693e008"
+    }, {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "https://nghttp2.org"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/nghttp2@1.43.0?download_url=https%3A%2F%2Fnghttp2.org"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : null,
+    "licenseDeclared" : null,
+    "name" : "thirdparty_nghttp2",
+    "originator" : "Organization: https://nghttp2.org",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "toolchain",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/arkcompiler_toolchain/tree/a4f771eae4afdb2da351647e3aa5badecd158691",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/arkcompiler_toolchain@weekly_20230110?revision=a4f771eae4afdb2da351647e3aa5badecd158691"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : null,
+    "licenseDeclared" : null,
+    "name" : "toolchain",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "updater",
+    "copyrightText" : "Copyright (c) 2021 Huawei Device Co., Ltd.",
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/update_updater/tree/2b55567c85919f2676ea969d8ae1a76464d50795",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/update_updater@weekly_20230110?revision=2b55567c85919f2676ea969d8ae1a76464d50795"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "updater",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "update_service",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/update_updateservice/tree/1e56737221eb55aeb8bc8138c9edc9b18f52a771",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/update_updateservice@weekly_20230110?revision=1e56737221eb55aeb8bc8138c9edc9b18f52a771"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : null,
+    "licenseDeclared" : null,
+    "name" : "update_service",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "user_file_service",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/filemanagement_user_file_service/tree/69381ebc9937399c7c1f427acfd5305c6d2ca2bd",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/filemanagement_user_file_service@weekly_20230110?revision=69381ebc9937399c7c1f427acfd5305c6d2ca2bd"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "user_file_service",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "webview",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/web_webview/tree/48a7fddf1e50d8abc2f04fcb212a13bb5e3e4d0d",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/web_webview@weekly_20230110?revision=48a7fddf1e50d8abc2f04fcb212a13bb5e3e4d0d"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "webview",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "work_scheduler",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/resourceschedule_work_scheduler/tree/8e5e571a53f8d3fb17d28a16d1d1792bbbee6476",
+    "externalRefs" : [ {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/resourceschedule_work_scheduler@weekly_20230110?revision=8e5e571a53f8d3fb17d28a16d1d1792bbbee6476"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : "Apache-2.0",
+    "licenseDeclared" : null,
+    "name" : "work_scheduler",
+    "originator" : "Organization: OpenHarmony",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  }, {
+    "SPDXID" : "zlib",
+    "copyrightText" : null,
+    "downloadLocation" : "https://openharmony.gitee.com/openharmony/third_party_zlib/tree/bb66036fee27f2e10707633e36214a17cba32bde",
+    "externalRefs" : [ {
+      "referenceCategory" : "SOURCE_MANAGER",
+      "referenceType" : "url",
+      "referenceLocator" : "https://github.com/madler/zlib/archive/refs/tags/v1.2.12.tar.gz"
+    }, {
+      "referenceCategory" : "PACKAGE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:gitee/openharmony/third_party_zlib@weekly_20230110?revision=bb66036fee27f2e10707633e36214a17cba32bde"
+    }, {
+      "referenceCategory" : "PROVIDE_MANAGER",
+      "referenceType" : "purl",
+      "referenceLocator" : "pkg:generic/zlib@v1.2.12?download_url=https%3A%2F%2Fgithub.com%2Fmadler%2Fzlib%2Farchive%2Frefs%2Ftags%2Fv1.2.12.tar.gz"
+    } ],
+    "filesAnalyzed" : null,
+    "licenseConcluded" : null,
+    "licenseDeclared" : null,
+    "name" : "zlib",
+    "originator" : "Organization: https://github.com/madler/zlib/archive/refs/tags/v1.2.12.tar.gz",
+    "supplier" : "Organization: OpenHarmony",
+    "versionInfo" : "weekly_20230110"
+  } ],
+  "relationships" : [ {
+    "spdxElementId" : "ability_base",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "access_token",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "accessibility",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "app_file_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "background_task_mgr",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "battery_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "battery_statistics",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "bluetooth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "call_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "cellular_call",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "cellular_data",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "certificate_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "core_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "data_share",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "device_usage_statistics",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "dfs_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "dsoftbus",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "enterprise_device_management",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "file_api",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "form_fwk",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "huks",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "input",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "location",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "media_library",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "memmgr",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "multimedia_av_session",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "netmanager_base",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "os_account",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "power_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "settings_standard",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "sms_mms",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "state_registry",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "storage_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "telephony_data",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "thermal_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "user_file_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "webview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "work_scheduler",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ability_base"
+  }, {
+    "spdxElementId" : "accessibility",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "accessibility"
+  }, {
+    "spdxElementId" : "access_token",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "accessibility",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "app_file_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "background_task_mgr",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "bluetooth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "certificate_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "core_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "data_share",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "device_auth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "device_status",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "device_usage_statistics",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "dsoftbus",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "enterprise_device_management",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "file_api",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "form_fwk",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "hisysevent_native",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "hiview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "huks",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "init",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "input",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "ipc",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "location",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "media_library",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "miscdevice",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "multimedia_av_session",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "netmanager_base",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "os_account",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "pin_auth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "power_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "sensor",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "storage_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "update_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "user_file_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "access_token"
+  }, {
+    "spdxElementId" : "background_task_mgr",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "background_task_mgr"
+  }, {
+    "spdxElementId" : "device_usage_statistics",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "background_task_mgr"
+  }, {
+    "spdxElementId" : "memmgr",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "background_task_mgr"
+  }, {
+    "spdxElementId" : "work_scheduler",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "background_task_mgr"
+  }, {
+    "spdxElementId" : "battery_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "battery_manager"
+  }, {
+    "spdxElementId" : "battery_statistics",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "battery_manager"
+  }, {
+    "spdxElementId" : "core_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "battery_manager"
+  }, {
+    "spdxElementId" : "media_library",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "battery_manager"
+  }, {
+    "spdxElementId" : "thermal_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "battery_manager"
+  }, {
+    "spdxElementId" : "webview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "battery_manager"
+  }, {
+    "spdxElementId" : "battery_statistics",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "battery_statistics"
+  }, {
+    "spdxElementId" : "hiview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "battery_statistics"
+  }, {
+    "spdxElementId" : "bluetooth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bluetooth"
+  }, {
+    "spdxElementId" : "call_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bluetooth"
+  }, {
+    "spdxElementId" : "dsoftbus",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bluetooth"
+  }, {
+    "spdxElementId" : "netmanager_ext",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bluetooth"
+  }, {
+    "spdxElementId" : "ability_base",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "access_token",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "accessibility",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "app_file_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "appspawn",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "appverify",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "background_task_mgr",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "battery_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "battery_statistics",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "bluetooth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "c_utils",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "call_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "cellular_call",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "cellular_data",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "certificate_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "config_policy",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "core_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "crypto_framework",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "data_share",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "dataclassification",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "device_attest",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "device_auth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "device_security_level",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "device_status",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "device_usage_statistics",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "dfs_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "display_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "drivers_peripheral_power",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "dsoftbus",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "enterprise_device_management",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "eventhandler",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "faultloggerd",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "file_api",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "flutter",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "form_fwk",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "frame_aware_sched",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "hicollie_native",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "hidumper",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "hiperf",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "hisysevent_native",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "hitrace_native",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "hiview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "huks",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "init",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "input",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "ipc",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "kv_store",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "location",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "media_library",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "memmgr",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "memory_utils",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "miscdevice",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "multimedia_av_session",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "multimedia_histreamer",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "multimedia_image_framework",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "netmanager_base",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "netmanager_ext",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "os_account",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "power_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "profiler",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "relational_store",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "ril_adapter",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "selinux",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "sensor",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "sms_mms",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "soc_perf",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "state_registry",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "storage_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "thermal_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "update_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "webview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "work_scheduler",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "bounds_checking_function"
+  }, {
+    "spdxElementId" : "bluetooth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "call_manager"
+  }, {
+    "spdxElementId" : "call_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "call_manager"
+  }, {
+    "spdxElementId" : "cellular_data",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "cellular_data"
+  }, {
+    "spdxElementId" : "location",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "cellular_data"
+  }, {
+    "spdxElementId" : "webview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "cellular_data"
+  }, {
+    "spdxElementId" : "certificate_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "certificate_manager"
+  }, {
+    "spdxElementId" : "device_attest",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "cjson"
+  }, {
+    "spdxElementId" : "device_auth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "cjson"
+  }, {
+    "spdxElementId" : "device_security_level",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "cjson"
+  }, {
+    "spdxElementId" : "dsoftbus",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "cjson"
+  }, {
+    "spdxElementId" : "init",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "cjson"
+  }, {
+    "spdxElementId" : "input",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "cjson"
+  }, {
+    "spdxElementId" : "miscdevice",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "cjson"
+  }, {
+    "spdxElementId" : "sys_installer",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "cjson"
+  }, {
+    "spdxElementId" : "toolchain",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "cjson"
+  }, {
+    "spdxElementId" : "update_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "cjson"
+  }, {
+    "spdxElementId" : "updater",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "cjson"
+  }, {
+    "spdxElementId" : "config_policy",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "config_policy"
+  }, {
+    "spdxElementId" : "core_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "config_policy"
+  }, {
+    "spdxElementId" : "input",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "config_policy"
+  }, {
+    "spdxElementId" : "soc_perf",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "config_policy"
+  }, {
+    "spdxElementId" : "telephony_data",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "config_policy"
+  }, {
+    "spdxElementId" : "bluetooth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "core_service"
+  }, {
+    "spdxElementId" : "call_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "core_service"
+  }, {
+    "spdxElementId" : "cellular_call",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "core_service"
+  }, {
+    "spdxElementId" : "cellular_data",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "core_service"
+  }, {
+    "spdxElementId" : "core_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "core_service"
+  }, {
+    "spdxElementId" : "location",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "core_service"
+  }, {
+    "spdxElementId" : "netmanager_base",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "core_service"
+  }, {
+    "spdxElementId" : "sms_mms",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "core_service"
+  }, {
+    "spdxElementId" : "state_registry",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "core_service"
+  }, {
+    "spdxElementId" : "webview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "core_service"
+  }, {
+    "spdxElementId" : "certificate_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "crypto_framework"
+  }, {
+    "spdxElementId" : "crypto_framework",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "crypto_framework"
+  }, {
+    "spdxElementId" : "multimedia_histreamer",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "curl"
+  }, {
+    "spdxElementId" : "netstack",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "curl"
+  }, {
+    "spdxElementId" : "update_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "curl"
+  }, {
+    "spdxElementId" : "ability_base",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "access_token",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "accessibility",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "app_file_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "appspawn",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "appverify",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "background_task_mgr",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "battery_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "battery_statistics",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "bluetooth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "bounds_checking_function",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "c_utils",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "call_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "cellular_call",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "cellular_data",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "certificate_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "cjson",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "config_policy",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "core_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "crypto_framework",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "curl",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "data_share",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "dataclassification",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "device_attest",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "device_auth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "device_security_level",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "device_status",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "device_usage_statistics",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "dfs_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "display_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "drivers_peripheral_power",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "dsoftbus",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "e2fsprogs",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "ejdb",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "enterprise_device_management",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "ets_runtime",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "eventhandler",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "f2fs_tools",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "faultloggerd",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "ffmpeg",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "file_api",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "flutter",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "form_fwk",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "frame_aware_sched",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "hicollie_native",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "hidumper",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "hiperf",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "hisysevent_native",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "hitrace_native",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "hiview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "huks",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "icu",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "init",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "input",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "iowow",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "ipc",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "jsoncpp",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "kv_store",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "libdrm",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "libphonenumber",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "libpng",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "libuv",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "libxml2",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "location",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "media_library",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "memmgr",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "memory_utils",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "miscdevice",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "multimedia_av_session",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "multimedia_histreamer",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "multimedia_image_framework",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "netmanager_base",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "netmanager_ext",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "netstack",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "os_account",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "pin_auth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "power_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "preferences",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "profiler",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "relational_store",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "ril_adapter",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "selinux",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "sensor",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "settings_standard",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "sms_mms",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "soc_perf",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "state_registry",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "storage_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "sys_installer",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "syscap_codec",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "telephony_data",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "thermal_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "thirdparty_giflib",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "thirdparty_nghttp2",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "toolchain",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "update_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "updater",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "user_file_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "webview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "work_scheduler",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "zlib",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "c_utils"
+  }, {
+    "spdxElementId" : "dfs_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "dataclassification"
+  }, {
+    "spdxElementId" : "app_file_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "data_share"
+  }, {
+    "spdxElementId" : "call_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "data_share"
+  }, {
+    "spdxElementId" : "cellular_data",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "data_share"
+  }, {
+    "spdxElementId" : "core_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "data_share"
+  }, {
+    "spdxElementId" : "data_share",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "data_share"
+  }, {
+    "spdxElementId" : "dsoftbus",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "data_share"
+  }, {
+    "spdxElementId" : "enterprise_device_management",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "data_share"
+  }, {
+    "spdxElementId" : "file_api",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "data_share"
+  }, {
+    "spdxElementId" : "media_library",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "data_share"
+  }, {
+    "spdxElementId" : "power_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "data_share"
+  }, {
+    "spdxElementId" : "settings_standard",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "data_share"
+  }, {
+    "spdxElementId" : "storage_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "data_share"
+  }, {
+    "spdxElementId" : "device_attest",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "device_attest"
+  }, {
+    "spdxElementId" : "device_security_level",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "device_auth"
+  }, {
+    "spdxElementId" : "dfs_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "device_auth"
+  }, {
+    "spdxElementId" : "dsoftbus",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "device_auth"
+  }, {
+    "spdxElementId" : "media_library",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "device_auth"
+  }, {
+    "spdxElementId" : "media_library",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "device_security_level"
+  }, {
+    "spdxElementId" : "device_status",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "device_status"
+  }, {
+    "spdxElementId" : "device_usage_statistics",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "device_usage_statistics"
+  }, {
+    "spdxElementId" : "form_fwk",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "device_usage_statistics"
+  }, {
+    "spdxElementId" : "hiview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "device_usage_statistics"
+  }, {
+    "spdxElementId" : "work_scheduler",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "device_usage_statistics"
+  }, {
+    "spdxElementId" : "dfs_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "dfs_service"
+  }, {
+    "spdxElementId" : "accessibility",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "display_manager"
+  }, {
+    "spdxElementId" : "display_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "display_manager"
+  }, {
+    "spdxElementId" : "power_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "display_manager"
+  }, {
+    "spdxElementId" : "thermal_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "display_manager"
+  }, {
+    "spdxElementId" : "access_token",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "dsoftbus"
+  }, {
+    "spdxElementId" : "device_attest",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "dsoftbus"
+  }, {
+    "spdxElementId" : "device_auth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "dsoftbus"
+  }, {
+    "spdxElementId" : "device_security_level",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "dsoftbus"
+  }, {
+    "spdxElementId" : "dfs_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "dsoftbus"
+  }, {
+    "spdxElementId" : "dsoftbus",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "dsoftbus"
+  }, {
+    "spdxElementId" : "huks",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "dsoftbus"
+  }, {
+    "spdxElementId" : "init",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "dsoftbus"
+  }, {
+    "spdxElementId" : "ipc",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "dsoftbus"
+  }, {
+    "spdxElementId" : "os_account",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "dsoftbus"
+  }, {
+    "spdxElementId" : "e2fsprogs",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "e2fsprogs"
+  }, {
+    "spdxElementId" : "f2fs_tools",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "e2fsprogs"
+  }, {
+    "spdxElementId" : "storage_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "e2fsprogs"
+  }, {
+    "spdxElementId" : "hiview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ejdb"
+  }, {
+    "spdxElementId" : "enterprise_device_management",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "enterprise_device_management"
+  }, {
+    "spdxElementId" : "toolchain",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ets_runtime"
+  }, {
+    "spdxElementId" : "access_token",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "accessibility",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "background_task_mgr",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "battery_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "battery_statistics",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "bluetooth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "call_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "cellular_call",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "cellular_data",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "core_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "device_status",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "device_usage_statistics",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "display_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "enterprise_device_management",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "eventhandler",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "form_fwk",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "frame_aware_sched",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "hicollie_native",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "hidumper",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "input",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "location",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "media_library",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "memmgr",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "multimedia_av_session",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "netmanager_base",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "netmanager_ext",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "os_account",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "power_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "sensor",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "sms_mms",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "soc_perf",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "state_registry",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "thermal_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "work_scheduler",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "eventhandler"
+  }, {
+    "spdxElementId" : "f2fs_tools",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "f2fs_tools"
+  }, {
+    "spdxElementId" : "ets_runtime",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "faultloggerd"
+  }, {
+    "spdxElementId" : "faultloggerd",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "faultloggerd"
+  }, {
+    "spdxElementId" : "hiview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "faultloggerd"
+  }, {
+    "spdxElementId" : "multimedia_histreamer",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ffmpeg"
+  }, {
+    "spdxElementId" : "app_file_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "file_api"
+  }, {
+    "spdxElementId" : "file_api",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "file_api"
+  }, {
+    "spdxElementId" : "storage_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "file_api"
+  }, {
+    "spdxElementId" : "user_file_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "file_api"
+  }, {
+    "spdxElementId" : "webview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "file_api"
+  }, {
+    "spdxElementId" : "multimedia_image_framework",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "flutter"
+  }, {
+    "spdxElementId" : "form_fwk",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "form_fwk"
+  }, {
+    "spdxElementId" : "access_token",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hicollie_native"
+  }, {
+    "spdxElementId" : "battery_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hicollie_native"
+  }, {
+    "spdxElementId" : "battery_statistics",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hicollie_native"
+  }, {
+    "spdxElementId" : "display_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hicollie_native"
+  }, {
+    "spdxElementId" : "dsoftbus",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hicollie_native"
+  }, {
+    "spdxElementId" : "form_fwk",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hicollie_native"
+  }, {
+    "spdxElementId" : "input",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hicollie_native"
+  }, {
+    "spdxElementId" : "os_account",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hicollie_native"
+  }, {
+    "spdxElementId" : "power_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hicollie_native"
+  }, {
+    "spdxElementId" : "thermal_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hicollie_native"
+  }, {
+    "spdxElementId" : "hidumper",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hidumper"
+  }, {
+    "spdxElementId" : "hiview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hidumper"
+  }, {
+    "spdxElementId" : "profiler",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hidumper"
+  }, {
+    "spdxElementId" : "access_token",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "accessibility",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "appspawn",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "battery_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "battery_statistics",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "bluetooth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "call_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "cellular_call",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "cellular_data",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "certificate_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "config_policy",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "core_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "device_auth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "device_security_level",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "device_status",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "display_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "dsoftbus",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "enterprise_device_management",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "hicollie_native",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "hisysevent_native",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "hiview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "huks",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "input",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "kv_store",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "location",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "miscdevice",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "multimedia_av_session",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "netmanager_base",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "netmanager_ext",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "os_account",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "pin_auth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "power_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "sensor",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "sms_mms",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "thermal_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "update_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "work_scheduler",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hisysevent_native"
+  }, {
+    "spdxElementId" : "access_token",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "accessibility",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "appspawn",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "background_task_mgr",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "bluetooth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "call_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "cellular_call",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "cellular_data",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "data_share",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "device_auth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "device_security_level",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "device_status",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "ets_runtime",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "eventhandler",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "form_fwk",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "frame_aware_sched",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "hisysevent_native",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "hitrace_native",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "huks",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "input",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "ipc",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "kv_store",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "media_library",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "miscdevice",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "multimedia_av_session",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "multimedia_histreamer",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "multimedia_image_framework",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "netmanager_base",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "os_account",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "power_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "preferences",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "relational_store",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "sensor",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "soc_perf",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "user_file_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hitrace_native"
+  }, {
+    "spdxElementId" : "hiview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "hiview"
+  }, {
+    "spdxElementId" : "appverify",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "huks"
+  }, {
+    "spdxElementId" : "bluetooth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "huks"
+  }, {
+    "spdxElementId" : "certificate_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "huks"
+  }, {
+    "spdxElementId" : "core_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "huks"
+  }, {
+    "spdxElementId" : "crypto_framework",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "huks"
+  }, {
+    "spdxElementId" : "device_attest",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "huks"
+  }, {
+    "spdxElementId" : "device_auth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "huks"
+  }, {
+    "spdxElementId" : "device_security_level",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "huks"
+  }, {
+    "spdxElementId" : "device_status",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "huks"
+  }, {
+    "spdxElementId" : "dsoftbus",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "huks"
+  }, {
+    "spdxElementId" : "file_api",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "huks"
+  }, {
+    "spdxElementId" : "huks",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "huks"
+  }, {
+    "spdxElementId" : "kv_store",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "huks"
+  }, {
+    "spdxElementId" : "media_library",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "huks"
+  }, {
+    "spdxElementId" : "multimedia_av_session",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "huks"
+  }, {
+    "spdxElementId" : "netstack",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "huks"
+  }, {
+    "spdxElementId" : "pin_auth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "huks"
+  }, {
+    "spdxElementId" : "profiler",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "huks"
+  }, {
+    "spdxElementId" : "relational_store",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "huks"
+  }, {
+    "spdxElementId" : "storage_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "huks"
+  }, {
+    "spdxElementId" : "toolchain",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "huks"
+  }, {
+    "spdxElementId" : "background_task_mgr",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "icu"
+  }, {
+    "spdxElementId" : "ets_runtime",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "icu"
+  }, {
+    "spdxElementId" : "flutter",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "icu"
+  }, {
+    "spdxElementId" : "icu",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "icu"
+  }, {
+    "spdxElementId" : "libphonenumber",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "icu"
+  }, {
+    "spdxElementId" : "relational_store",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "icu"
+  }, {
+    "spdxElementId" : "access_token",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "accessibility",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "appspawn",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "appverify",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "background_task_mgr",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "call_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "cellular_call",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "cellular_data",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "core_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "device_attest",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "device_auth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "device_usage_statistics",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "dfs_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "dsoftbus",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "enterprise_device_management",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "faultloggerd",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "hidumper",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "hiperf",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "hitrace_native",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "hiview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "init",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "input",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "location",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "media_library",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "memmgr",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "multimedia_histreamer",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "netmanager_base",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "os_account",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "power_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "profiler",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "ril_adapter",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "sms_mms",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "state_registry",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "storage_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "sys_installer",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "thermal_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "update_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "updater",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "webview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "init"
+  }, {
+    "spdxElementId" : "accessibility",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "input"
+  }, {
+    "spdxElementId" : "input",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "input"
+  }, {
+    "spdxElementId" : "multimedia_av_session",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "input"
+  }, {
+    "spdxElementId" : "power_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "input"
+  }, {
+    "spdxElementId" : "webview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "input"
+  }, {
+    "spdxElementId" : "ejdb",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "iowow"
+  }, {
+    "spdxElementId" : "hiview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "iowow"
+  }, {
+    "spdxElementId" : "ability_base",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "access_token",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "accessibility",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "app_file_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "background_task_mgr",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "battery_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "battery_statistics",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "bluetooth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "call_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "cellular_call",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "cellular_data",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "certificate_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "core_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "data_share",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "device_attest",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "device_auth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "device_security_level",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "device_status",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "device_usage_statistics",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "dfs_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "display_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "drivers_peripheral_power",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "dsoftbus",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "enterprise_device_management",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "file_api",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "form_fwk",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "hidumper",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "hisysevent_native",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "hiview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "huks",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "init",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "input",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "ipc",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "kv_store",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "location",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "media_library",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "memmgr",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "miscdevice",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "multimedia_av_session",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "multimedia_image_framework",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "netmanager_base",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "netmanager_ext",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "os_account",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "pin_auth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "power_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "relational_store",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "sensor",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "sms_mms",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "soc_perf",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "state_registry",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "storage_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "sys_installer",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "thermal_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "update_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "user_file_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "webview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "work_scheduler",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ipc"
+  }, {
+    "spdxElementId" : "ability_base",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "jsoncpp"
+  }, {
+    "spdxElementId" : "battery_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "jsoncpp"
+  }, {
+    "spdxElementId" : "battery_statistics",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "jsoncpp"
+  }, {
+    "spdxElementId" : "core_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "jsoncpp"
+  }, {
+    "spdxElementId" : "device_status",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "jsoncpp"
+  }, {
+    "spdxElementId" : "enterprise_device_management",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "jsoncpp"
+  }, {
+    "spdxElementId" : "form_fwk",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "jsoncpp"
+  }, {
+    "spdxElementId" : "hisysevent_native",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "jsoncpp"
+  }, {
+    "spdxElementId" : "hiview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "jsoncpp"
+  }, {
+    "spdxElementId" : "kv_store",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "jsoncpp"
+  }, {
+    "spdxElementId" : "netmanager_base",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "jsoncpp"
+  }, {
+    "spdxElementId" : "netstack",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "jsoncpp"
+  }, {
+    "spdxElementId" : "telephony_data",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "jsoncpp"
+  }, {
+    "spdxElementId" : "work_scheduler",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "jsoncpp"
+  }, {
+    "spdxElementId" : "form_fwk",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "kv_store"
+  }, {
+    "spdxElementId" : "kv_store",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "kv_store"
+  }, {
+    "spdxElementId" : "media_library",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "kv_store"
+  }, {
+    "spdxElementId" : "os_account",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "kv_store"
+  }, {
+    "spdxElementId" : "relational_store",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "kv_store"
+  }, {
+    "spdxElementId" : "call_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libphonenumber"
+  }, {
+    "spdxElementId" : "cellular_call",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libphonenumber"
+  }, {
+    "spdxElementId" : "core_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libphonenumber"
+  }, {
+    "spdxElementId" : "libphonenumber",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libphonenumber"
+  }, {
+    "spdxElementId" : "access_token",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "accessibility",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "app_file_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "background_task_mgr",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "battery_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "bluetooth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "call_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "cellular_data",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "config_policy",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "core_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "data_share",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "device_status",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "device_usage_statistics",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "display_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "enterprise_device_management",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "eventhandler",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "file_api",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "form_fwk",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "hisysevent_native",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "hitrace_native",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "huks",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "init",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "input",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "kv_store",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "location",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "media_library",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "multimedia_av_session",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "multimedia_image_framework",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "netmanager_base",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "netmanager_ext",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "netstack",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "os_account",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "power_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "preferences",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "profiler",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "relational_store",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "sensor",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "settings_standard",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "sms_mms",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "state_registry",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "storage_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "sys_installer",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "syscap_codec",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "thermal_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "toolchain",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "update_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "user_file_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "webview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "work_scheduler",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libuv"
+  }, {
+    "spdxElementId" : "bluetooth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libxml2"
+  }, {
+    "spdxElementId" : "drivers_peripheral_power",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libxml2"
+  }, {
+    "spdxElementId" : "frame_aware_sched",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libxml2"
+  }, {
+    "spdxElementId" : "hiview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libxml2"
+  }, {
+    "spdxElementId" : "memmgr",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libxml2"
+  }, {
+    "spdxElementId" : "power_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libxml2"
+  }, {
+    "spdxElementId" : "preferences",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libxml2"
+  }, {
+    "spdxElementId" : "soc_perf",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libxml2"
+  }, {
+    "spdxElementId" : "thermal_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "libxml2"
+  }, {
+    "spdxElementId" : "location",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "location"
+  }, {
+    "spdxElementId" : "media_library",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "media_library"
+  }, {
+    "spdxElementId" : "storage_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "media_library"
+  }, {
+    "spdxElementId" : "memmgr",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "memmgr"
+  }, {
+    "spdxElementId" : "battery_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "miscdevice"
+  }, {
+    "spdxElementId" : "miscdevice",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "miscdevice"
+  }, {
+    "spdxElementId" : "multimedia_av_session",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "multimedia_av_session"
+  }, {
+    "spdxElementId" : "input",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "multimedia_image_framework"
+  }, {
+    "spdxElementId" : "media_library",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "multimedia_image_framework"
+  }, {
+    "spdxElementId" : "multimedia_av_session",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "multimedia_image_framework"
+  }, {
+    "spdxElementId" : "multimedia_image_framework",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "multimedia_image_framework"
+  }, {
+    "spdxElementId" : "webview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "multimedia_image_framework"
+  }, {
+    "spdxElementId" : "appspawn",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "netmanager_base"
+  }, {
+    "spdxElementId" : "cellular_data",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "netmanager_base"
+  }, {
+    "spdxElementId" : "device_attest",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "netmanager_base"
+  }, {
+    "spdxElementId" : "netmanager_base",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "netmanager_base"
+  }, {
+    "spdxElementId" : "netmanager_ext",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "netmanager_base"
+  }, {
+    "spdxElementId" : "webview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "netmanager_base"
+  }, {
+    "spdxElementId" : "core_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "netmanager_ext"
+  }, {
+    "spdxElementId" : "netmanager_ext",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "netmanager_ext"
+  }, {
+    "spdxElementId" : "netstack",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "netstack"
+  }, {
+    "spdxElementId" : "accessibility",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "os_account"
+  }, {
+    "spdxElementId" : "background_task_mgr",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "os_account"
+  }, {
+    "spdxElementId" : "battery_statistics",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "os_account"
+  }, {
+    "spdxElementId" : "certificate_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "os_account"
+  }, {
+    "spdxElementId" : "device_auth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "os_account"
+  }, {
+    "spdxElementId" : "device_usage_statistics",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "os_account"
+  }, {
+    "spdxElementId" : "dsoftbus",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "os_account"
+  }, {
+    "spdxElementId" : "enterprise_device_management",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "os_account"
+  }, {
+    "spdxElementId" : "hiview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "os_account"
+  }, {
+    "spdxElementId" : "huks",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "os_account"
+  }, {
+    "spdxElementId" : "location",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "os_account"
+  }, {
+    "spdxElementId" : "memmgr",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "os_account"
+  }, {
+    "spdxElementId" : "os_account",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "os_account"
+  }, {
+    "spdxElementId" : "work_scheduler",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "os_account"
+  }, {
+    "spdxElementId" : "os_account",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "pin_auth"
+  }, {
+    "spdxElementId" : "battery_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "power_manager"
+  }, {
+    "spdxElementId" : "battery_statistics",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "power_manager"
+  }, {
+    "spdxElementId" : "call_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "power_manager"
+  }, {
+    "spdxElementId" : "core_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "power_manager"
+  }, {
+    "spdxElementId" : "device_usage_statistics",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "power_manager"
+  }, {
+    "spdxElementId" : "display_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "power_manager"
+  }, {
+    "spdxElementId" : "form_fwk",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "power_manager"
+  }, {
+    "spdxElementId" : "hiview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "power_manager"
+  }, {
+    "spdxElementId" : "power_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "power_manager"
+  }, {
+    "spdxElementId" : "thermal_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "power_manager"
+  }, {
+    "spdxElementId" : "webview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "power_manager"
+  }, {
+    "spdxElementId" : "accessibility",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "preferences"
+  }, {
+    "spdxElementId" : "core_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "preferences"
+  }, {
+    "spdxElementId" : "preferences",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "preferences"
+  }, {
+    "spdxElementId" : "telephony_data",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "preferences"
+  }, {
+    "spdxElementId" : "curl",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "profiler"
+  }, {
+    "spdxElementId" : "device_attest",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "profiler"
+  }, {
+    "spdxElementId" : "libphonenumber",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "profiler"
+  }, {
+    "spdxElementId" : "netstack",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "profiler"
+  }, {
+    "spdxElementId" : "profiler",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "profiler"
+  }, {
+    "spdxElementId" : "cellular_data",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "relational_store"
+  }, {
+    "spdxElementId" : "core_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "relational_store"
+  }, {
+    "spdxElementId" : "device_usage_statistics",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "relational_store"
+  }, {
+    "spdxElementId" : "form_fwk",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "relational_store"
+  }, {
+    "spdxElementId" : "media_library",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "relational_store"
+  }, {
+    "spdxElementId" : "relational_store",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "relational_store"
+  }, {
+    "spdxElementId" : "settings_standard",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "relational_store"
+  }, {
+    "spdxElementId" : "sms_mms",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "relational_store"
+  }, {
+    "spdxElementId" : "telephony_data",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "relational_store"
+  }, {
+    "spdxElementId" : "webview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "relational_store"
+  }, {
+    "spdxElementId" : "ril_adapter",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "ril_adapter"
+  }, {
+    "spdxElementId" : "appspawn",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "selinux"
+  }, {
+    "spdxElementId" : "e2fsprogs",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "selinux"
+  }, {
+    "spdxElementId" : "init",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "selinux"
+  }, {
+    "spdxElementId" : "media_library",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "selinux"
+  }, {
+    "spdxElementId" : "os_account",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "selinux"
+  }, {
+    "spdxElementId" : "selinux",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "selinux"
+  }, {
+    "spdxElementId" : "storage_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "selinux"
+  }, {
+    "spdxElementId" : "sys_installer",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "selinux"
+  }, {
+    "spdxElementId" : "device_status",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "sensor"
+  }, {
+    "spdxElementId" : "display_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "sensor"
+  }, {
+    "spdxElementId" : "power_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "sensor"
+  }, {
+    "spdxElementId" : "sensor",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "sensor"
+  }, {
+    "spdxElementId" : "call_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "sms_mms"
+  }, {
+    "spdxElementId" : "sms_mms",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "sms_mms"
+  }, {
+    "spdxElementId" : "soc_perf",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "soc_perf"
+  }, {
+    "spdxElementId" : "webview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "soc_perf"
+  }, {
+    "spdxElementId" : "bluetooth",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "state_registry"
+  }, {
+    "spdxElementId" : "state_registry",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "state_registry"
+  }, {
+    "spdxElementId" : "media_library",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "storage_service"
+  }, {
+    "spdxElementId" : "os_account",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "storage_service"
+  }, {
+    "spdxElementId" : "storage_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "storage_service"
+  }, {
+    "spdxElementId" : "thermal_manager",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "thermal_manager"
+  }, {
+    "spdxElementId" : "work_scheduler",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "thermal_manager"
+  }, {
+    "spdxElementId" : "multimedia_image_framework",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "thirdparty_giflib"
+  }, {
+    "spdxElementId" : "curl",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "thirdparty_nghttp2"
+  }, {
+    "spdxElementId" : "sys_installer",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "thirdparty_nghttp2"
+  }, {
+    "spdxElementId" : "media_library",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "user_file_service"
+  }, {
+    "spdxElementId" : "user_file_service",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "user_file_service"
+  }, {
+    "spdxElementId" : "webview",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "webview"
+  }, {
+    "spdxElementId" : "work_scheduler",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "work_scheduler"
+  }, {
+    "spdxElementId" : "ability_base",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "zlib"
+  }, {
+    "spdxElementId" : "curl",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "zlib"
+  }, {
+    "spdxElementId" : "kv_store",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "zlib"
+  }, {
+    "spdxElementId" : "multimedia_image_framework",
+    "relationshipType" : "DEPENDS_ON",
+    "relatedSpdxElement" : "zlib"
+  } ]
+}
