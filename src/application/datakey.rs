@@ -114,7 +114,7 @@ impl<R, S> DBKeyService<R, S>
             (KeyAction::Disable, vec![KeyState::Enabled]),
             (KeyAction::Sign, vec![KeyState::Enabled, KeyState::PendingDelete, KeyState::PendingRevoke]),
             (KeyAction::IssueCert, vec![KeyState::Enabled, KeyState::PendingDelete, KeyState::PendingRevoke]),
-            (KeyAction::Read, vec![KeyState::Enabled, KeyState::PendingDelete, KeyState::PendingRevoke]),
+            (KeyAction::Read, vec![KeyState::Enabled, KeyState::PendingDelete, KeyState::PendingRevoke, KeyState::Disabled]),
         ]);
         match valid_action_by_key_type.get(&key.key_type) {
             None => {
@@ -150,6 +150,16 @@ where
     S: SignBackend + ?Sized + 'static
 {
     async fn create(&self, data: &mut DataKey) -> Result<DataKey> {
+        //check parent key is enabled and expire time is greater than child key
+        if let Some(parent_id) = data.parent_id {
+            let parent_key = self.repository.get_by_id(parent_id).await?;
+            if parent_key.key_state != KeyState::Enabled {
+                return Err(Error::ActionsNotAllowedError(format!("parent key '{}' not in enable state", parent_id)));
+            }
+            if parent_key.expire_at < data.expire_at {
+                return Err(Error::ActionsNotAllowedError(format!("parent key '{}' expire time is less than child key", parent_id)));
+            }
+        }
         //we need to create a key in database first, then generate sensitive data
         let mut key = self.repository.create(data.clone()).await?;
         match self.sign_service.read().await.generate_keys(&mut key).await {
@@ -199,6 +209,13 @@ where
         let user_id = user.id;
         let user_email = user.email.clone();
         let key = self.get_and_check_permission(Some(user), id_or_name, KeyAction::Delete).await?;
+        //check if the ca/ica key is used by other keys
+        if key.key_type == KeyType::X509ICA || key.key_type == KeyType::X509CA {
+            let children = self.repository.get_by_parent_id(key.id).await?;
+            if !children.is_empty() {
+                return Err(Error::ActionsNotAllowedError(format!("key '{}' is used by other keys, request delete is not allowed", key.name)));
+            }
+        }
         self.repository.request_delete_key(user_id, user_email, key.id).await
     }
 

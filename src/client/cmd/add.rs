@@ -41,8 +41,8 @@ use std::sync::atomic::{AtomicI32, Ordering};
 lazy_static! {
     pub static ref FILE_EXTENSION: HashMap<FileType, Vec<&'static str>> = HashMap::from([
         (FileType::Rpm, vec!["rpm", "srpm"]),
-        //checksum file can be used for any file
-        (FileType::CheckSum, vec![".*"]),
+        //Generic file can be used for any file
+        (FileType::Generic, vec![".*"]),
         (FileType::KernelModule, vec!["ko"]),
         (FileType::EfiImage, vec!["efi"]),
     ]);

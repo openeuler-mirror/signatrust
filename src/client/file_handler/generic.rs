@@ -26,24 +26,25 @@ use crate::util::options;
 use crate::util::error::Error;
 use std::collections::HashMap;
 
+//Stands for ASCII Armored file
 const FILE_EXTENSION: &str = "asc";
 
 #[derive(Clone)]
-pub struct CheckSumFileHandler {}
+pub struct GenericFileHandler {}
 
-impl CheckSumFileHandler {
+impl GenericFileHandler {
     pub fn new() -> Self {
         Self {}
     }
 }
 
 #[async_trait]
-impl FileHandler for CheckSumFileHandler {
+impl FileHandler for GenericFileHandler {
     fn validate_options(&self, sign_options: &HashMap<String, String>) -> Result<()> {
         if let Some(detached) = sign_options.get(options::DETACHED) {
             if detached == "false" {
                 return Err(Error::InvalidArgumentError(
-                    "checksum file only support detached signature".to_string(),
+                    "generic file only support detached signature".to_string(),
                 ));
             }
         }
@@ -51,14 +52,14 @@ impl FileHandler for CheckSumFileHandler {
         if let Some(key_type) = sign_options.get(options::KEY_TYPE) {
             if key_type != KeyType::Pgp.to_string().as_str() {
                 return Err(Error::InvalidArgumentError(
-                    "checksum file only support pgp key type".to_string(),
+                    "generic file only support pgp key type".to_string(),
                 ));
             }
         }
         Ok(())
     }
 
-    /* when assemble checksum signature when only create another .asc file separately */
+    /* when assemble generic signature when only create another .asc file separately */
     async fn assemble_data(
         &self,
         path: &PathBuf,
@@ -86,12 +87,12 @@ mod test {
     fn test_validate_options() {
         let mut options = HashMap::new();
         options.insert(options::DETACHED.to_string(), "false".to_string());
-        let handler = CheckSumFileHandler::new();
+        let handler = GenericFileHandler::new();
         let result = handler.validate_options(&options);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
-            "invalid argument: checksum file only support detached signature"
+            "invalid argument: generic file only support detached signature"
         );
 
         options.remove(options::DETACHED);
@@ -108,13 +109,13 @@ mod test {
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
-            "invalid argument: checksum file only support pgp key type"
+            "invalid argument: generic file only support pgp key type"
         );
     }
 
     #[tokio::test]
     async fn test_assemble_data() {
-        let handler = CheckSumFileHandler::new();
+        let handler = GenericFileHandler::new();
         let options = HashMap::new();
         let path = PathBuf::from("./test_data/test.txt");
         let data = vec![vec![1, 2, 3]];
