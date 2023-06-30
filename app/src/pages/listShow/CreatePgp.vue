@@ -25,7 +25,7 @@
       <el-form-item label="Expire"  prop="expire_at">
         <el-date-picker
           v-model="formLabelAlign.expire_at"
-          type="date"
+          type="month"
           placeholder="Choose expire date time"
           :disabled-date="pickerOptions"
         />
@@ -36,7 +36,7 @@
           class="ml-4"
           @change="getChange()"
         >
-          <el-radio label="private" title="The private key pairs are managed by yourself, no one else can seen/use your private key pairs.">Private</el-radio>
+          <!-- <el-radio label="private" title="The private key pairs are managed by yourself, no one else can seen/use your private key pairs.">Private</el-radio> -->
           <el-radio label="public" title="The public key pairs can be created/used by any administrator, but in order to delete it, it require triple confirms from different administrators.">Public</el-radio>
         </el-radio-group>
       </el-form-item>
@@ -115,7 +115,7 @@ const formLabelAlign = reactive<any>({
   name: "",
   expire_at: "",
   description: "",
-  visibility: "private",
+  visibility: "public",
   paw2: "",
   digest_algorithm: "none",
   key_type: "rsa",
@@ -210,7 +210,7 @@ const cleanForm = () => {
   formLabelAlign.digest_algorithm = "none";
   formLabelAlign.key_length = "2048";
   formLabelAlign.key_type = "rsa";
-  formLabelAlign.visibility = "private";
+  formLabelAlign.visibility = "public";
 };
 // 表单校验规则
 /* 姓名 */
