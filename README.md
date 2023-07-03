@@ -103,7 +103,7 @@ This project consists of several binaries:
 
 # Quick Start Guide
 ## Local development
-Run these command correspondingly to build or run project executable binary:
+Run these commands correspondingly to build or run project executable binary:
 ```shell
 # build binary
 cargo build --bin control-server/data-server/client/control-admin

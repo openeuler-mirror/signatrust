@@ -318,7 +318,6 @@ async fn cancel_revoke_data_key(user: UserIdentity, key_service: web::Data<dyn K
 /// ```text
 /// curl -X POST https://domain:port/api/v1/keys/{id_or_name}/public_key
 /// ```
-/// ## Note: this endpoint is public for public keys, for private keys, it requires authentication.
 #[utoipa::path(
     get,
     path = "/api/v1/keys/{id_or_name}/public_key",
@@ -349,7 +348,6 @@ async fn export_public_key(user: Option<UserIdentity>, key_service: web::Data<dy
 /// ```text
 /// curl -X POST https://domain:port/api/v1/keys/{id_or_name}/certificate
 /// ```
-/// ## Note: this endpoint is public for public keys, for private keys, it requires authentication.
 #[utoipa::path(
     get,
     path = "/api/v1/keys/{id_or_name}/certificate",
@@ -380,7 +378,6 @@ async fn export_certificate(user: Option<UserIdentity>, key_service: web::Data<d
 /// ```text
 /// curl -X POST https://domain:port/api/v1/keys/{id_or_name}/crl
 /// ```
-/// ## Note: this endpoint is public for public keys, for private keys, it requires authentication.
 #[utoipa::path(
     get,
     path = "/api/v1/keys/{id_or_name}/crl",

@@ -21,7 +21,7 @@ use std::env;
 use validator::Validate;
 use chrono::{Duration, Utc};
 use crate::util::error::{Result};
-use crate::domain::datakey::entity::KeyType as EntityKeyTpe;
+use crate::domain::datakey::entity::{KeyType as EntityKeyTpe, KeyType};
 use clap::{Parser, Subcommand};
 use clap::{Args};
 use tokio_util::sync::CancellationToken;
@@ -176,6 +176,12 @@ async fn main() -> Result<()> {
                 parent_id: None,
                 expire_at: format!("{}", now + Duration::days(30)),
             };
+            if generate_keys.key_type == KeyType::X509CA.to_string() {
+                key.expire_at = format!("{}", now + Duration::days(365));
+            }
+            if generate_keys.key_type == KeyType::X509ICA.to_string() {
+                key.expire_at = format!("{}", now + Duration::days(180));
+            }
             if let Some(id) = generate_keys.param_x509_parent_name {
                 let data_key = control_server.get_key_by_name(&id).await?;
                 key.parent_id = Some(data_key.id);

@@ -35,7 +35,8 @@ use crate::infra::database::pool::{create_pool, get_db_pool};
 use crate::infra::sign_backend::factory::SignBackendFactory;
 
 
-use crate::presentation::handler::data::sign_handler::get_grpc_handler;
+use crate::presentation::handler::data::sign_handler::get_grpc_handler as sign_grpc_handler;
+use crate::presentation::handler::data::health_handler::get_grpc_handler as health_grpc_handler;
 use crate::util::error::Result;
 
 pub struct DataServer
@@ -125,12 +126,14 @@ impl DataServer {
         if let Some(identity) = self.server_identity.clone() {
             server
                 .tls_config(ServerTlsConfig::new().identity(identity).client_ca_root(self.ca_cert.clone().unwrap()))?
-                .add_service(get_grpc_handler(key_service, user_service))
+                .add_service(sign_grpc_handler(key_service, user_service))
+                .add_service(health_grpc_handler())
                 .serve_with_shutdown(addr, self.shutdown_signal())
                 .await?
         } else {
             server
-                .add_service(get_grpc_handler(key_service, user_service))
+                .add_service(sign_grpc_handler(key_service, user_service))
+                .add_service(health_grpc_handler())
                 .serve_with_shutdown(addr, self.shutdown_signal())
                 .await?
         }
