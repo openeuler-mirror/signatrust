@@ -6,7 +6,7 @@ COPY . /app
 
 RUN cargo +nightly build --release --bin $BINARY --target x86_64-unknown-linux-musl
 
-FROM alpine:latest
+FROM openeuler/openeuler:22.03
 ARG BINARY
 ENV BINARY=${BINARY}
 WORKDIR /app

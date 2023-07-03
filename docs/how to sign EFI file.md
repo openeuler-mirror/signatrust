@@ -20,7 +20,7 @@ Since the UEFI executable is a [PE/COFF format file](https://en.wikipedia.org/wi
 5. multi signatures are allowed in a single image(referred as signatures table blow), each signature MUST start at a virtual address aligned to quadword-aligned[2]
 6. the signatures MAY end up with some zero-bytes so that the size of `signatures table` can be aligned to quadword
 
-Here's an brief image to illustrates the signature outline.
+Here's an brief image to illustrate the signature outline.
 
 ![](./images/signatrust_outline.png)
 
@@ -33,7 +33,7 @@ So in the SignedData structure, something we should keep in mind:
 3. the digest algorithm was a choice from `sha256(default)`, `sha1` and `MD5(backwards only)`(details below)
 4. in Authenticode, only one `signerInfo structure` is needed in `signerInfos`
 
-Here's an image to illustrates the signedData.
+Here's an image to illustrate the signedData.
 
 ![](./images/signedData.png)
 

@@ -92,6 +92,8 @@ impl Modify for SecurityAddon {
         crate::presentation::handler::control::user_handler::new_token,
         crate::presentation::handler::control::user_handler::list_token,
         crate::presentation::handler::control::user_handler::delete_token,
+
+        crate::presentation::handler::control::health_handler::health,
     ),
     components(
         schemas(crate::presentation::handler::control::model::datakey::dto::DataKeyDTO,
