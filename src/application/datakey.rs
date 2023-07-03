@@ -141,6 +141,25 @@ impl<R, S> DBKeyService<R, S>
         }
         Ok(())
     }
+    async fn check_key_hierarchy(&self, data: &DataKey, parent_id: i32) -> Result<()> {
+        let parent_key = self.repository.get_by_id(parent_id).await?;
+        if parent_key.key_state != KeyState::Enabled {
+            return Err(Error::ActionsNotAllowedError(format!("parent key '{}' not in enable state", parent_id)));
+        }
+        if parent_key.expire_at < data.expire_at {
+            return Err(Error::ActionsNotAllowedError(format!("parent key '{}' expire time is less than child key", parent_id)));
+        }
+        if data.key_type == X509ICA && parent_key.key_type != X509CA {
+            return Err(Error::ActionsNotAllowedError("only CA key is allowed for creating ICA".to_string()));
+        }
+        if data.key_type == X509EE && parent_key.key_type != X509ICA {
+            return Err(Error::ActionsNotAllowedError("only ICA key is allowed for creating End Entity Key".to_string()));
+        }
+        if data.key_type == X509CA {
+            return Err(Error::ActionsNotAllowedError("CA key is not allowed to specify parent key".to_string()));
+        }
+        Ok(())
+    }
 }
 
 #[async_trait]
@@ -150,15 +169,9 @@ where
     S: SignBackend + ?Sized + 'static
 {
     async fn create(&self, data: &mut DataKey) -> Result<DataKey> {
-        //check parent key is enabled and expire time is greater than child key
+        //check parent key is enabled,expire time is greater than child key and hierarchy is correct
         if let Some(parent_id) = data.parent_id {
-            let parent_key = self.repository.get_by_id(parent_id).await?;
-            if parent_key.key_state != KeyState::Enabled {
-                return Err(Error::ActionsNotAllowedError(format!("parent key '{}' not in enable state", parent_id)));
-            }
-            if parent_key.expire_at < data.expire_at {
-                return Err(Error::ActionsNotAllowedError(format!("parent key '{}' expire time is less than child key", parent_id)));
-            }
+            self.check_key_hierarchy(data, parent_id).await?;
         }
         //we need to create a key in database first, then generate sensitive data
         let mut key = self.repository.create(data.clone()).await?;
