@@ -76,7 +76,7 @@ lazy_static! {
         let path = app.config.unwrap_or(format!("{}/{}", env::current_dir().expect("current dir not found").display(),
             "config/server.toml"));
         let server_config = util::config::ServerConfig::new(path);
-        //TODO: Enable watch configure will 100 percent cpu consumption, fix it later
+        //TODO: Enable watch configure file will lead to 100 percent cpu consumption, fix it later
         //server_config.watch(CANCEL_TOKEN.clone()).expect("failed to watch configure file");
         server_config.config
     };
