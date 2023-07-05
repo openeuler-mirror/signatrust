@@ -14,6 +14,8 @@
  *
  */
 
+use std::array::TryFromSliceError;
+use std::convert::Infallible;
 use config::ConfigError;
 use pgp::composed::key::SecretKeyParamsBuilderError;
 use pgp::errors::Error as PGPError;
@@ -40,6 +42,7 @@ use openidconnect::url::ParseError as OIDCParseError;
 use openidconnect::ConfigurationError;
 use openidconnect::UserInfoError;
 use anyhow::Error as AnyhowError;
+use csrf::CsrfError;
 use utoipa::{ToSchema};
 use efi_signer::error::Error as EFIError;
 
@@ -96,6 +99,8 @@ pub enum Error {
     UnprivilegedError,
     #[error("operation disallowed: {0}")]
     ActionsNotAllowedError(String),
+    #[error("framework error: {0}")]
+    FrameworkError(String),
 
     //client error
     #[error("file extension {0} not supported for file {1}")]
@@ -362,4 +367,31 @@ impl From<EFIError> for Error {
         Error::EFIError(error.to_string())
     }
 }
+
+impl From<CsrfError> for Error {
+    fn from(error: CsrfError) -> Self {
+        Error::FrameworkError(error.to_string())
+    }
+}
+
+impl From<actix_web::Error> for Error {
+    fn from(error: actix_web::Error) -> Self { Error::FrameworkError(error.to_string()) }
+}
+
+impl From<data_encoding::DecodeError> for Error {
+    fn from(error: data_encoding::DecodeError) -> Self { Error::FrameworkError(error.to_string()) }
+}
+
+impl From<Infallible> for Error {
+    fn from(error: Infallible) -> Self { Error::FrameworkError(error.to_string()) }
+}
+
+impl From<TryFromSliceError> for Error {
+    fn from(error: TryFromSliceError) -> Self { Error::FrameworkError(error.to_string()) }
+}
+
+impl From<Vec<u8>> for Error {
+    fn from(error: Vec<u8>) -> Self { Error::KeyParseError(format!("original vec {:?}", error)) }
+}
+
 

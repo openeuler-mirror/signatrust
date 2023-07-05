@@ -18,6 +18,7 @@ use actix_web::{HttpResponse, Responder, Result, web, Scope, HttpRequest, HttpMe
 use crate::util::error::Error;
 use super::model::user::dto::UserIdentity;
 use actix_identity::Identity;
+use secstr::SecVec;
 use validator::Validate;
 
 use crate::application::user::UserService;
@@ -103,9 +104,11 @@ async fn logout(id: Identity) -> Result<impl Responder, Error> {
     (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn callback(req: HttpRequest, user_service: web::Data<dyn UserService>, code: web::Query<Code>) -> Result<impl Responder, Error> {
+async fn callback(req: HttpRequest, user_service: web::Data<dyn UserService>, code: web::Query<Code>, protect_key: web::Data<SecVec<u8>>) -> Result<impl Responder, Error> {
     code.validate()?;
-    let user_entity:UserIdentity = UserIdentity::from(user_service.into_inner().validate_user(&code.code).await?);
+    //generate csrf token and cookie
+    let protect_key_array:[u8; 32] = protect_key.unsecure().try_into()?;
+    let user_entity = UserIdentity::from_user_with_csrf_token(user_service.validate_user(&code.code).await?, protect_key_array)?;
     match Identity::login(&req.extensions(), serde_json::to_string(&user_entity)?) {
         Ok(_) => {
             Ok(HttpResponse::Found().insert_header(("Location", "/")).finish())
