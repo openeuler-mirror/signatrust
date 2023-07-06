@@ -2,7 +2,7 @@ import axios from 'axios';
 import type { AxiosRequestConfig, AxiosPromise } from 'axios';
 import { ElMessage } from 'element-plus';
 import { showGuard } from '@/shared/utils/login';
-
+import Cookies from 'js-cookie';
 // 创建一个 axios 实例
 const service = axios.create({
   timeout: 60000, // 请求超时时间毫秒
@@ -12,14 +12,16 @@ const service = axios.create({
 });
 // 添加请求拦截器
 service.interceptors.request.use(
-  // 在发送请求之前做些什么
-
-  (config: any) => {
+  (config) => {
+    // 在发送请求之前做些什么
+    const token = Cookies.get('Xsrf-Token');
+    if (token) {
+      config.headers['Xsrf-Token'] = token;
+    }
     return config;
   },
-  error => {
+  (error) => {
     // 对请求错误做些什么
-    console.log(error);
     return Promise.reject(error);
   }
 );
