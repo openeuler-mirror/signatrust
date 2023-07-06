@@ -60,9 +60,8 @@ fn main() -> Result<()> {
     let app = App::parse();
     let path = app.config.unwrap_or(
         format!("{}/{}", env::current_dir().expect("current dir not found").display(), "client.toml"));
-    let mut client = Config::default();
-    client
-        .merge(File::with_name(path.as_str())).expect("load client configuration file");
+    let client = Config::builder().add_source(File::with_name(path.as_str())).build().expect("load client configuration file");
+
     let signal = Arc::new(AtomicBool::new(false));
     signal_hook::flag::register(signal_hook::consts::SIGTERM, Arc::clone(&signal)).expect("failed to register sigterm signal");
     signal_hook::flag::register(signal_hook::consts::SIGINT, Arc::clone(&signal)).expect("failed to register sigint signal");

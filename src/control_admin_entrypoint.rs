@@ -41,8 +41,6 @@ mod presentation;
 
 #[macro_use]
 extern crate log;
-#[macro_use]
-extern crate lazy_static;
 
 #[derive(Parser)]
 #[command(name = "signatrust-admin")]

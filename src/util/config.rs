@@ -69,7 +69,8 @@ impl ServerConfig {
                                 ..
                             })) => {
                                 info!("server configuration changed ...");
-                                config.write().unwrap().refresh().expect("failed to write configuration file");
+                                let mut conf = config.write().unwrap();
+                                *conf = Config::builder().add_source(File::with_name(watch_file.as_str())).build_cloned().expect("reloading from configuration file");
                             }
                             Some(Err(e)) => error!("watch error: {:?}", e),
                             _ => {}
