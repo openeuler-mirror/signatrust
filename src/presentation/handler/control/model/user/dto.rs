@@ -8,7 +8,6 @@ use std::pin::Pin;
 use futures::Future;
 use serde::{Deserialize, Serialize};
 use std::convert::From;
-use std::str::FromStr;
 use actix_web::http::header::HeaderName;
 use crate::application::user::UserService;
 use crate::domain::user::entity::User;
@@ -22,9 +21,9 @@ use secstr::SecVec;
 use crate::util::error::Error::GeneratingKeyError;
 use crate::util::key::generate_csrf_parent_token;
 
-const CSRF_HEADER_NAME: &str = "Xsrf-Token";
-const AUTH_HEADER_NAME: &str = "Authorization";
-const SET_COOKIE_HEADER: &str = "set-cookie";
+pub const CSRF_HEADER_NAME: &str = "Xsrf-Token";
+pub const AUTH_HEADER_NAME: &str = "Authorization";
+pub const SET_COOKIE_HEADER: &str = "set-cookie";
 
 
 #[derive(Debug, Deserialize, Serialize, ToSchema)]
@@ -71,25 +70,26 @@ impl UserIdentity {
         Ok(cookie.b64_string())
     }
 
-    pub fn csrf_token_valid(&self, protect_key: [u8; 32], value: &str) -> SignatrustResult<bool> {
+    pub fn csrf_cookie_valid(&self, protect_key: [u8; 32], value: &str) -> SignatrustResult<bool> {
         let protect = AesGcmCsrfProtection::from_key(protect_key);
-        let csrf = BASE64.decode(value.as_bytes())?;
-        let token = BASE64.decode(self.csrf_token.clone().unwrap().as_bytes())?;
-        Ok(protect.verify_token_pair(&protect.parse_token(&token)?, &protect.parse_cookie(&csrf)?))
+        Ok(protect.verify_token_pair(
+            &protect.parse_token(
+                &BASE64.decode(self.csrf_token.clone().unwrap().as_bytes())?)?,
+            &protect.parse_cookie(
+                &BASE64.decode(value.as_bytes())?)?))
     }
 
-    pub async fn append_csrf_token(req: ServiceRequest,  next: Next<impl MessageBody + 'static>) -> core::result::Result<ServiceResponse<impl MessageBody + 'static>, actix_web::error::Error> {
+    pub async fn append_csrf_cookie(req: ServiceRequest,  next: Next<impl MessageBody + 'static>) -> core::result::Result<ServiceResponse<impl MessageBody + 'static>, actix_web::error::Error> {
         let mut response = next.call(req).await?;
-        let http_req = response.request();
-        if let Ok(identity) = Identity::from_request(http_req, &mut Payload::None).into_inner() {
+        if let Ok(identity) = Identity::from_request(response.request(), &mut Payload::None).into_inner() {
              if let Ok(user_json) = identity.id() {
                  if let Ok(user) = serde_json::from_str::<UserIdentity>(&user_json) {
                      if response.status() == StatusCode::UNAUTHORIZED {
                          //only append csrf token in authorized response
                          return Ok(response);
                      }
-                     //generate csrf token based on user token
-                     if let Some(protect_key) = http_req.app_data::<web::Data<SecVec<u8>>>() {
+                     //generate csrf cookie based on user token
+                     if let Some(protect_key) = response.request().app_data::<web::Data<SecVec<u8>>>() {
                          if let Ok(protect_key_array) = protect_key.clone().unsecure().try_into() {
                              if let Ok(csrf_token) = user.generate_new_csrf_cookie(protect_key_array, 600) {
                                  let http_header = response.headers_mut();
@@ -160,7 +160,7 @@ impl FromRequest for UserIdentity {
                     if let Some(protect_key) = req.app_data::<web::Data<SecVec<u8>>>() {
                         if let Some(header) = req.headers().get(CSRF_HEADER_NAME) {
                             if let Ok(protect_key_array) = protect_key.clone().unsecure().try_into() {
-                                if let Ok(true) = user.csrf_token_valid(protect_key_array, header.to_str().unwrap()) {
+                                if let Ok(true) = user.csrf_cookie_valid(protect_key_array, header.to_str().unwrap()) {
                                     return Ok(user)
                                 } else {
                                     warn!("csrf header is invalid");

@@ -29,7 +29,6 @@ use actix_session::{config::PersistentSession, storage::RedisSessionStore, Sessi
 use actix_limitation::{Limiter, RateLimiter};
 use time::Duration as timeDuration;
 use std::time::Duration;
-use actix_web_lab::middleware::{from_fn};
 
 use crate::infra::database::model::datakey::repository as datakeyRepository;
 use crate::infra::database::pool::{create_pool, get_db_pool};
@@ -198,7 +197,11 @@ impl ControlServer {
 
         let http_server = HttpServer::new(move || {
             App::new()
-                .wrap(from_fn(UserIdentity::append_csrf_token))
+                //NOTE: csrf protect,following the suggestion from https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html
+                //there is no need to update csrf cookie for every request
+                //in the case of signed double submit cookie ,disable updating csrf token in middleware automatically
+                //now and open it if we have to.
+                //.wrap(from_fn(UserIdentity::append_csrf_cookie))
                 .wrap(middleware::Logger::default())
                 .wrap(IdentityMiddleware::default())
                 //rate limiter handler

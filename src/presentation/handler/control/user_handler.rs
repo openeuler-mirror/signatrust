@@ -18,12 +18,13 @@ use actix_web::{HttpResponse, Responder, Result, web, Scope, HttpRequest, HttpMe
 use crate::util::error::Error;
 use super::model::user::dto::UserIdentity;
 use actix_identity::Identity;
+use actix_web::cookie::Cookie;
 use secstr::SecVec;
 use validator::Validate;
 
 use crate::application::user::UserService;
 use crate::presentation::handler::control::model::token::dto::{CreateTokenDTO, TokenDTO};
-use crate::presentation::handler::control::model::user::dto::Code;
+use crate::presentation::handler::control::model::user::dto::{Code, CSRF_HEADER_NAME};
 
 /// Start the login OIDC login process
 ///
@@ -111,7 +112,13 @@ async fn callback(req: HttpRequest, user_service: web::Data<dyn UserService>, co
     let user_entity = UserIdentity::from_user_with_csrf_token(user_service.validate_user(&code.code).await?, protect_key_array)?;
     match Identity::login(&req.extensions(), serde_json::to_string(&user_entity)?) {
         Ok(_) => {
-            Ok(HttpResponse::Found().insert_header(("Location", "/")).finish())
+            let cookie = Cookie::build(CSRF_HEADER_NAME, user_entity.generate_new_csrf_cookie(protect_key_array, 3600)?)
+                .path("/")
+                .secure(true)
+                .same_site(actix_web::cookie::SameSite::Strict)
+                .expires(time::OffsetDateTime::now_utc() + time::Duration::seconds(3600))
+                .finish();
+            Ok(HttpResponse::Found().cookie(cookie).insert_header(("Location", "/")).finish())
         }
         Err(err) => {
             Err(Error::AuthError(format!("failed to get oidc token {}", err)))
