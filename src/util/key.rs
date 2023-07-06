@@ -36,6 +36,17 @@ pub fn generate_api_token() -> String {
     thread_rng().sample_iter(&Alphanumeric).take(40).map(char::from).collect()
 }
 
+pub fn generate_csrf_parent_token() -> Vec<u8> {
+    let number: Vec<u8> = (0..64).map(|_| thread_rng().gen::<u8>()).collect();
+    number
+}
+pub fn truncate_string_to_protect_key(s: &str) -> [u8; 32] {
+    let truncated = &s.as_bytes()[..32].to_owned();
+    let mut result = [0u8; 32];
+    result[..truncated.len()].copy_from_slice(truncated);
+    result
+}
+
 pub fn get_token_hash(real_token: &str) -> String {
     let mut hasher = Sha256::default();
     hasher.update(real_token);

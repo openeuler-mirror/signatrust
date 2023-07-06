@@ -34,6 +34,8 @@ use crate::infra::database::model::datakey::repository as datakeyRepository;
 use crate::infra::database::pool::{create_pool, get_db_pool};
 use crate::presentation::handler::control::*;
 use actix_web::{dev::ServiceRequest};
+use actix_web::cookie::SameSite;
+use secstr::SecVec;
 use tokio_util::sync::CancellationToken;
 use crate::util::error::Result;
 
@@ -46,7 +48,8 @@ use crate::domain::datakey::entity::DataKey;
 use crate::domain::token::entity::Token;
 use crate::domain::user::entity::User;
 use crate::presentation::handler::control::model::token::dto::{CreateTokenDTO};
-use crate::presentation::handler::control::model::user::dto::UserIdentity;
+use crate::presentation::handler::control::model::user::dto::{UserIdentity};
+use crate::util::key::truncate_string_to_protect_key;
 
 pub struct ControlServer {
     server_config: Arc<RwLock<Config>>,
@@ -190,9 +193,15 @@ impl ControlServer {
         );
 
         let openapi = ControlApiDoc::openapi();
+        let csrf_protect_key = web::Data::new(SecVec::new(truncate_string_to_protect_key(&key).to_vec()));
 
         let http_server = HttpServer::new(move || {
             App::new()
+                //NOTE: csrf protect,following the suggestion from https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html
+                //there is no need to update csrf cookie for every request
+                //in the case of signed double submit cookie ,disable updating csrf token in middleware automatically
+                //now and open it if we have to.
+                //.wrap(from_fn(UserIdentity::append_csrf_cookie))
                 .wrap(middleware::Logger::default())
                 .wrap(IdentityMiddleware::default())
                 //rate limiter handler
@@ -203,12 +212,13 @@ impl ControlServer {
                         store.clone(), Key::from(key.as_bytes()))
                         .session_lifecycle(PersistentSession::default().session_ttl(timeDuration::hours(1)))
                         .cookie_name("Signatrust".to_owned())
-                        .cookie_secure(false)
+                        .cookie_secure(true)
                         .cookie_domain(None)
+                        .cookie_same_site(SameSite::Strict)
                         .cookie_path("/".to_owned())
                         .build(),
                 )
-                // enable logger
+                .app_data(csrf_protect_key.clone())
                 .app_data(key_service.clone())
                 .app_data(user_service.clone())
                 .app_data(limiter.clone())
@@ -249,7 +259,7 @@ impl ControlServer {
     pub async fn create_user_token(&self, user: User) -> Result<Token> {
         let user = self.user_service.save(user).await?;
         self.user_service.generate_token(
-            &UserIdentity::from(user.clone()),
+            &UserIdentity::from_user(user.clone()),
             CreateTokenDTO::new("default admin token".to_owned())).await
     }
 

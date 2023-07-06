@@ -27,7 +27,7 @@ use tokio::sync::RwLock as AsyncRwLock;
 use chrono::Utc;
 use serde::{Deserialize};
 use config::Config;
-use reqwest::{header, Client};
+use reqwest::{header, Client, StatusCode};
 use crate::presentation::handler::control::model::user::dto::UserIdentity;
 use openidconnect::{
     Scope,
@@ -143,13 +143,18 @@ impl<R, T> DBUserService<R, T>
     async fn get_access_token(&self, code: &str) -> Result<AccessToken> {
         match Client::builder().build() {
             Ok(client) => {
-                let token: AccessToken = client.post(&self.oidc_config.token_url).query(&[
+                let response= client.post(&self.oidc_config.token_url).query(&[
                     ("client_id", self.oidc_config.client_id.as_str()),
                     ("client_secret", self.oidc_config.client_secret.as_str()),
                     ("code", code),
                     ("redirect_uri", self.oidc_config.redirect_uri.as_str()),
-                    ("grant_type", "authorization_code")]).send().await?.json().await?;
-                Ok(token)
+                    ("grant_type", "authorization_code")]).send().await?;
+                if response.status() != StatusCode::OK {
+                    Err(Error::AuthError(format!("failed to get access token {}", response.text().await?)))
+                } else {
+                    let resp: AccessToken = response.json().await?;
+                    Ok(resp)
+                }
             }
             Err(err) => {
                 Err(Error::AuthError(err.to_string()))

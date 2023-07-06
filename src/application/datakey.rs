@@ -155,8 +155,8 @@ impl<R, S> DBKeyService<R, S>
         if data.key_type == X509EE && parent_key.key_type != X509ICA {
             return Err(Error::ActionsNotAllowedError("only ICA key is allowed for creating End Entity Key".to_string()));
         }
-        if data.key_type == X509CA {
-            return Err(Error::ActionsNotAllowedError("CA key is not allowed to specify parent key".to_string()));
+        if data.key_type == X509CA || data.key_type == OpenPGP {
+            return Err(Error::ActionsNotAllowedError("CA key or openPGP is not allowed to specify parent key".to_string()));
         }
         Ok(())
     }

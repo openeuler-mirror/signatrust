@@ -188,7 +188,7 @@ async fn main() -> Result<()> {
             }
             key.validate()?;
 
-            let keys = control_server.create_keys(&mut DataKey::create_from(key, UserIdentity::from(user))?).await?;
+            let keys = control_server.create_keys(&mut DataKey::create_from(key, UserIdentity::from_user(user))?).await?;
             info!("[Result]: Keys {} type {} has been successfully generated", &keys.name, &generate_keys.key_type)
         }
         None => {}
