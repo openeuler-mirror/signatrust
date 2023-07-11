@@ -276,10 +276,10 @@
     v-model="dialogTwoVisible"
     :title="exportName?.toUpperCase()"
     width="30%"
-    :show-close="false"
     center
+    show-close
   >
-    <span class="comment">{{ copyValue }}</span>
+    <el-input v-model="copyValue"  type="textarea" :disabled="false" autosize/>
     <div
       :data-clipboard-text="copyValue"
       class="tag"
@@ -287,7 +287,12 @@
       style="margin: 30px auto"
     >
       <button
-        style="padding: 10px 25px; background-color: #002fa7; color: #fff"
+        style="
+          padding: 10px 25px;
+          background-color: #002fa7;
+          color: #fff;
+          cursor: pointer;
+        "
       >
         Copy
       </button>

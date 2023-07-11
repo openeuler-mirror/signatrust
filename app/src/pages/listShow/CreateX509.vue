@@ -329,7 +329,7 @@ const isDesc = (rule: any, value: any, callback: any) => {
   if (!value) {
     callback(console.log('avc'));
   } else {
-    const reg = /^[a-zA-Z0-9-]{1,100}$/;
+    const reg = /^[a-zA-Z0-9-\s]{1,100}$/;
     const desc = reg.test(value);
     if (!desc) {
       callback(
