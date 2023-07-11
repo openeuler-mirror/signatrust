@@ -49,13 +49,13 @@ export function getUserAuth() {
 
 // 退出登录
 export function logout() {
-  queryIDToken().then((res: any) =>window.location.href='https://openeuler-usercenter.test.osinfra.cn/logout?redirect_uri=https://signatrust.test.osinfra.cn/'
+  queryIDToken().then((res: any) =>window.location.href=`https://openeuler-usercenter.test.osinfra.cn/logout?redirect_uri=${window.location.origin}`
  
   );
 }
 
 export function showGuard() {
-  window.location.href = 'https://signatrust.test.osinfra.cn/api/v1/users/login'
+  window.location.href = `${window.location.origin}/api/v1/users/login`
 }
 
 // token失效跳转首页
