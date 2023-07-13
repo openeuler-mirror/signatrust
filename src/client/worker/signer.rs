@@ -68,6 +68,10 @@ impl SignHandler for RemoteSigner {
                     key_id: item.key_id.clone(),
                 });
             }
+            if sign_segments.is_empty() {
+                *item.error.borrow_mut() = Err(Error::FileContentEmpty);
+                return item
+            }
             let result = self.client.sign_stream(
                 tokio_stream::iter(sign_segments)).await;
             match result {
