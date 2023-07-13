@@ -107,7 +107,7 @@ When generated, we can get the profile detail via inspecting certificate file:
                 Signatrust Intermediate CA
             Authority Information Access:
                 OCSP - URI:https://oscp.signatrust.osinfra.cn
-                CA Issuers - URI:https://signatrust.osinfra.cn/api/v1/keys/<key-id>/certificate
+                CA Issuers - URI:https://signatrust.osinfra.cn/api/v1/keys/<key-id-or-name>/certificate
 ```
 The life cycle and functionality of the Intermediate Certificate Authority is defined as below:
 
@@ -169,7 +169,7 @@ When generated, we can get the profile detail via inspecting certificate file:
                 Signatrust Sign Certificate
             Authority Information Access:
                 OCSP - URI:https://oscp.signatrust.osinfra.cn
-                CA Issuers - URI:https://signatrust.osinfra.cn/api/v1/keys/<key-id>/certificate
+                CA Issuers - URI:https://signatrust.osinfra.cn/api/v1/keys/<key-id-or-name>/certificate
 ```
 
 The life cycle and functionality of the End Entity Certificate is defined as below:
@@ -190,7 +190,7 @@ the CRL content would be updated every **7** days in design, and the generated c
 ```shell
 X509v3 CRL Distribution Points:
             Full Name:
-              URI:https://signatrust.osinfra.cn/api/v1/keys/<key-id>/crl
+              URI:https://signatrust.osinfra.cn/api/v1/keys/<key-id-or-name>/crl
 ```
 ### Online Certificate Status Protocol
 The Online Certificate Status Protocol (OCSP) enables the client to determine the
@@ -317,7 +317,7 @@ at the same time; within this proposal, the generation process will differ based
 We need to introduce a new endpoint to check the CRL status of a specific CA or intermediate CA, considering we already 
 have the endpoint to export keys, we should update the export API to match the changes, the endpoint currently we have:
 ```shell
-  POST -H 'Authorization: XXXX' /api/v1/keys/<key-id>/export
+  POST -H 'Authorization: XXXX' /api/v1/keys/<key-id-or-name>/export
   Response in JSON:
   {
   "certificate": "string",
@@ -328,7 +328,7 @@ The endpoint will be split into three individual and explicit endpoints:
 
 a. Get public key, it's only valid for `openPGP` keys and will get armored public key:
 ```shell
-  GET -H 'Authorization: XXXX' /api/v1/keys/<key-id>/public_key
+  GET -H 'Authorization: XXXX' /api/v1/keys/<key-id-or-name>/public_key
   Response in TEXT:
     -----BEGIN PGP PUBLIC KEY BLOCK-----
 
@@ -337,7 +337,7 @@ a. Get public key, it's only valid for `openPGP` keys and will get armored publi
 ```
 b. Get certificate, the endpoint only valid for `X509CA`, `X509ICA` and `X509EE` keys and will get PEM encoded certificate:
 ```shell
-  GET -H 'Authorization: XXXX' /api/v1/keys/<key-id>/certificate
+  GET -H 'Authorization: XXXX' /api/v1/keys/<key-id-or-name>/certificate
   Response in TEXT:
     -----BEGIN CERTIFICATE-----
 
@@ -346,7 +346,7 @@ b. Get certificate, the endpoint only valid for `X509CA`, `X509ICA` and `X509EE`
 ```
 c. Get CRL content, the endpoint is **public** and only valid for `X509CA` and `X509ICA` keys and will get the PEM encoded CRL:
 ```shell
-  GET /api/v1/keys/<key-id>/crl
+  GET /api/v1/keys/<key-id-or-name>/crl
   Response in TEXT:
     -----BEGIN X509 CRL-----
 
@@ -356,16 +356,16 @@ c. Get CRL content, the endpoint is **public** and only valid for `X509CA` and `
 #### Key operations
 We support request/cancel delete public keys via APIs as follows:
 ```shell
-POST /api/v1/keys/<key-id>/request_delete
-POST /api/v1/keys/<key-id>/cancel_delete
+POST /api/v1/keys/<key-id-or-name>/request_delete
+POST /api/v1/keys/<key-id-or-name>/cancel_delete
 ```
 In order to support revoke certificates, we need to introduce a new group of APIs to revoke certificates, considering revoke and
 delete are belong to key operations, we propose to update those APIs in the following:
 ```shell
-POST /api/v1/keys/<key-id>/action/request_delete
-POST /api/v1/keys/<key-id>/action/cancel_delete
-POST /api/v1/keys/<key-id>/action/request_revoke
-POST /api/v1/keys/<key-id>/action/cancel_revoke
+POST /api/v1/keys/<key-id-or-name>/action/request_delete
+POST /api/v1/keys/<key-id-or-name>/action/cancel_delete
+POST /api/v1/keys/<key-id-or-name>/action/request_revoke
+POST /api/v1/keys/<key-id-or-name>/action/cancel_revoke
 ```
 For the revoke API, we need to pass the reason in the request body as well,
 and the revoke reason will follow openssl recommendation:

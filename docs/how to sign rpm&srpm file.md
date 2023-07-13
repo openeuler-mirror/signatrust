@@ -26,7 +26,7 @@ And these tags below will be used for signing:
 ## Sign the RPM&SRPM with Signatrust
 Signatrust support sign RPM file within the command as following:
 ```bash
- RUST_BACKTRACE=full RUST_LOG=debug ./target/debug/client --config /path/to/client.toml add  --key-id default-pgp --file-type rpm --key-type pgp .data/simple.rpm
+ RUST_BACKTRACE=full RUST_LOG=debug ./target/debug/client --config /path/to/client.toml add  --key-name default-pgp --file-type rpm --key-type pgp .data/simple.rpm
 ```
 
 ## Verify the Signature of RPM file
@@ -34,7 +34,7 @@ In order to verify the signature of rpm file, you need to download the openPGP p
 1. Download the public key from signatrust control-server and save into local file(new.key as below) in text format:
 ```shell
 curl -X 'POST' \
-  'https://localhost:8080/api/v1/keys/<key-id>/public_key' \
+  'https://localhost:8080/api/v1/keys/<key-id-or-name>/public_key' \
   -H 'accept: application/json' \
   -H 'Authorization: cBnLPLXl1fA7fKDZnjg9fd9dSWw2RXtUH3MGFUtq' \
   -d ''

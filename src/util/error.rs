@@ -125,6 +125,8 @@ pub enum Error {
     PartialSuccessError,
     #[error("Error in sign or parse EFI image")]
     EFIError(String),
+    #[error("file content is empty")]
+    FileContentEmpty,
 }
 
 #[derive(Deserialize, Serialize, ToSchema)]

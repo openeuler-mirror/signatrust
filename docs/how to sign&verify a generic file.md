@@ -7,7 +7,7 @@ basically the sign system will read the whole file content, sign it with openPGP
 ## Sign the generic file with signatrust
 Signatrust supports sign a generic file with the following command:
 ```bash
- RUST_BACKTRACE=full RUST_LOG=debug ./target/debug/client --config /path/to/client.toml add  --key-id default-pgp  --file-type generic --key-type pgp .data/somme-file.checksum
+ RUST_BACKTRACE=full RUST_LOG=debug ./target/debug/client --config /path/to/client.toml add  --key-name default-pgp  --file-type generic --key-type pgp .data/somme-file.checksum
 ```
 and the `asc` file will be generated in the same directory with the original file.
 ```
@@ -42,7 +42,7 @@ brew install gnupg
 2. Download the public key from signatrust control-server and save it into local file(pgp.public_key as below) in pem format:
 ```shell
 curl -X 'POST' \
-  'https://localhost:8080/api/v1/keys/<key-id>/public_key' \
+  'https://localhost:8080/api/v1/keys/<key-id-or-name>/public_key' \
   -H 'accept: application/json' \
   -H 'Authorization: cBnLPLXl1fA7fKDZnjg9fd9dSWw2RXtUH3MGFUtq' \
   -d ''
