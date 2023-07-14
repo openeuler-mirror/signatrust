@@ -103,25 +103,39 @@ This project consists of several binaries:
 
 # Quick Start Guide
 ## Local development
-Run these commands correspondingly to build or run project executable binary:
-```shell
-# build binary
-cargo build --bin control-server/data-server/client/control-admin
-# running command
-RUST_BACKTRACE=full RUST_LOG=debug ./target/debug/<binary> --config <config-file-path>
-```
+There are two ways to setup a local development enviroment:
+- Build and run binary directly:
+
+   Run these commands correspondingly to build or run project executable binary:
+   ```shell
+   # build binary
+   cargo build --bin control-server/data-server/client/control-admin
+   # running command
+   RUST_BACKTRACE=full RUST_LOG=debug ./target/debug/<binary> --config <config-file-path>
+   ```
+
+   Additionally, we have developed a script to set up the MySQL database in a Docker environment. To use the script, you will
+   need to install the Docker server, the MySQL binary, and the [Sqlx binary](https://github.com/launchbadge/sqlx/blob/main/sqlx-cli/README.md#enable-building-in-offline-mode-with-query).
+   Once you have these installed, simply run the command below to initialize the database.
+   ```shell
+   make db
+   ```
+
+- Using docker compose:
+
+   Alternately, you can using `docker compose` to setup a develop environment easily:
+   ```bash
+   docker compose up
+   ```
+   This will build docker images for `redis`, `mysql`, `control-server` and `data-server` and start them
+
 When using memory backend, to ensure the security of sensitive data, Signatrust requires an external KMS system for encryption and decryption. However,
-to run the system locally for development purpose, you will need to configure a **dummy** KMS provider
-```shell
-[kms-provider]
-type = "dummy"
-```
-Additionally, we have developed a script to set up the MySQL database in a Docker environment. To use the script, you will
-need to install the Docker server, the MySQL binary, and the [Sqlx binary](https://github.com/launchbadge/sqlx/blob/main/sqlx-cli/README.md#enable-building-in-offline-mode-with-query).
-Once you have these installed, simply run the command below to initialize the database.
-```shell
-make db
-```
+   to run the system locally for development purpose, you will need to configure a **dummy** KMS provider
+   ```shell
+   [kms-provider]
+   type = "dummy"
+   ```
+
 In order to develop without the need of setting up the external OIDC server, simple run the prepared script which will generate the default admin&token and the default keys:
 ```shell
 make init
