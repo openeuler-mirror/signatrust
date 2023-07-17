@@ -1,0 +1,41 @@
+name = "application"
+#tls_cert = "/server/server.crt"
+#tls_key = "/server/server.key"
+#ca_root = "/server/ca_root.pem"
+[data-server]
+server_ip = "0.0.0.0"
+server_port = "8088"
+[control-server]
+server_ip = "0.0.0.0"
+server_port = "8080"
+cookie_key = "2B5AEC57F7CC4FF8B4120AA7E4527C7B597CAF43183E453A9B981991E6FACB76"
+redis_connection = "redis://:signatrust-redis@redis:6379"
+domain_name = "localhost"
+crl_refresh_interval_days = 7
+limits_per_minute = 100
+[oidc]
+client_id = ""
+client_secret = ""
+auth_url = "https://omapi.test.osinfra.cn/oneid/oidc/authorize"
+token_url = "https://omapi.test.osinfra.cn/oneid/oidc/token"
+userinfo_url = "https://omapi.test.osinfra.cn/oneid/oidc/user"
+redirect_url = "https://127.0.0.1:8080/api/v1/users/callback"
+[sign-backend]
+type = "memory"
+[memory.kms-provider]
+type = "dummy"
+kms_id = "65ccb4d8-cc45-4139-b380-2fcff184ac4f"
+iam_endpoint = "https://iam.cn-north-4.myhuaweicloud.com"
+kms_endpoint = "https://kms.cn-north-4.myhuaweicloud.com"
+project_name = "cn-north-4"
+project_id = "25f40abeecb84d3e90731de258ca71ec"
+username = "freesky-edward"
+password = ""
+domain="freesky-edward"
+[memory.encryption-engine]
+rotate_in_days = 90
+algorithm = "aes256gsm"
+[database]
+connection_url = "mysql://test:test@database:3306/signatrust"
+max_connection = 5
+
