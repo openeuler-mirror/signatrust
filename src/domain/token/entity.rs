@@ -54,3 +54,28 @@ impl Token {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new_token() {
+        let token = Token::new(1, "Test".to_string(), "abc123".to_string()).unwrap();
+        assert_eq!(token.id, 0);
+        assert_eq!(token.user_id, 1);
+        assert_eq!(token.description, "Test");
+        assert_eq!(token.token, "abc123");
+        assert!(token.create_at < Utc::now());
+        assert_eq!(token.expire_at, token.create_at + Duration::days(TOKEN_EXPIRE_IN_DAYS));
+    }
+
+    #[test]
+    fn test_token_display() {
+        let token = Token::new(1, "Test".to_string(), "abc123".to_string()).unwrap();
+        let expected = format!("id: {}, user_id: {}, expire_at: {}",
+                               token.id, token.user_id, token.expire_at);
+        assert_eq!(expected, format!("{}", token));
+    }
+}
+

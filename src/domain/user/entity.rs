@@ -44,3 +44,23 @@ impl User {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new_user() {
+        let user = User::new("test@example.com".to_string()).unwrap();
+        assert_eq!(user.id, 0);
+        assert_eq!(user.email, "test@example.com");
+    }
+
+    #[test]
+    fn test_user_display() {
+        let user = User::new("test@example.com".to_string()).unwrap();
+        let expected = format!("id: {}, email: {}", user.id, user.email);
+        assert_eq!(expected, format!("{}", user));
+    }
+}
+
