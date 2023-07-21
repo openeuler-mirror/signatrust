@@ -175,7 +175,7 @@ impl X509CRL {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum X509RevokeReason {
     Unspecified,
     KeyCompromise,

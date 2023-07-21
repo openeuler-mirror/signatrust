@@ -153,3 +153,80 @@ impl TryFrom<X509CRL> for X509CRLDTO {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+    use super::*;
+    use crate::domain::datakey::entity::{Visibility};
+
+    #[test]
+    fn test_data_key_dto_from_entity() {
+        let key = DataKey{
+            id: 0,
+            name: "Test Key".to_string(),
+            visibility: Visibility::Public,
+            description: "test key description".to_string(),
+            user: 0,
+            attributes: HashMap::new(),
+            key_type: KeyType::OpenPGP,
+            parent_id: None,
+            fingerprint: "".to_string(),
+            serial_number: None,
+            private_key: vec![1,2,3],
+            public_key: vec![4,5,6],
+            certificate: vec![7,8,9,10],
+            create_at: Utc::now(),
+            expire_at: Utc::now(),
+            key_state: KeyState::Disabled,
+            user_email: None,
+            request_delete_users: None,
+            request_revoke_users: None,
+            parent_key: None,
+        };
+        let dto = DataKeyDTO::try_from(key).unwrap();
+        assert_eq!(dto.id, 0);
+        assert_eq!(dto.name, "Test Key");
+        assert_eq!(dto.visibility, Visibility::Public.to_string());
+        assert_eq!(dto.key_state, KeyState::Disabled.to_string());
+        assert_eq!(dto.private_key, "010203");
+        assert_eq!(dto.public_key, "040506");
+        assert_eq!(dto.certificate, "0708090A");
+    }
+
+    #[test]
+    fn test_data_key_entity_from_dto() {
+        let dto = DataKeyDTO {
+            id: 1,
+            name: "Test Key".to_string(),
+            description: "".to_string(),
+            visibility: Visibility::Public.to_string(),
+            user: 0,
+            attributes: "{}".to_string(),
+            key_type: "pgp".to_string(),
+            parent_id: None,
+            fingerprint: "".to_string(),
+            serial_number: None,
+            private_key: "0708090A".to_string(),
+            public_key: "040506".to_string(),
+            certificate: "010203".to_string(),
+            create_at: Utc::now(),
+            expire_at: Utc::now(),
+            key_state: "disabled".to_string(),
+            user_email: None,
+            request_delete_users: None,
+            request_revoke_users: None,
+            x509_crl_update_at: None,
+        };
+        let key = DataKey::try_from(dto).unwrap();
+        assert_eq!(key.id, 1);
+        assert_eq!(key.name, "Test Key");
+        assert_eq!(key.visibility, Visibility::Public);
+        assert_eq!(key.key_type, KeyType::OpenPGP);
+        assert_eq!(key.private_key, vec![7,8,9,10]);
+        assert_eq!(key.public_key, vec![4,5,6]);
+        assert_eq!(key.certificate, vec![1,2,3]);
+    }
+
+}
+

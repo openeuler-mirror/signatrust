@@ -52,3 +52,48 @@ impl From<ClusterKey> for ClusterKeyDTO {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use chrono::Utc;
+    use super::{ClusterKey,ClusterKeyDTO};
+
+    #[test]
+    fn test_cluster_key_dto_from_entity() {
+        let key = ClusterKey {
+            id: 1,
+            data: vec![1, 2, 3],
+            algorithm: "algo".to_string(),
+            identity: "id".to_string(),
+            create_at: Utc::now()
+        };
+        let create_at = key.create_at.clone();
+        let dto = ClusterKeyDTO::from(key);
+        assert_eq!(dto.id, 1);
+        assert_eq!(dto.data, vec![1, 2, 3]);
+        assert_eq!(dto.algorithm, "algo");
+        assert_eq!(dto.identity, "id");
+        assert_eq!(dto.create_at, create_at);
+    }
+
+    #[test]
+    fn test_cluster_key_entity_from_dto() {
+        let dto = ClusterKeyDTO {
+            id: 1,
+            data: vec![1, 2, 3],
+            algorithm: "algo".to_string(),
+            identity: "id".to_string(),
+            create_at: Utc::now()
+        };
+
+        let create_at = dto.create_at.clone();
+        let key = ClusterKey::from(dto);
+        assert_eq!(key.id, 1);
+        assert_eq!(key.data, vec![1, 2, 3]);
+        assert_eq!(key.algorithm, "algo");
+        assert_eq!(key.identity, "id");
+        assert_eq!(key.create_at, create_at);
+    }
+
+}
+

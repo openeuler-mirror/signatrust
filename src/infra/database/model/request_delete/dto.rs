@@ -122,3 +122,46 @@ impl PendingOperationDTO {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::Utc;
+
+    #[test]
+    fn test_request_type_display() {
+        let delete = RequestType::Delete;
+        assert_eq!(format!("{}", delete), "delete");
+
+        let revoke = RequestType::Revoke;
+        assert_eq!(format!("{}", revoke), "revoke");
+    }
+
+    #[test]
+    fn test_request_type_from_str() {
+        let delete = RequestType::from_str("delete").unwrap();
+        assert_eq!(delete, RequestType::Delete);
+
+        let revoke = RequestType::from_str("revoke").unwrap();
+        assert_eq!(revoke, RequestType::Revoke);
+    }
+
+    #[test]
+    fn test_revoked_key_dto_conversion() {
+        let now = Utc::now();
+        let dto = RevokedKeyDTO::new(1, 2, X509RevokeReason::KeyCompromise);
+        let revoked_key = RevokedKey::try_from(dto).unwrap();
+        assert_eq!(revoked_key.key_id, 1);
+        assert_eq!(revoked_key.ca_id, 2);
+        assert_eq!(revoked_key.reason, X509RevokeReason::KeyCompromise);
+        assert!(revoked_key.create_at > now);
+    }
+
+    #[test]
+    fn test_pending_operation_dto() {
+        let delete_dto = PendingOperationDTO::new_for_delete(1, 2, "test@email.com".into());
+        assert_eq!(delete_dto.request_type, RequestType::Delete);
+        let revoke_dto = PendingOperationDTO::new_for_revoke(3, 4, "test2@email.com".into());
+        assert_eq!(revoke_dto.request_type, RequestType::Revoke);
+    }
+}
