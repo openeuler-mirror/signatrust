@@ -395,7 +395,7 @@ impl SignPlugins for X509Plugin {
                         | Pkcs7Flags::NOCERTS
                         | Pkcs7Flags::BINARY
                         | Pkcs7Flags::NOSMIMECAP
-                        | Pkcs7Flags::NOATTR)?;
+                )?;
                 Ok(pkcs7.to_der()?)
             }
             SignType::Cms => {
@@ -409,7 +409,6 @@ impl SignPlugins for X509Plugin {
                         | CMSOptions::CMS_NOCERTS
                         | CMSOptions::BINARY
                         | CMSOptions::NOSMIMECAP
-                        | CMSOptions::NOATTR,
                 )?;
                 Ok(cms_signature.to_der()?)
             }

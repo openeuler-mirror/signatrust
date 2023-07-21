@@ -141,6 +141,74 @@ openssl smime -verify -binary -inform DER -in detached.p7s  -content simple.ko -
 ......
 Verification successful
 ```
+4. Display signature
+In order to view the detail of signature, we can convert signature into cms format and view detail with openssl cms sub command.
+```shell
+ openssl cms -verify -noverify -in detached.p7s -inform DER -cmsout -out detached.cms
+ openssl cms -cmsout -print -noout -in detached.cms
+
+CMS_ContentInfo:
+  contentType: pkcs7-signedData (1.2.840.113549.1.7.2)
+  d.signedData:
+    version: 1
+    digestAlgorithms:
+        algorithm: sha256 (2.16.840.1.101.3.4.2.1)
+        parameter: <ABSENT>
+    encapContentInfo:
+      eContentType: pkcs7-data (1.2.840.113549.1.7.1)
+      eContent: <ABSENT>
+    certificates:
+      <EMPTY>
+    crls:
+      <EMPTY>
+    signerInfos:
+        version: 1
+        d.issuerAndSerialNumber:
+          issuer: CN=Infra, OU=Infra, O=Huawei, L=ShenZhen, ST=GuangDong, C=CN
+          serialNumber: 0xB2A68D95D9B92D92E48FDB184FA0BC8B
+        digestAlgorithm:
+          algorithm: sha256 (2.16.840.1.101.3.4.2.1)
+          parameter: <ABSENT>
+        signedAttrs:
+            object: contentType (1.2.840.113549.1.9.3)
+            value.set:
+              OBJECT:pkcs7-data (1.2.840.113549.1.7.1)
+
+            object: signingTime (1.2.840.113549.1.9.5)
+            value.set:
+              UTCTIME:Jul 21 08:49:06 2023 GMT
+
+            object: messageDigest (1.2.840.113549.1.9.4)
+            value.set:
+              OCTET STRING:
+                0000 - ff 87 d2 69 59 94 92 d3-28 a9 53 39 81   ...iY...(.S9.
+                000d - 8e b3 95 ff 97 82 59 e4-f2 19 07 52 bc   ......Y....R.
+                001a - 32 ad 97 df cd e6                        2.....
+        signatureAlgorithm:
+          algorithm: rsaEncryption (1.2.840.113549.1.1.1)
+          parameter: NULL
+        signature:
+          0000 - 1d b0 07 d7 23 cd 0e 39-47 7f 64 2a b0 57 7c   ....#..9G.d*.W|
+          000f - b8 8a 38 33 4b 36 ea 7a-23 9a ba ac 5a 9f c1   ..83K6.z#...Z..
+          001e - 48 4e ca 65 86 3e c2 27-1f 2e bd 02 7b 75 8c   HN.e.>.'....{u.
+          002d - fd d1 d0 06 32 65 58 10-bf 8f c4 4c a2 6a 77   ....2eX....L.jw
+          003c - 9f 36 df c6 ab 90 02 de-54 b1 96 a9 50 0a b7   .6......T...P..
+          004b - f7 2e 5d 72 b1 07 0a 78-ae a3 c3 06 1e a0 9c   ..]r...x.......
+          005a - c3 e8 7e 10 5f 97 39 5b-fe 86 9b 58 cf f5 d2   ..~._.9[...X...
+          0069 - 3c 61 a0 ca cc 12 48 3c-d4 86 1c 1b fb 3a 47   <a....H<.....:G
+          0078 - 2f 31 01 45 a2 ce 32 cc-09 9b 24 18 95 3c ed   /1.E..2...$..<.
+          0087 - d1 bf c6 b4 9c 4f 73 dd-10 ab c0 d7 42 ba 13   .....Os.....B..
+          0096 - 51 d0 e7 6f 60 84 80 56-ba 33 3f 09 ef 2a 6d   Q..o`..V.3?..*m
+          00a5 - c7 84 1c 9e 64 07 bf 9d-ea 1c 9c 59 14 39 77   ....d......Y.9w
+          00b4 - 12 92 d4 8d cf 0c 6f c4-bd 9a ca 3e ec 54 1a   ......o....>.T.
+          00c3 - ed 5a 87 8c 47 33 53 58-b8 5b 98 ff bb aa 1b   .Z..G3SX.[.....
+          00d2 - cf f3 23 cb a4 48 93 4b-87 fe 7d ba da 96 6d   ..#..H.K..}...m
+          00e1 - 56 57 6e 7d 25 4c e7 6e-39 27 c3 f3 06 58 72   VWn}%L.n9'...Xr
+          00f0 - 2f d8 27 cc ce 78 22 18-df 8a c2 91 29 87 a2   /.'..x".....)..
+          00ff - 62                                             b
+        unsignedAttrs:
+          <EMPTY>
+```
 
 
 
