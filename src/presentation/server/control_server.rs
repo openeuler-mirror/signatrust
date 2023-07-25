@@ -22,7 +22,7 @@ use utoipa::{
 use utoipa_swagger_ui::SwaggerUi;
 use std::sync::{Arc, RwLock};
 use actix_web::{App, HttpServer, middleware, web, cookie::Key};
-use config::Config;
+use config::{Config};
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 use actix_identity::{IdentityMiddleware};
 use actix_session::{config::PersistentSession, storage::RedisSessionStore, SessionMiddleware};
@@ -37,7 +37,7 @@ use actix_web::{dev::ServiceRequest};
 use actix_web::cookie::SameSite;
 use secstr::SecVec;
 use tokio_util::sync::CancellationToken;
-use crate::util::error::Result;
+use crate::util::error::{Error, Result};
 
 use crate::application::datakey::{DBKeyService, KeyService};
 use crate::infra::database::model::token::repository::TokenRepository;
@@ -49,7 +49,7 @@ use crate::domain::token::entity::Token;
 use crate::domain::user::entity::User;
 use crate::presentation::handler::control::model::token::dto::{CreateTokenDTO};
 use crate::presentation::handler::control::model::user::dto::{UserIdentity};
-use crate::util::key::truncate_string_to_protect_key;
+use crate::util::key::{file_exists, truncate_string_to_protect_key};
 
 pub struct ControlServer {
     server_config: Arc<RwLock<Config>>,
@@ -232,24 +232,18 @@ impl ControlServer {
                 .service(web::scope("/api")
                     .service(health_handler::get_scope()))
         });
-        if self.server_config
-            .read()?
-            .get_string("tls_cert")?
-            .is_empty()
-            || self
-            .server_config
-            .read()?
-            .get_string("tls_key")?
-            .is_empty() {
+        let tls_cert = self.server_config.read()?.get_string("tls_cert").unwrap_or(String::new()).to_string();
+        let tls_key = self.server_config.read()?.get_string("tls_key").unwrap_or(String::new()).to_string();
+        if tls_cert.is_empty() || tls_key.is_empty() {
             info!("tls key and cert not configured, control server tls will be disabled");
             http_server.bind(addr)?.run().await?;
         } else {
+            if !file_exists(&tls_cert) || !file_exists(&tls_key) {
+                return Err(Error::FileFoundError(format!("tls cert: {} or key: {} file not found", tls_key, tls_cert)));
+            }
             let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
-            builder
-                .set_private_key_file(
-                    self.server_config.read()?.get_string("tls_key")?, SslFiletype::PEM).unwrap();
-            builder.set_certificate_chain_file(
-                self.server_config.read()?.get_string("tls_cert")?).unwrap();
+            builder.set_private_key_file(tls_key, SslFiletype::PEM).unwrap();
+            builder.set_certificate_chain_file(tls_cert).unwrap();
             http_server.bind_openssl(addr, builder)?.run().await?;
         }
         Ok(())

@@ -23,6 +23,7 @@ use async_trait::async_trait;
 
 
 use dns_lookup::{lookup_host};
+use crate::util::error::Error::{DNSResolveError};
 
 pub struct DNSLoadBalancer {
     hostname: String,
@@ -46,15 +47,23 @@ impl DNSLoadBalancer {
 impl DynamicLoadBalancer for DNSLoadBalancer {
     fn get_transport_channel(&self) -> Result<Channel> {
         let mut endpoints = Vec::new();
-        for ip in lookup_host(&self.hostname)?.into_iter() {
-            let mut endpoint = Endpoint::from_shared(
-                format!("http://{}:{}", ip, self.port))?;
-            if let Some(tls_config) = self.client_config.clone() {
-                endpoint = endpoint.tls_config(tls_config)?;
+        match lookup_host(&self.hostname) {
+            Ok(hosts) => {
+                for ip in hosts.into_iter() {
+                    let mut endpoint = Endpoint::from_shared(
+                        format!("http://{}:{}", ip, self.port))?;
+                    if let Some(tls_config) = self.client_config.clone() {
+                        endpoint = endpoint.tls_config(tls_config)?;
+                    }
+                    info!("found endpoint {}:{} for signing task.", ip, self.port);
+                    endpoints.push(endpoint);
+                }
+                Ok(Channel::balance_list(endpoints.into_iter()))
             }
-            info!("found endpoint {}:{} for signing task.", ip, self.port);
-            endpoints.push(endpoint);
+            Err(_) => {
+                Err(DNSResolveError(self.hostname.clone()))
+            }
         }
-        Ok(Channel::balance_list(endpoints.into_iter()))
+
     }
 }

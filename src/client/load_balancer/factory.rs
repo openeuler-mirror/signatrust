@@ -21,6 +21,8 @@ use crate::client::load_balancer::dns::DNSLoadBalancer;
 use crate::client::load_balancer::single::SingleLoadBalancer;
 use crate::client::load_balancer::traits::DynamicLoadBalancer;
 use crate::util::error::{Error, Result};
+use crate::util::error::Error::ConfigError;
+use crate::util::key::file_exists;
 
 pub struct ChannelFactory {
     lb: Box<dyn DynamicLoadBalancer>
@@ -29,15 +31,26 @@ pub struct ChannelFactory {
 impl ChannelFactory {
     pub async fn new(config: &HashMap<String, Value>) -> Result<Self> {
         let mut client_config :Option<ClientTlsConfig> = None;
-        let tls_cert = config.get("tls_cert").unwrap_or(&Value::new(Some(&String::new()), config::ValueKind::String(String::new()))).to_string();
-        let tls_key = config.get("tls_key").unwrap_or(&Value::new(Some(&String::new()), config::ValueKind::String(String::new()))).to_string();
-        let server_port = config.get("server_port").expect("server port not in client config").to_string();
+        let tls_cert = config.get("tls_cert").unwrap_or(
+            &Value::new(Some(&String::new()), config::ValueKind::String(String::new()))).to_string();
+        let tls_key = config.get("tls_key").unwrap_or(
+            &Value::new(Some(&String::new()), config::ValueKind::String(String::new()))).to_string();
+        let server_address = config.get("server_address").unwrap_or(
+            &Value::new(Some(&String::new()), config::ValueKind::String(String::new()))).to_string();
+        let server_port = config.get("server_port").unwrap_or(
+            &Value::new(Some(&String::new()), config::ValueKind::String(String::new()))).to_string();
+        if server_address.is_empty() || server_port.is_empty() {
+            return Err(ConfigError(format!("server address: {} or port: {} not configured", server_address, server_port)));
+        }
         if tls_cert.is_empty() || tls_key.is_empty()
         {
             info!("tls client key and cert not configured, tls will be disabled");
         } else {
             info!("tls client key and cert configured, tls will be enabled");
             debug!("tls cert:{}, tls key:{}", tls_cert, tls_key);
+            if !file_exists(&tls_cert) || !file_exists(&tls_key){
+                return Err(Error::FileFoundError(format!("client tls cert {} or key {} file not found", tls_key, tls_cert)));
+            }
             let identity = Identity::from_pem(
                 tokio::fs::read(tls_cert).await?,
                 tokio::fs::read(tls_key).await?);
@@ -48,17 +61,17 @@ impl ChannelFactory {
         if lb_type == "single" {
             return Ok(Self {
                 lb: Box::new(SingleLoadBalancer::new(
-                    config.get("server_address").unwrap_or(&Value::default()).to_string(),
+                    server_address,
                     server_port, client_config)?)
             })
         } else if lb_type == "dns" {
             return Ok(Self {
                 lb: Box::new(DNSLoadBalancer::new(
-                    config.get("server_address").unwrap_or(&Value::default()).to_string(),
+                    server_address,
                     server_port, client_config)?)
             })
         }
-        Err(Error::ConfigError(format!("invalid load balancer type configuration {}", lb_type)))
+        Err(ConfigError(format!("invalid load balancer type configuration: {}", lb_type)))
     }
 
     pub fn get_channel(&self) -> Result<Channel> {

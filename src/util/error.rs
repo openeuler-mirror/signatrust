@@ -51,38 +51,40 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, ThisError, Clone)]
 pub enum Error {
-    #[error("An error occurred in database operation. {0}")]
+    #[error("An error occurred in database operation: {0}")]
     DatabaseError(String),
-    #[error("An error occurred when loading configure file. {0}")]
+    #[error("An error occurred when loading configure: {0}")]
     ConfigError(String),
-    #[error("An error occurred when perform IO requests. {0}")]
+    #[error("An error occurred when perform IO requests: {0}")]
     IOError(String),
-    #[error("unsupported type configured. {0}")]
+    #[error("unsupported type configured: {0}")]
     UnsupportedTypeError(String),
-    #[error("kms invoke error. {0}")]
+    #[error("kms invoke error: {0}")]
     KMSInvokeError(String),
-    #[error("failed to serialize/deserialize. {0}")]
+    #[error("failed to serialize/deserialize: {0}")]
     SerializeError(String),
-    #[error("failed to perform http request. {0}")]
+    #[error("failed to perform http request: {0}")]
     HttpRequest(String),
-    #[error("failed to convert. {0}")]
+    #[error("failed to convert: {0}")]
     ConvertError(String),
-    #[error("failed to encode/decode. {0}")]
+    #[error("failed to encode/decode: {0}")]
     EncodeError(String),
-    #[error("failed to get cluster key. {0}")]
+    #[error("failed to get cluster key: {0}")]
     ClusterError(String),
-    #[error("failed to serialize/deserialize key. {0}")]
+    #[error("failed to serialize/deserialize key: {0}")]
     KeyParseError(String),
-    #[error("failed to sign with key {0}. {1}")]
+    #[error("failed to sign with key {0}: {1}")]
     SignError(String, String),
-    #[error("failed to perform pgp {0}")]
+    #[error("failed to perform pgp: {0}")]
     PGPInvokeError(String),
-    #[error("failed to perform openssl {0}")]
+    #[error("failed to perform openssl: {0}")]
     X509InvokeError(String),
-    #[error("invalid parameter error {0}")]
+    #[error("invalid parameter error: {0}")]
     ParameterError(String),
     #[error("record not found error")]
     NotFoundError,
+    #[error("fail to load file: {0}")]
+    FileFoundError(String),
     #[error("invalid user")]
     UnauthorizedError,
     #[error("invalid cookie key found")]
@@ -103,7 +105,7 @@ pub enum Error {
     FrameworkError(String),
 
     //client error
-    #[error("file extension {0} not supported for file {1}")]
+    #[error("file extension: {0} not supported for file: {1}")]
     FileNotSupportError(String, String),
     #[error("not any valid file found")]
     NoFileCandidateError,
@@ -127,6 +129,10 @@ pub enum Error {
     EFIError(String),
     #[error("file content is empty")]
     FileContentEmpty,
+    #[error("Failed to get IP addresses by hostname: {0}")]
+    DNSResolveError(String),
+    #[error("Failed to execute process: {0}")]
+    CommandProcessFailed(String),
 }
 
 #[derive(Deserialize, Serialize, ToSchema)]
