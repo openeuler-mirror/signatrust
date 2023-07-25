@@ -37,6 +37,20 @@ spec:
             - mountPath: /app/config/server.toml
               name: config-volume
               subPath: server.toml
+          livenessProbe:
+            httpGet:
+              path: /api/health/
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/health/
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 3
       volumes:
         - name: config-volume
           configMap:
@@ -61,6 +75,20 @@ spec:
         - name: init-mysql
           image: busybox:1.28
           command: [ "sh", "-c", "until nslookup signatrust-database.signatrust-local-development.svc.cluster.local; do echo waiting for mysql service ; sleep 2; done;" ]
+        - name: prepare-table
+          image: tommylike/rust-sqlx
+          env:
+            - name: DATABASE_URL
+              value: mysql://test:test@signatrust-database.signatrust-local-development.svc.cluster.local:3306/signatrust
+          command:
+            - /bin/sh
+            - -c
+            - |
+              # TODO: Use commit it instead of latest master
+              git clone https://gitee.com/openeuler/signatrust
+              cd signatrust
+              sqlx database create
+              sqlx migrate run
       containers:
         - image: tommylike/signatrust-control-admin:f1e04f2fd37a92b04dfc9a4fd78cba1956654970
           imagePullPolicy: Always
@@ -81,40 +109,46 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: signatrust-server
+  name: signatrust-data-server
 spec:
   replicas: 1
   selector:
     matchLabels:
-      component: signatrust-server
+      component: signatrust-data-server
   template:
     metadata:
       labels:
-        component: signatrust-server
+        component: signatrust-data-server
     spec:
       initContainers:
         - name: init-mysql
           image: busybox:1.28
           command: [ "sh", "-c", "until nslookup signatrust-database.signatrust-local-development.svc.cluster.local; do echo waiting for mysql service ; sleep 2; done;" ]
-        - name: prepare-table
-          image: tommylike/rust-sqlx
-          env:
-            - name: DATABASE_URL
-              value: mysql://test:test@signatrust-database.signatrust-local-development.svc.cluster.local:3306/signatrust
-          command:
-            - /bin/sh
-            - -c
-            - |
-              # TODO: Use commit it instead of latest master
-              git clone https://gitee.com/openeuler/signatrust
-              cd signatrust
-              sqlx database create
-              sqlx migrate run
       containers:
         - image: tommylike/signatrust-data-server:f1e04f2fd37a92b04dfc9a4fd78cba1956654970
           imagePullPolicy: Always
           name: signatrust-server
           command: ["/app/data-server"]
+          livenessProbe:
+            exec:
+              # NOTE: For production environment, we need to use grpc with client certificate,
+              # for example, grpc_health_probe --addr=0.0.0.0:8088 -tls -tls-no-verify -tls-client-cert ./.data/certs/client/server.crt -tls-client-key ./.data/certs/client/server.key
+              command:
+              - /app/grpc_health_probe
+              - --addr=0.0.0.0:8088
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            # NOTE: For production environment, we need to use grpc with client certificate,
+            # for example, grpc_health_probe --addr=0.0.0.0:8088 -tls -tls-no-verify -tls-client-cert ./.data/certs/client/server.crt -tls-client-key ./.data/certs/client/server.key
+            exec:
+              command:
+              - /app/grpc_health_probe
+              - --addr=0.0.0.0:8088
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 3
           resources:
             requests:
               cpu: 4000m

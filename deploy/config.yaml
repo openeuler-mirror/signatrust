@@ -16,7 +16,6 @@ data:
     type = "dns"
     server_address = "signatrust-server-headless.signatrust-local-development.svc.cluster.local"
     server_port = "8088"
-
   server.toml: |
     name = "application"
     tls_cert = ""
@@ -31,6 +30,7 @@ data:
     cookie_key = "2B5AEC57F7CC4FF8B4120AA7E4527C7B597CAF43183E453A9B981991E6FACB76"
     redis_connection = "redis://:signatrust-redis@signatrust-redis.signatrust-local-development.svc.cluster.local:6379"
     limits_per_minute = 100
+    domain_name = "signatrust.test.osinfra.cn"
     [oidc]
     client_id = ""
     client_secret = ""
