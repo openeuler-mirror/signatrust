@@ -11,3 +11,12 @@ commonAnnotations:
 namespace: signatrust-local-development
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+images:
+  - name: tommylike/signatrust-control-admin
+    newTag: f326b869ada3832cee80af1b9d0cd47cf7e65790
+  - name: tommylike/signatrust-client
+    newTag: f326b869ada3832cee80af1b9d0cd47cf7e65790
+  - name: tommylike/signatrust-control-server
+    newTag: f326b869ada3832cee80af1b9d0cd47cf7e65790
+  - name: tommylike/signatrust-data-server
+    newTag: f326b869ada3832cee80af1b9d0cd47cf7e65790
