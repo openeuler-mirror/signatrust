@@ -37,6 +37,8 @@ use crate::client::worker::signer::RemoteSigner;
 use crate::client::worker::splitter::Splitter;
 use crate::client::worker::traits::SignHandler;
 use std::sync::atomic::{AtomicI32, Ordering};
+use crate::util::error::Error::CommandProcessFailed;
+use crate::util::key::file_exists;
 
 lazy_static! {
     pub static ref FILE_EXTENSION: HashMap<FileType, Vec<&'static str>> = HashMap::from([
@@ -154,6 +156,10 @@ impl SignCommand for CommandAddHandler {
         if worker_threads == 0 {
             worker_threads = num_cpus::get();
         }
+        let working_dir = config.read()?.get_string("working_dir")?;
+        if !file_exists(&working_dir) {
+            return Err(error::Error::FileFoundError(format!("working dir: {} not exists", working_dir)));
+        }
         Ok(CommandAddHandler{
             worker_threads,
             buffer_size: config.read()?.get_string("buffer_size")?.parse()?,
@@ -199,10 +205,16 @@ impl SignCommand for CommandAddHandler {
         let (collect_s, collect_r) = bounded::<sign_identity::SignIdentity>(self.max_concurrency);
         info!("starting to sign {} files", files.len());
         let lb_config = self.config.read()?.get_table("server")?;
-        runtime.block_on(async {
-            let channel = ChannelFactory::new(
-                &lb_config).await.unwrap().get_channel().unwrap();
-            let mut signer = RemoteSigner::new(channel, self.buffer_size);
+        let errored = runtime.block_on(async {
+            let channel_provider = ChannelFactory::new(&lb_config).await;
+            if let Err(err) = channel_provider {
+                return Some(err)
+            }
+            let channel = channel_provider.unwrap().get_channel();
+            if let Err(err) = channel {
+                return Some(err)
+            }
+            let mut signer = RemoteSigner::new(channel.unwrap(), self.buffer_size);
             //split file
             let send_handlers = files.into_iter().map(|file|{
                 let task_split_s = split_s.clone();
@@ -294,20 +306,29 @@ impl SignCommand for CommandAddHandler {
             });
             // wait for finish
             for h in send_handlers {
-                h.await.unwrap();
+                if let Err(error) = h.await {
+                    return Some(CommandProcessFailed(format!("failed to wait for send handler: {}", error.to_string())))
+                }
             }
-            drop(split_s);
-            split_handler.await.expect("split worker finished correctly");
-            drop(sign_s);
-            sign_handler.await.expect("sign worker finished correctly");
-            drop(assemble_s);
-            assemble_handler.await.expect("assemble worker finished correctly");
-            drop(collect_s);
-            collect_handler.await.expect("collect worker finished correctly");
+            for (key, channel, worker) in [
+                ("split", split_s, split_handler),
+                ("sign", sign_s, sign_handler),
+                ("assemble", assemble_s, assemble_handler),
+                ("collect", collect_s, collect_handler),
+            ] {
+                drop(channel);
+                if let Err(error) = worker.await {
+                    return Some(CommandProcessFailed(format!("failed to wait for: {0} handler to finish: {1}", key, error.to_string())))
+                }
+            }
             info!("Successfully signed {} files failed {} files",
                 succeed_files.load(Ordering::Relaxed), failed_files.load(Ordering::Relaxed));
             info!("sign files process finished");
+            None
         });
+        if let Some(err) = errored {
+            return Err(err)
+        }
         if failed_files.load(Ordering::Relaxed) != 0 {
             return Ok(false)
         }

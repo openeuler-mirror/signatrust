@@ -19,6 +19,7 @@ use rand::{thread_rng, Rng};
 use rand::distributions::Alphanumeric;
 use serde::{Serialize, Serializer};
 use std::collections::{HashMap, BTreeMap};
+use std::path::Path;
 use sha2::{Sha256, Digest};
 
 pub fn encode_u8_to_hex_string(value: &[u8]) -> String {
@@ -47,6 +48,11 @@ pub fn truncate_string_to_protect_key(s: &str) -> [u8; 32] {
     result
 }
 
+pub fn file_exists(file_path: &str) -> bool {
+    let path = Path::new(file_path);
+    path.exists()
+}
+
 pub fn get_token_hash(real_token: &str) -> String {
     let mut hasher = Sha256::default();
     hasher.update(real_token);
@@ -62,6 +68,9 @@ pub fn sorted_map<S: Serializer, K: Serialize + Ord, V: Serialize>(value: &HashM
 
 #[cfg(test)]
 mod test {
+    use std::env;
+    use std::fs::File;
+    use uuid::Uuid;
     use super::*;
 
     #[test]
@@ -92,5 +101,15 @@ mod test {
         assert_eq!(decoded, vec![173, 18, 255, 00]);
         let content_a = encode_u8_to_hex_string(&decoded);
         assert_eq!(content, content_a);
+    }
+
+    #[test]
+    fn test_file_exists() {
+        //generate temp file
+        let valid_path = env::temp_dir().join(Uuid::new_v4().to_string());
+        let _valid_file = File::create(valid_path.clone()).expect("create temporary file should work");
+        let invalid_path = "./invalid/file/path/should/not/exists";
+        assert!(file_exists(valid_path.to_str().unwrap()));
+        assert!(!file_exists(invalid_path));
     }
 }

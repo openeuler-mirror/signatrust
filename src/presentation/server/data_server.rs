@@ -16,7 +16,7 @@
 
 use std::net::SocketAddr;
 use std::sync::{Arc, RwLock};
-use config::Config;
+use config::{Config};
 use tokio::fs;
 use tokio_util::sync::CancellationToken;
 use tonic::{
@@ -37,7 +37,8 @@ use crate::infra::sign_backend::factory::SignBackendFactory;
 
 use crate::presentation::handler::data::sign_handler::get_grpc_handler as sign_grpc_handler;
 use crate::presentation::handler::data::health_handler::get_grpc_handler as health_grpc_handler;
-use crate::util::error::Result;
+use crate::util::error::{Error, Result};
+use crate::util::key::file_exists;
 
 pub struct DataServer
 {
@@ -62,23 +63,16 @@ impl DataServer {
     }
 
     async fn load(&mut self) -> Result<()> {
-        if self
-            .server_config
-            .read()?
-            .get_string("tls_cert")?
-            .is_empty()
-            || self
-                .server_config
-                .read()?
-                .get_string("tls_key")?
-                .is_empty()
-        {
+        let ca_root = self.server_config.read()?.get("ca_root").unwrap_or(String::new()).to_string();
+        let tls_cert = self.server_config.read()?.get("tls_cert").unwrap_or(String::new()).to_string();
+        let tls_key = self.server_config.read()?.get("tls_key").unwrap_or(String::new()).to_string();
+        if ca_root.is_empty() || tls_cert.is_empty() || tls_key.is_empty() {
             info!("tls key and cert not configured, data server tls will be disabled");
             return Ok(());
         }
-        let ca_root = self.server_config.read()?.get_string("ca_root").expect("ca_root not configured");
-        let tls_cert = self.server_config.read()?.get_string("tls_cert")?;
-        let tls_key = self.server_config.read()?.get_string("tls_key")?;
+        if !file_exists(&ca_root) || !file_exists(&tls_cert) || !file_exists(&tls_key) {
+            return Err(Error::FileFoundError(format!("ca root: {} or tls cert: {} or key: {} file not found", ca_root, tls_key, tls_cert)));
+        }
         self.ca_cert = Some(
             Certificate::from_pem(fs::read(ca_root).await?));
         self.server_identity = Some(Identity::from_pem(fs::read(tls_cert).await?,
