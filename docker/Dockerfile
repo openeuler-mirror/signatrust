@@ -22,7 +22,6 @@ RUN yum install -y shadow && groupadd --gid $USER_GID $USERNAME \
 USER $USERNAME
 WORKDIR /app
 COPY --from=builder --chown=$USER_UID:$USER_GID /app/target/x86_64-unknown-linux-musl/release/$BINARY /app
-COPY --from=sqlx-cli --chown=$USER_UID:$USER_GID /app/bin/sqlx /app
 COPY --chown=$USER_UID:$USER_GID $CONFIG /app/config/
 
 ENTRYPOINT /app/$(echo $BINARY)
