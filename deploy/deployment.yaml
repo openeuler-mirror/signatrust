@@ -17,15 +17,32 @@ spec:
         - name: init-mysql
           image: busybox:1.28
           command: [ "sh", "-c", "until nslookup signatrust-database.signatrust-local-development.svc.cluster.local; do echo waiting for mysql service ; sleep 2; done;" ]
+        - name: prepare-table
+          image: tommylike/rust-sqlx
+          env:
+            - name: DATABASE_URL
+              value: mysql://test:test@signatrust-database.signatrust-local-development.svc.cluster.local:3306/signatrust
+          command:
+            - /bin/sh
+            - -c
+            - |
+              # TODO: Use commit ID instead of latest master
+              git clone https://gitee.com/openeuler/signatrust
+              cd signatrust
+              sqlx database create
+              sqlx migrate run
       containers:
         - image: tommylike/signatrust-control-server:f1e04f2fd37a92b04dfc9a4fd78cba1956654970
           imagePullPolicy: Always
           name: signatrust-server
           command: ["/app/control-server"]
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
           resources:
             requests:
-              cpu: 4000m
-              memory: 4000Mi
+              cpu: 2000m
+              memory: 2000Mi
           ports:
             - containerPort: 8080
               name: http
@@ -75,25 +92,14 @@ spec:
         - name: init-mysql
           image: busybox:1.28
           command: [ "sh", "-c", "until nslookup signatrust-database.signatrust-local-development.svc.cluster.local; do echo waiting for mysql service ; sleep 2; done;" ]
-        - name: prepare-table
-          image: tommylike/rust-sqlx
-          env:
-            - name: DATABASE_URL
-              value: mysql://test:test@signatrust-database.signatrust-local-development.svc.cluster.local:3306/signatrust
-          command:
-            - /bin/sh
-            - -c
-            - |
-              # TODO: Use commit it instead of latest master
-              git clone https://gitee.com/openeuler/signatrust
-              cd signatrust
-              sqlx database create
-              sqlx migrate run
       containers:
         - image: tommylike/signatrust-control-admin:f1e04f2fd37a92b04dfc9a4fd78cba1956654970
           imagePullPolicy: Always
           name: signatrust-control-admin
           command: ["/bin/sleep", "10000"]
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
           env:
             - name: RUST_LOG
               value: debug
@@ -129,6 +135,9 @@ spec:
           imagePullPolicy: Always
           name: signatrust-server
           command: ["/app/data-server"]
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
           livenessProbe:
             exec:
               # NOTE: For production environment, we need to use grpc with client certificate,
@@ -151,8 +160,8 @@ spec:
             failureThreshold: 3
           resources:
             requests:
-              cpu: 4000m
-              memory: 4000Mi
+              cpu: 2000m
+              memory: 2000Mi
           ports:
             - containerPort: 8088
               name: http
@@ -244,6 +253,9 @@ spec:
         - image: tommylike/signatrust-client:f1e04f2fd37a92b04dfc9a4fd78cba1956654970
           imagePullPolicy: Always
           name: signatrust-client
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
           env:
             - name: RUST_LOG
               value: debug

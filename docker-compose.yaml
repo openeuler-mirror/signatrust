@@ -6,6 +6,7 @@ services:
       args:
         BINARY: data-server
         CONFIG: ./docker
+      dockerfile: ./docker/Dockerfile.data-server
     hostname: data-server
     entrypoint: ["/bin/bash", "-cx", "/app/sqlx database create; /app/sqlx migrate run; /app/data-server"]
     depends_on:
@@ -13,6 +14,7 @@ services:
       - database
     stdin_open: true
     tty: true
+    user: signatrust
     environment:
       RUST_LOG: $RUST_LOG
       DATABASE_URL: $DATABASE_URL
@@ -25,7 +27,7 @@ services:
       args:
         BINARY: control-server
         CONFIG: ./docker
-    hostname: control-server
+      dockerfile: ./docker/Dockerfile.data-server
     hostname: control-server
     depends_on:
       - redis
@@ -33,6 +35,7 @@ services:
       - data-server
     stdin_open: true
     tty: true
+    user: signatrust
     environment:
       RUST_LOG: $RUST_LOG
     entrypoint: ["/bin/bash", "-cx", "sleep 5; /app/control-server"]
@@ -42,7 +45,6 @@ services:
   redis:
     image: openeuler/redis:6.2.7-22.03-lts
     hostname: redis
-    command: /usr/bin/resalloc-server
     stdin_open: true
     tty: true
     volumes:

@@ -1,0 +1,5 @@
+FROM clux/muslrust:nightly as builder
+LABEL Author=TommyLike<tommylikehu@gmail.com>
+WORKDIR /app
+
+RUN cargo install sqlx-cli@0.7.1 --no-default-features --features native-tls,mysql,openssl-vendored --root /app
