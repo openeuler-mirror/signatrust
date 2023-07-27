@@ -59,8 +59,8 @@ impl TryFrom<X509CRL> for CRLContent {
 
 #[derive(Deserialize, IntoParams, Validate, ToSchema)]
 pub struct NameIdenticalQuery {
-    /// Key Name, should be identical, length between 4 and 20, not contains any colon symbol.
-    #[validate(length(min = 4, max = 20), custom = "validate_invalid_character")]
+    /// Key Name, should be identical, length between 4 and 210, not contains any colon symbol.
+    #[validate(length(min = 4, max = 210), custom = "validate_invalid_character")]
     pub name: String,
 }
 
@@ -74,11 +74,11 @@ pub struct ListKeyQuery {
 
 #[derive(Debug, Validate, Deserialize, ToSchema)]
 pub struct CreateDataKeyDTO {
-    /// Key Name, should be identical, length between 4 and 20, not contains any colon symbol.
-    #[validate(length(min = 4, max = 20), custom = "validate_invalid_character")]
+    /// Key Name, should be identical, length between 4 and 210, not contains any colon symbol.
+    #[validate(length(min = 4, max = 210), custom = "validate_invalid_character")]
     pub name: String,
-    /// Description, length between 0 and 100
-    #[validate(length(min = 0, max = 100))]
+    /// Description, length between 0 and 200
+    #[validate(length(min = 0, max = 200))]
     pub description: String,
     /// Attributes in map
     #[serde(serialize_with = "sorted_map")]
@@ -94,11 +94,11 @@ pub struct CreateDataKeyDTO {
 
 #[derive(Debug, Validate, Deserialize, ToSchema)]
 pub struct ImportDataKeyDTO {
-    /// Key Name, should be identical, length between 4 and 20, not contains any colon symbol.
-    #[validate(length(min = 4, max = 20), custom = "validate_invalid_character")]
+    /// Key Name, should be identical, length between 4 and 210, not contains any colon symbol.
+    #[validate(length(min = 4, max = 210), custom = "validate_invalid_character")]
     pub name: String,
-    /// Description, length between 0 and 100
-    #[validate(length(min = 0, max = 100))]
+    /// Description, length between 0 and 200
+    #[validate(length(min = 0, max = 200))]
     pub description: String,
     /// Attributes in map
     pub attributes: HashMap<String, String>,
