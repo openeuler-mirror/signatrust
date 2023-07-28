@@ -15,3 +15,11 @@ server_port = "8088"
 #type = "dns"
 #server_address = "a.svc.cluster"
 #server_port = "8080"
+# ==============================================
+# configuration to use signatrust test server
+# domain_name = "signatrust-data-server.test.osinfra.cn"
+# tls_cert = "/Users/tommylike/Work/codes/rust-projects/signatrust/.data/certs/client/server.crt"
+# tls_key = "/Users/tommylike/Work/codes/rust-projects/signatrust/.data/certs/client/server.key"
+# type = "single"
+# server_address = "signatrust-data-server.test.osinfra.cn"
+# server_port = "443"

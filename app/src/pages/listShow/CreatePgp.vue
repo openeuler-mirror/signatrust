@@ -218,10 +218,10 @@ const isName = (rule: any, value: any, callback: any) => {
   if (!value) {
     callback();
   } else {
-    const reg = /^[a-zA-Z0-9-]{4,20}$/;
+    const reg = /^[a-zA-Z0-9-]{4,256}$/;
     const name = reg.test(value);
     if (!name) {
-      callback(new Error("The value contains 4 to 20 English characters"));
+      callback(new Error("The value contains 4 to 256 English characters"));
     } else {
       const param = ref({
         name: value,
@@ -238,7 +238,7 @@ const isDesc = (rule: any, value: any, callback: any) => {
   if (!value) {
     callback();
   } else {
-    const reg = /^[a-zA-Z0-9-\s]{1,100}$/;
+    const reg = /^[a-zA-Z0-9-\s]{1,200}$/;
     const desc = reg.test(value);
     if (!desc) {
       callback(new Error("The value contains a maximum of 100 English characters"));
