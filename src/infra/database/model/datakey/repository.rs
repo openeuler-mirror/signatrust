@@ -16,7 +16,7 @@
 
 use super::dto::DataKeyDTO;
 use crate::infra::database::pool::DbPool;
-use crate::domain::datakey::entity::{DataKey, KeyState, KeyType, ParentKey, RevokedKey, X509CRL, X509RevokeReason};
+use crate::domain::datakey::entity::{DataKey, KeyState, KeyType, ParentKey, RevokedKey, Visibility, X509CRL, X509RevokeReason};
 use crate::domain::datakey::repository::Repository;
 use crate::util::error::{Result};
 use async_trait::async_trait;
@@ -28,7 +28,8 @@ use crate::infra::database::model::datakey::dto::X509CRLDTO;
 use crate::infra::database::model::request_delete::dto::{PendingOperationDTO, RequestType, RevokedKeyDTO};
 use crate::util::error;
 
-const PENDING_THRESHOLD: i32 = 3;
+const PUBLICKEY_PENDING_THRESHOLD: i32 = 3;
+const PRIVATEKEY_PENDING_THRESHOLD: i32 = 1;
 
 #[derive(Clone)]
 pub struct DataKeyRepository {
@@ -143,7 +144,7 @@ impl Repository for DataKeyRepository {
         Ok(())
     }
 
-    async fn get_all_keys(&self, key_type: Option<KeyType>) -> Result<Vec<DataKey>> {
+    async fn get_all_keys(&self, key_type: Option<KeyType>, visibility: Visibility) -> Result<Vec<DataKey>> {
         let dtos: Vec<DataKeyDTO> = match key_type {
             None => {
                 sqlx::query_as(
@@ -153,9 +154,10 @@ impl Repository for DataKeyRepository {
             INNER JOIN user U ON D.user = U.id \
             LEFT JOIN pending_operation R ON D.id = R.key_id and R.request_type = 'delete' \
             LEFT JOIN pending_operation K ON D.id = K.key_id and K.request_type = 'revoke' \
-            WHERE D.key_state != ? \
+            WHERE D.key_state != ? AND D.visibility = ? \
             GROUP BY D.id")
                     .bind(KeyState::Deleted.to_string())
+                    .bind(visibility.to_string())
                     .fetch_all(&self.db_pool)
                     .await?
             }
@@ -168,10 +170,11 @@ impl Repository for DataKeyRepository {
             LEFT JOIN pending_operation R ON D.id = R.key_id and R.request_type = 'delete' \
             LEFT JOIN pending_operation K ON D.id = K.key_id and K.request_type = 'revoke' \
             WHERE D.key_state != ? AND \
-            D.key_type = ? \
+            D.key_type = ? AND D.visibility = ? \
             GROUP BY D.id")
                     .bind(KeyState::Deleted.to_string())
                     .bind(key_t.to_string())
+                    .bind(visibility.to_string())
                     .fetch_all(&self.db_pool)
                     .await?
             }
@@ -326,8 +329,9 @@ impl Repository for DataKeyRepository {
         Ok(DataKey::try_from(dto)?)
     }
 
-    async fn request_delete_key(&self, user_id: i32, user_email: String, id: i32) -> Result<()> {
+    async fn request_delete_key(&self, user_id: i32, user_email: String, id: i32, public_key: bool) -> Result<()> {
         let mut tx = self.db_pool.begin().await?;
+        let threshold = if public_key { PUBLICKEY_PENDING_THRESHOLD } else { PRIVATEKEY_PENDING_THRESHOLD };
         //1. update key state to pending delete if needed.
         let _: Option<DataKeyDTO> = sqlx::query_as(
             "UPDATE data_key SET key_state = ? \
@@ -347,15 +351,16 @@ impl Repository for DataKeyRepository {
             .bind(KeyState::Deleted.to_string())
             .bind(id)
             .bind(id)
-            .bind(PENDING_THRESHOLD)
+            .bind(threshold)
             .fetch_optional(&mut tx)
             .await?;
         tx.commit().await?;
         Ok(())
     }
 
-    async fn request_revoke_key(&self, user_id: i32, user_email: String, id: i32, parent_id: i32, reason: X509RevokeReason) -> Result<()> {
+    async fn request_revoke_key(&self, user_id: i32, user_email: String, id: i32, parent_id: i32, reason: X509RevokeReason, public_key: bool) -> Result<()> {
         let mut tx = self.db_pool.begin().await?;
+        let threshold = if public_key { PUBLICKEY_PENDING_THRESHOLD } else { PRIVATEKEY_PENDING_THRESHOLD };
         //1. update key state to pending delete if needed.
         let _: Option<DataKeyDTO> = sqlx::query_as(
             "UPDATE data_key SET key_state = ? \
@@ -377,7 +382,7 @@ impl Repository for DataKeyRepository {
             .bind(KeyState::Revoked.to_string())
             .bind(id)
             .bind(id)
-            .bind(PENDING_THRESHOLD)
+            .bind(threshold)
             .fetch_optional(&mut tx)
             .await?;
         tx.commit().await?;

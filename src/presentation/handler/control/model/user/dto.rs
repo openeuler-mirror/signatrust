@@ -26,7 +26,7 @@ pub const AUTH_HEADER_NAME: &str = "Authorization";
 pub const SET_COOKIE_HEADER: &str = "set-cookie";
 
 
-#[derive(Debug, Deserialize, Serialize, ToSchema)]
+#[derive(Debug, Deserialize, Serialize, ToSchema, Clone)]
 pub struct UserIdentity {
     pub email: String,
     pub id: i32,

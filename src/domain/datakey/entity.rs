@@ -347,8 +347,25 @@ pub struct DataKeyContent {
 pub enum Visibility {
     #[default]
     Public,
-    //NOTE: We don't support private key now.
-    //Private
+    Private
+}
+
+impl Visibility {
+    pub fn from_parameter(s: Option<String>) -> Result<Self> {
+        match s {
+            None => {
+                Ok(Visibility::Public)
+            }
+            Some(value) => {
+                if value == "public" {
+                    return Ok(Visibility::Public);
+                } else if value == "private" {
+                    return Ok(Visibility::Private);
+                }
+                Err(Error::UnsupportedTypeError(format!("unsupported data key visibility {}", value)))
+            }
+        }
+    }
 }
 
 impl FromStr for Visibility {
@@ -357,6 +374,7 @@ impl FromStr for Visibility {
     fn from_str(s: &str) -> Result<Self> {
         match s {
             "public" => Ok(Visibility::Public),
+            "private" => Ok(Visibility::Private),
             _ => Err(Error::UnsupportedTypeError(format!("unsupported data key visibility {}", s))),
         }
     }
@@ -366,6 +384,7 @@ impl Display for Visibility {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             Visibility::Public => write!(f, "public"),
+            Visibility::Private => write!(f, "private"),
         }
     }
 }

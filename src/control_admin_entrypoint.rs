@@ -124,6 +124,9 @@ pub struct CommandGenerateKeys {
     #[arg(long)]
     #[arg(help = "specify th type of key")]
     key_type: String,
+    #[arg(long)]
+    #[arg(help = "specify th visibility of key")]
+    visibility: String,
 }
 
 fn generate_keys_parameters(command: &CommandGenerateKeys) -> HashMap<String, String> {
@@ -172,6 +175,7 @@ async fn main() -> Result<()> {
                 attributes: generate_keys_parameters(&generate_keys),
                 key_type: generate_keys.key_type.clone(),
                 parent_id: None,
+                visibility: Some(generate_keys.visibility.clone()),
                 expire_at: format!("{}", now + Duration::days(30)),
             };
             if generate_keys.key_type == KeyType::X509CA.to_string() {
@@ -186,7 +190,7 @@ async fn main() -> Result<()> {
             }
             key.validate()?;
 
-            let keys = control_server.create_keys(&mut DataKey::create_from(key, UserIdentity::from_user(user))?).await?;
+            let keys = control_server.create_keys(&mut DataKey::create_from(key, UserIdentity::from_user(user.clone()))?, UserIdentity::from_user(user)).await?;
             info!("[Result]: Keys {} type {} has been successfully generated", &keys.name, &generate_keys.key_type)
         }
         None => {}

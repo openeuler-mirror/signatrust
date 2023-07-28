@@ -13,6 +13,7 @@ message SignStreamRequest {
   string key_type = 2;
   string key_id = 3;
   map<string, string> options = 4;
+  optional string token = 5;
 }
 
 message SignStreamResponse {

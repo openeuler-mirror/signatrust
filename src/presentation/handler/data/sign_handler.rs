@@ -28,6 +28,8 @@ use signatrust::{
 use tonic::{Request, Response, Status, Streaming};
 use crate::application::datakey::KeyService;
 use crate::application::user::UserService;
+use crate::util::error::Error;
+use crate::util::error::Result as SignatrustResult;
 
 pub struct SignHandler<K, U>
 where
@@ -49,6 +51,16 @@ where
             user_service
         }
     }
+    async fn validate_private_key_token(&self, token: Option<String>, name: &str) -> SignatrustResult<()> {
+        let names: Vec<_> = name.split(':').collect();
+        if names.len() <= 1 {
+            return Ok(())
+        }
+        if token.is_none() || !self.user_service.validate_token_and_email(names[0], &token.unwrap()).await? {
+            return Err(Error::AuthError("user token and email unmatched".to_string()))
+        }
+        Ok(())
+    }
 }
 
 #[tonic::async_trait]
@@ -66,12 +78,21 @@ where
         let mut key_name: String = "".to_string();
         let mut key_type: String = "".to_string();
         let mut options: HashMap<String, String> = HashMap::new();
+        let mut token: Option<String> = None;
         while let Some(content) = binaries.next().await {
             let mut inner_result = content.unwrap();
             data.append(&mut inner_result.data);
             key_name = inner_result.key_id;
             key_type = inner_result.key_type;
             options = inner_result.options;
+            token = inner_result.token;
+        }
+        //perform token validation on private keys
+        if let Err(err) = self.validate_private_key_token(token, &key_name).await {
+            return Ok(Response::new(SignStreamResponse {
+                signature: vec![],
+                error: err.to_string(),
+            }))
         }
         debug!("begin to sign key_type :{} key_name: {}", key_type, key_name);
         match self.key_service.sign(key_type, key_name, &options, data).await {

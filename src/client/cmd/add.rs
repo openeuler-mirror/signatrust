@@ -89,6 +89,7 @@ pub struct CommandAddHandler {
     detached: bool,
     max_concurrency: usize,
     sign_type: SignType,
+    token: Option<String>,
 }
 
 impl CommandAddHandler {
@@ -160,6 +161,12 @@ impl SignCommand for CommandAddHandler {
         if !file_exists(&working_dir) {
             return Err(error::Error::FileFoundError(format!("working dir: {} not exists", working_dir)));
         }
+        let mut token = None;
+        if let Ok(t) = config.read()?.get_string("token") {
+            if t != "" {
+                token = Some(t);
+            }
+        }
         Ok(CommandAddHandler{
             worker_threads,
             buffer_size: config.read()?.get_string("buffer_size")?.parse()?,
@@ -173,6 +180,7 @@ impl SignCommand for CommandAddHandler {
             detached: command.detached,
             max_concurrency: config.read()?.get_string("max_concurrency")?.parse()?,
             sign_type: command.sign_type,
+            token,
         })
     }
 
@@ -214,7 +222,7 @@ impl SignCommand for CommandAddHandler {
             if let Err(err) = channel {
                 return Some(err)
             }
-            let mut signer = RemoteSigner::new(channel.unwrap(), self.buffer_size);
+            let mut signer = RemoteSigner::new(channel.unwrap(), self.buffer_size, self.token.clone());
             //split file
             let send_handlers = files.into_iter().map(|file|{
                 let task_split_s = split_s.clone();

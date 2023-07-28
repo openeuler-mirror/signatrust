@@ -21,12 +21,20 @@ use serde::{Serialize, Serializer};
 use std::collections::{HashMap, BTreeMap};
 use std::path::Path;
 use sha2::{Sha256, Digest};
+use crate::domain::datakey::entity::Visibility;
 
 pub fn encode_u8_to_hex_string(value: &[u8]) -> String {
     value
         .iter()
         .map(|n| format!("{:02X}", n))
         .collect::<String>()
+}
+
+pub fn get_datakey_full_name(name: &str, email: &str, visibility: &Visibility) -> String {
+    if visibility.to_owned() == Visibility::Private {
+        return format!("{}:{}", email, name);
+    }
+    name.to_string()
 }
 
 pub fn decode_hex_string_to_u8(value: &String) -> Vec<u8> {
