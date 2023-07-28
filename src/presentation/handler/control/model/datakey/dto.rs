@@ -3,7 +3,7 @@ use crate::domain::datakey::entity::KeyType;
 use crate::util::error::Result;
 use chrono::{DateTime, Utc};
 use std::str::FromStr;
-use crate::util::key::sorted_map;
+use crate::util::key::{get_datakey_full_name, sorted_map};
 
 use validator::{Validate, ValidationError};
 use std::collections::HashMap;
@@ -62,6 +62,9 @@ pub struct NameIdenticalQuery {
     /// Key Name, should be identical, length between 4 and 20, not contains any colon symbol.
     #[validate(length(min = 4, max = 20), custom = "validate_invalid_character")]
     pub name: String,
+    /// Key Name, should be identical, length between 4 and 20, not contains any colon symbol.
+    #[validate(custom = "validate_key_visibility")]
+    pub visibility: Option<String>,
 }
 
 #[derive(Deserialize, IntoParams, Validate, ToSchema)]
@@ -69,6 +72,8 @@ pub struct ListKeyQuery {
     /// Key type, optional, should be one of x509ca, x509ica, x509ee, or pgp
     #[validate(custom = "validate_key_type")]
     pub key_type: Option<String>,
+    #[validate(custom = "validate_key_visibility")]
+    pub visibility: Option<String>,
 }
 
 
@@ -80,6 +85,9 @@ pub struct CreateDataKeyDTO {
     /// Description, length between 0 and 100
     #[validate(length(min = 0, max = 100))]
     pub description: String,
+    /// The key's visibility
+    #[validate(custom = "validate_key_visibility")]
+    pub visibility: Option<String>,
     /// Attributes in map
     #[serde(serialize_with = "sorted_map")]
     pub attributes: HashMap<String, String>,
@@ -100,6 +108,9 @@ pub struct ImportDataKeyDTO {
     /// Description, length between 0 and 100
     #[validate(length(min = 0, max = 100))]
     pub description: String,
+    /// The key's visibility
+    #[validate(custom = "validate_key_visibility")]
+    pub visibility: Option<String>,
     /// Attributes in map
     pub attributes: HashMap<String, String>,
     /// Key type current support pgp and x509
@@ -165,6 +176,18 @@ fn validate_utc_time(expire: &str) -> std::result::Result<(), ValidationError> {
     Ok(())
 }
 
+fn validate_key_visibility(visibility: &str) -> std::result::Result<(), ValidationError> {
+    match Visibility::from_str(visibility) {
+        Ok(_) => {
+            Ok(())
+        }
+        Err(_) => {
+            Err(ValidationError::new("unsupported key visibility"))
+        }
+    }
+}
+
+
 fn validate_key_type(key_type: &str) -> std::result::Result<(), ValidationError> {
     match KeyType::from_str(key_type) {
         Ok(_) => {
@@ -189,10 +212,12 @@ impl DataKey {
         let mut combined_attributes = dto.attributes.clone();
         combined_attributes.insert("name".to_string(), dto.name.clone());
         combined_attributes.insert("create_at".to_string(), now.clone().to_string());
+        let visibility = Visibility::from_parameter(dto.visibility)?;
+        let key_name = get_datakey_full_name(&dto.name, &identity.email, &visibility);
         Ok(DataKey {
             id: 0,
-            name: dto.name,
-            visibility: Visibility::Public,
+            name: key_name,
+            visibility,
             description: dto.description,
             user: identity.id,
             attributes: combined_attributes,
@@ -219,10 +244,12 @@ impl DataKey {
         combined_attributes.insert("name".to_string(), dto.name.clone());
         combined_attributes.insert("create_at".to_string(), now.clone().to_string());
         combined_attributes.insert("expire_at".to_string(), dto.expire_at.clone());
+        let visibility = Visibility::from_parameter(dto.visibility)?;
+        let key_name = get_datakey_full_name(&dto.name, &identity.email, &visibility);
         Ok(DataKey {
             id: 0,
-            name: dto.name,
-            visibility: Visibility::Public,
+            name: key_name,
+            visibility,
             description: dto.description,
             user: identity.id,
             attributes: combined_attributes,

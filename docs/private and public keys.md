@@ -8,8 +8,8 @@ Since these keys are only used for one specific project and can be a temporary k
 The `data_key` table will have a new string column named `visibility`.
 ## Control API changes
 1. Create key pairs: Add an attribute `visibility` which only accepts the value `public` or `private`. for any private keys, the key name will be prefixed with user's email for example: `tommylikehu@gmail.com:copr-user1-project1`
-2. List Key pairs: Add an query parameter `visibility` to filter keys accordingly.
-3. The private key can be deleted by user directly, while the case of the public key is more complex.
+2. List Key pairs: Add a query parameter `visibility` to filter keys accordingly, all public key will be returned if omitted.
+3. User can delete the private key directly, while the case of the public key is more complex.
 ```shell
                      >Requst delete by one administrator                       two more administrator confirmed deletion
 Key in Normal State <-------------------------------------> Pending Delete key<----------------------------------------->Deleted
@@ -19,6 +19,7 @@ Key in Normal State <-------------------------------------> Pending Delete key<-
 For the purpose of limiting access to private keys, there are two possible solutions.
 1. Use the SAN attribute in client certificate, the email `SAN` of the client can be verified whether it matches to the key owner's when requesting a private key pairs. But this requires the support of openssl/tonic library.
 2. Add attribute `token` to the grpc requests, and that the verification can be performed without any library changes.
-Note: this verification will be performed only when key name is prefixed with email address.
+We proposed to add optional parameter 'token' to the grpc request, and note this verification will be performed only when key name is prefixed with email address.
+
 
 

@@ -18,7 +18,7 @@ use crate::domain::datakey::repository::Repository as DatakeyRepository;
 use crate::domain::sign_service::SignBackend;
 use crate::util::error::{Error, Result};
 use async_trait::async_trait;
-use crate::domain::datakey::entity::{DataKey, KeyAction, KeyState, KeyType, X509CRL, X509RevokeReason};
+use crate::domain::datakey::entity::{DataKey, KeyAction, KeyState, KeyType, Visibility, X509CRL, X509RevokeReason};
 use tokio::time::{self};
 
 use crate::util::signer_container::DataKeyContainer;
@@ -32,10 +32,10 @@ use crate::presentation::handler::control::model::user::dto::UserIdentity;
 
 #[async_trait]
 pub trait KeyService: Send + Sync{
-    async fn create(&self, data: &mut DataKey) -> Result<DataKey>;
+    async fn create(&self, user: UserIdentity, data: &mut DataKey) -> Result<DataKey>;
     async fn import(&self, data: &mut DataKey) -> Result<DataKey>;
     async fn get_by_name(&self, name: &str) -> Result<DataKey>;
-    async fn get_all(&self, key_type: Option<KeyType>) -> Result<Vec<DataKey>>;
+    async fn get_all(&self, key_type: Option<KeyType>, visibility: Visibility) -> Result<Vec<DataKey>>;
     async fn get_one(&self, user: Option<UserIdentity>, id_or_name: String) -> Result<DataKey>;
     //get keys content
     async fn export_one(&self, user: Option<UserIdentity>, id_or_name: String) -> Result<DataKey>;
@@ -83,7 +83,7 @@ impl<R, S> DBKeyService<R, S>
         }
     }
 
-    async fn get_and_check_permission(&self, _user: Option<UserIdentity>, id_or_name: String, action: KeyAction) -> Result<DataKey> {
+    async fn get_and_check_permission(&self, user: Option<UserIdentity>, id_or_name: String, action: KeyAction) -> Result<DataKey> {
         let id = id_or_name.parse::<i32>();
         let data_key: DataKey = match id {
             Ok(id) => {
@@ -93,6 +93,10 @@ impl<R, S> DBKeyService<R, S>
                 self.repository.get_by_name(&id_or_name).await?
             }
         };
+        //check permission for private keys
+        if data_key.visibility == Visibility::Private && (user.is_none() || data_key.user != user.unwrap().id) {
+            return Err(Error::UnprivilegedError);
+        }
         self.validate_type_and_state(&data_key, action)?;
         Ok(data_key)
     }
@@ -141,8 +145,15 @@ impl<R, S> DBKeyService<R, S>
         }
         Ok(())
     }
-    async fn check_key_hierarchy(&self, data: &DataKey, parent_id: i32) -> Result<()> {
+    async fn check_key_hierarchy(&self, user: UserIdentity, data: &DataKey, parent_id: i32) -> Result<()> {
         let parent_key = self.repository.get_by_id(parent_id).await?;
+        //check permission for private keys
+        if parent_key.visibility == Visibility::Private && parent_key.user != user.id {
+            return Err(Error::UnprivilegedError);
+        }
+        if parent_key.visibility != data.visibility {
+            return Err(Error::ActionsNotAllowedError(format!("parent key '{}' visibility not equal to current datakey", parent_id)));
+        }
         if parent_key.key_state != KeyState::Enabled {
             return Err(Error::ActionsNotAllowedError(format!("parent key '{}' not in enable state", parent_id)));
         }
@@ -168,10 +179,10 @@ where
     R: DatakeyRepository + Clone + 'static,
     S: SignBackend + ?Sized + 'static
 {
-    async fn create(&self, data: &mut DataKey) -> Result<DataKey> {
+    async fn create(&self, user: UserIdentity, data: &mut DataKey) -> Result<DataKey> {
         //check parent key is enabled,expire time is greater than child key and hierarchy is correct
         if let Some(parent_id) = data.parent_id {
-            self.check_key_hierarchy(data, parent_id).await?;
+            self.check_key_hierarchy(user, data, parent_id).await?;
         }
         //we need to create a key in database first, then generate sensitive data
         let mut key = self.repository.create(data.clone()).await?;
@@ -196,8 +207,8 @@ where
         self.repository.get_by_name(name).await
     }
 
-    async fn get_all(&self, key_type: Option<KeyType>) -> Result<Vec<DataKey>> {
-        self.repository.get_all_keys(key_type).await
+    async fn get_all(&self, key_type: Option<KeyType>, visibility: Visibility) -> Result<Vec<DataKey>> {
+        self.repository.get_all_keys(key_type, visibility).await
     }
 
     async fn get_one(&self, user: Option<UserIdentity>,  id_or_name: String) -> Result<DataKey> {
@@ -229,7 +240,7 @@ where
                 return Err(Error::ActionsNotAllowedError(format!("key '{}' is used by other keys, request delete is not allowed", key.name)));
             }
         }
-        self.repository.request_delete_key(user_id, user_email, key.id).await
+        self.repository.request_delete_key(user_id, user_email, key.id, key.visibility == Visibility::Public).await
     }
 
     async fn cancel_delete(&self, user: UserIdentity, id_or_name: String) -> Result<()> {
@@ -242,7 +253,7 @@ where
         let user_id = user.id;
         let user_email = user.email.clone();
         let key = self.get_and_check_permission(Some(user), id_or_name, KeyAction::Revoke).await?;
-        self.repository.request_revoke_key(user_id, user_email, key.id, key.parent_id.unwrap(), reason).await?;
+        self.repository.request_revoke_key(user_id, user_email, key.id, key.parent_id.unwrap(), reason, key.visibility == Visibility::Public).await?;
         Ok(())
     }
 

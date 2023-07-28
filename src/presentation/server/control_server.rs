@@ -44,7 +44,7 @@ use crate::infra::database::model::token::repository::TokenRepository;
 use crate::infra::database::model::user::repository::UserRepository;
 use crate::infra::sign_backend::factory::SignBackendFactory;
 use crate::application::user::{DBUserService, UserService};
-use crate::domain::datakey::entity::DataKey;
+use crate::domain::datakey::entity::{DataKey};
 use crate::domain::token::entity::Token;
 use crate::domain::user::entity::User;
 use crate::presentation::handler::control::model::token::dto::{CreateTokenDTO};
@@ -258,9 +258,9 @@ impl ControlServer {
     }
 
     //used for control admin cmd
-    pub async fn create_keys(&self, data: &mut DataKey) -> Result<DataKey> {
-        let key = self.key_service.create(data).await?;
-        self.key_service.enable(None, format!("{}", key.id)).await?;
+    pub async fn create_keys(&self, data: &mut DataKey, user: UserIdentity) -> Result<DataKey> {
+        let key = self.key_service.create(user.clone(), data).await?;
+        self.key_service.enable(Some(user), format!("{}", key.id)).await?;
         Ok(key)
     }
 

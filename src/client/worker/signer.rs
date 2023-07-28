@@ -34,15 +34,17 @@ use std::io::{Cursor, Read};
 pub struct RemoteSigner {
     client: SignatrustClient<Channel>,
     buffer_size: usize,
+    token: Option<String>,
 }
 
 
 impl RemoteSigner {
 
-    pub fn new(channel: Channel, buffer_size: usize) -> Self {
+    pub fn new(channel: Channel, buffer_size: usize,token: Option<String>) -> Self {
         Self {
             client: SignatrustClient::new(channel),
             buffer_size,
+            token
         }
     }
 }
@@ -66,6 +68,7 @@ impl SignHandler for RemoteSigner {
                     options: item.sign_options.borrow().clone(),
                     key_type: format!("{}", item.key_type),
                     key_id: item.key_id.clone(),
+                    token: self.token.clone(),
                 });
             }
             if sign_segments.is_empty() {

@@ -24,12 +24,13 @@ use crate::presentation::handler::control::model::datakey::dto::{CertificateCont
 use crate::util::error::Error;
 use validator::Validate;
 use crate::application::datakey::KeyService;
-use crate::domain::datakey::entity::{DataKey, KeyType, X509RevokeReason};
+use crate::domain::datakey::entity::{DataKey, KeyType, Visibility, X509RevokeReason};
+use crate::util::key::get_datakey_full_name;
 use super::model::user::dto::UserIdentity;
 
 /// Create new key
 ///
-/// This will generate either a pgp key pairs or a x509 private/public/cert keys.
+/// This will generate either a private/public pgp key pairs or a x509 private/public/cert keys.
 /// ## Naming convention
 /// The name of the key should be unique.
 /// ## Generate pgp key
@@ -45,6 +46,7 @@ use super::model::user::dto::UserIdentity;
 ///   "name": "test-pgp",
 ///   "description": "hello world",
 ///   "key_type": "pgp",
+///   "visibility": "public",
 ///   "attributes": {
 ///     "digest_algorithm": "sha2_256",
 ///     "key_type": "rsa",
@@ -81,6 +83,7 @@ use super::model::user::dto::UserIdentity;
 ///   "description": "hello world",
 ///   "key_type": "x509CA",
 ///   "parent_id": "1111",
+///   "visibility": "public",
 ///   "attributes": {
 ///     "digest_algorithm": "sha2_256",
 ///     "key_type": "rsa",
@@ -117,8 +120,8 @@ use super::model::user::dto::UserIdentity;
 )]
 async fn create_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, datakey: web::Json<CreateDataKeyDTO>,) -> Result<impl Responder, Error> {
     datakey.validate()?;
-    let mut key = DataKey::create_from(datakey.0, user)?;
-    Ok(HttpResponse::Created().json(DataKeyDTO::try_from(key_service.into_inner().create(&mut key).await?)?))
+    let mut key = DataKey::create_from(datakey.0, user.clone())?;
+    Ok(HttpResponse::Created().json(DataKeyDTO::try_from(key_service.into_inner().create(user, &mut key).await?)?))
 }
 
 /// Get all available keys from database.
@@ -126,7 +129,7 @@ async fn create_data_key(user: UserIdentity, key_service: web::Data<dyn KeyServi
 /// ## Example
 /// Call the api endpoint with following curl.
 /// ```text
-/// curl https://domain:port/api/v1/keys/
+/// curl https://domain:port/api/v1/keys/?key_type=xxxx&visibility=xxxxx
 /// ```
 #[utoipa::path(
     get,
@@ -148,7 +151,8 @@ async fn list_data_key(_user: UserIdentity, key_service: web::Data<dyn KeyServic
         Some(ref k) => Some(KeyType::from_str(k)?),
         None => None,
     };
-    let keys = key_service.into_inner().get_all(key_type).await?;
+    let visibility = Visibility::from_parameter(key.visibility.clone())?;
+    let keys = key_service.into_inner().get_all(key_type, visibility).await?;
     let mut results = vec![];
     for k in keys {
         results.push(DataKeyDTO::try_from(k)?)
@@ -467,7 +471,7 @@ async fn disable_data_key(user: UserIdentity, key_service: web::Data<dyn KeyServ
 /// ## Example
 /// Call the api endpoint with following curl.
 /// ```text
-/// curl -X HEAD https://domain:port/api/v1/keys/name_identical?name=xxx
+/// curl -X HEAD https://domain:port/api/v1/keys/name_identical?name=xxx&visibility=xxxxx
 /// ```
 #[utoipa::path(
     head,
@@ -484,9 +488,11 @@ async fn disable_data_key(user: UserIdentity, key_service: web::Data<dyn KeyServ
         (status = 409, description = "Conflict in name")
     )
 )]
-async fn key_name_identical(_user: UserIdentity, key_service: web::Data<dyn KeyService>, name_exist: web::Query<NameIdenticalQuery>,) -> Result<impl Responder, Error> {
+async fn key_name_identical(user: UserIdentity, key_service: web::Data<dyn KeyService>, name_exist: web::Query<NameIdenticalQuery>,) -> Result<impl Responder, Error> {
     name_exist.validate()?;
-    match key_service.into_inner().get_by_name(&name_exist.name.clone()).await {
+    let visibility = Visibility::from_parameter(name_exist.visibility.clone())?;
+    let key_name = get_datakey_full_name(&name_exist.name, &user.email, &visibility);
+    match key_service.into_inner().get_by_name(&key_name).await {
         Ok(_) => Ok(HttpResponse::Conflict()),
         Err(_) => Ok(HttpResponse::Ok()),
     }
@@ -494,7 +500,7 @@ async fn key_name_identical(_user: UserIdentity, key_service: web::Data<dyn KeyS
 
 /// Import key
 ///
-/// Use this API to import openpgp or x509 keys
+/// Use this API to import public/private openpgp or x509 keys
 /// ## Import openPGP keys
 /// `private_key` and `public_key` are required, and the content are represented in armored text format, for example:
 /// ```text
