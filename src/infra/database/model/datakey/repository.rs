@@ -21,6 +21,7 @@ use crate::domain::datakey::repository::Repository;
 use crate::util::error::{Result};
 use async_trait::async_trait;
 use std::boxed::Box;
+use actix_web::web::Data;
 use chrono::Duration;
 use chrono::Utc;
 use sqlx::{MySql, Transaction};
@@ -85,6 +86,27 @@ impl DataKeyRepository {
             .await?;
         Ok(())
     }
+
+    async fn _obtain_datakey_parent(&self, datakey: &mut DataKey) -> Result<()> {
+        if let Some(parent) = datakey.parent_id {
+            let result = self.get_by_id(parent).await;
+            match result {
+                Ok(parent) => {
+                    datakey.parent_key = Some(ParentKey {
+                        name: parent.name,
+                        private_key: parent.private_key.clone(),
+                        public_key: parent.public_key.clone(),
+                        certificate: parent.certificate.clone(),
+                        attributes: parent.attributes
+                    })
+                }
+                _ => {
+                    return Err(error::Error::DatabaseError("unable to find parent key".to_string()));
+                }
+            }
+        }
+        Ok(())
+    }
 }
 
 #[async_trait]
@@ -111,28 +133,12 @@ impl Repository for DataKeyRepository {
             .await?.last_insert_id();
         let mut datakey = self.get_by_id(record as i32).await?;
         //fetch parent key if 'parent_id' exists.
-        if let Some(parent) = datakey.parent_id {
-            let result = self.get_by_id(parent).await;
-            match result {
-                Ok(parent) => {
-                    datakey.parent_key = Some(ParentKey {
-                        name: parent.name,
-                        private_key: parent.private_key.clone(),
-                        public_key: parent.public_key.clone(),
-                        certificate: parent.certificate.clone(),
-                        attributes: parent.attributes
-                    })
-                }
-                Err(error::Error::NotFoundError) => {
-                    let _ = self.delete(record as i32).await;
-                    return Err(error::Error::InvalidArgumentError("parent key does not exist".to_string()));
-                }
-                _ => {
-                    let _ = self.delete(record as i32).await;
-                    return Err(error::Error::DatabaseError("unable to find parent key".to_string()));
-                }
-            }
+        if let Err(err) = self._obtain_datakey_parent(&mut datakey).await {
+            warn!("failed to create datakey {} {}", datakey.name, err);
+            let _ = self.delete(record as i32).await;
+            return Err(err);
         }
+
         Ok(datakey)
     }
 
@@ -326,7 +332,9 @@ impl Repository for DataKeyRepository {
             .bind(KeyState::Enabled.to_string())
             .fetch_one(&self.db_pool)
             .await?;
-        Ok(DataKey::try_from(dto)?)
+        let mut datakey = DataKey::try_from(dto)?;
+        self._obtain_datakey_parent(&mut datakey).await?;
+        return Ok(datakey)
     }
 
     async fn request_delete_key(&self, user_id: i32, user_email: String, id: i32, public_key: bool) -> Result<()> {
