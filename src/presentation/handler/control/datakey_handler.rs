@@ -146,13 +146,13 @@ async fn create_data_key(user: UserIdentity, key_service: web::Data<dyn KeyServi
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn list_data_key(_user: UserIdentity, key_service: web::Data<dyn KeyService>, key: web::Query<ListKeyQuery>) -> Result<impl Responder, Error> {
+async fn list_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, key: web::Query<ListKeyQuery>) -> Result<impl Responder, Error> {
     let key_type = match key.key_type {
         Some(ref k) => Some(KeyType::from_str(k)?),
         None => None,
     };
     let visibility = Visibility::from_parameter(key.visibility.clone())?;
-    let keys = key_service.into_inner().get_all(key_type, visibility).await?;
+    let keys = key_service.into_inner().get_all(key_type, visibility, user.id).await?;
     let mut results = vec![];
     for k in keys {
         results.push(DataKeyDTO::try_from(k)?)

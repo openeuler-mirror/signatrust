@@ -35,7 +35,7 @@ pub trait KeyService: Send + Sync{
     async fn create(&self, user: UserIdentity, data: &mut DataKey) -> Result<DataKey>;
     async fn import(&self, data: &mut DataKey) -> Result<DataKey>;
     async fn get_by_name(&self, name: &str) -> Result<DataKey>;
-    async fn get_all(&self, key_type: Option<KeyType>, visibility: Visibility) -> Result<Vec<DataKey>>;
+    async fn get_all(&self, key_type: Option<KeyType>, visibility: Visibility, user_id: i32) -> Result<Vec<DataKey>>;
     async fn get_one(&self, user: Option<UserIdentity>, id_or_name: String) -> Result<DataKey>;
     //get keys content
     async fn export_one(&self, user: Option<UserIdentity>, id_or_name: String) -> Result<DataKey>;
@@ -152,13 +152,13 @@ impl<R, S> DBKeyService<R, S>
             return Err(Error::UnprivilegedError);
         }
         if parent_key.visibility != data.visibility {
-            return Err(Error::ActionsNotAllowedError(format!("parent key '{}' visibility not equal to current datakey", parent_id)));
+            return Err(Error::ActionsNotAllowedError(format!("parent key '{}' visibility not equal to current datakey", parent_key.name)));
         }
         if parent_key.key_state != KeyState::Enabled {
-            return Err(Error::ActionsNotAllowedError(format!("parent key '{}' not in enable state", parent_id)));
+            return Err(Error::ActionsNotAllowedError(format!("parent key '{}' not in enable state", parent_key.name)));
         }
         if parent_key.expire_at < data.expire_at {
-            return Err(Error::ActionsNotAllowedError(format!("parent key '{}' expire time is less than child key", parent_id)));
+            return Err(Error::ActionsNotAllowedError(format!("parent key '{}' expire time is less than child key", parent_key.name)));
         }
         if data.key_type == X509ICA && parent_key.key_type != X509CA {
             return Err(Error::ActionsNotAllowedError("only CA key is allowed for creating ICA".to_string()));
@@ -207,8 +207,8 @@ where
         self.repository.get_by_name(name).await
     }
 
-    async fn get_all(&self, key_type: Option<KeyType>, visibility: Visibility) -> Result<Vec<DataKey>> {
-        self.repository.get_all_keys(key_type, visibility).await
+    async fn get_all(&self, key_type: Option<KeyType>, visibility: Visibility, user_id: i32) -> Result<Vec<DataKey>> {
+        self.repository.get_all_keys(key_type, visibility, user_id).await
     }
 
     async fn get_one(&self, user: Option<UserIdentity>,  id_or_name: String) -> Result<DataKey> {

@@ -20,8 +20,6 @@ use crate::domain::datakey::entity::{DataKey, KeyState, KeyType, ParentKey, Revo
 use crate::domain::datakey::repository::Repository;
 use crate::util::error::{Result};
 use async_trait::async_trait;
-use std::boxed::Box;
-use actix_web::web::Data;
 use chrono::Duration;
 use chrono::Utc;
 use sqlx::{MySql, Transaction};
@@ -150,11 +148,12 @@ impl Repository for DataKeyRepository {
         Ok(())
     }
 
-    async fn get_all_keys(&self, key_type: Option<KeyType>, visibility: Visibility) -> Result<Vec<DataKey>> {
+    async fn get_all_keys(&self, key_type: Option<KeyType>, visibility: Visibility, user_id: i32) -> Result<Vec<DataKey>> {
         let dtos: Vec<DataKeyDTO> = match key_type {
             None => {
-                sqlx::query_as(
-                    "SELECT D.*, U.email AS user_email, GROUP_CONCAT(R.user_email) as request_delete_users, \
+                if visibility == Visibility::Public {
+                    sqlx::query_as(
+                        "SELECT D.*, U.email AS user_email, GROUP_CONCAT(R.user_email) as request_delete_users, \
             GROUP_CONCAT(K.user_email) as request_revoke_users \
             FROM data_key D \
             INNER JOIN user U ON D.user = U.id \
@@ -162,14 +161,31 @@ impl Repository for DataKeyRepository {
             LEFT JOIN pending_operation K ON D.id = K.key_id and K.request_type = 'revoke' \
             WHERE D.key_state != ? AND D.visibility = ? \
             GROUP BY D.id")
-                    .bind(KeyState::Deleted.to_string())
-                    .bind(visibility.to_string())
-                    .fetch_all(&self.db_pool)
-                    .await?
+                        .bind(KeyState::Deleted.to_string())
+                        .bind(visibility.to_string())
+                        .fetch_all(&self.db_pool)
+                        .await?
+                } else {
+                    sqlx::query_as(
+                        "SELECT D.*, U.email AS user_email, GROUP_CONCAT(R.user_email) as request_delete_users, \
+            GROUP_CONCAT(K.user_email) as request_revoke_users \
+            FROM data_key D \
+            INNER JOIN user U ON D.user = U.id \
+            LEFT JOIN pending_operation R ON D.id = R.key_id and R.request_type = 'delete' \
+            LEFT JOIN pending_operation K ON D.id = K.key_id and K.request_type = 'revoke' \
+            WHERE D.key_state != ? AND D.visibility = ? AND D.user = ? \
+            GROUP BY D.id")
+                        .bind(KeyState::Deleted.to_string())
+                        .bind(visibility.to_string())
+                        .bind(user_id)
+                        .fetch_all(&self.db_pool)
+                        .await?
+                }
             }
             Some(key_t) => {
-                sqlx::query_as(
-                    "SELECT D.*, U.email AS user_email, GROUP_CONCAT(R.user_email) as request_delete_users, \
+               if visibility == Visibility::Public {
+                   sqlx::query_as(
+                       "SELECT D.*, U.email AS user_email, GROUP_CONCAT(R.user_email) as request_delete_users, \
             GROUP_CONCAT(K.user_email) as request_revoke_users \
             FROM data_key D \
             INNER JOIN user U ON D.user = U.id \
@@ -178,11 +194,29 @@ impl Repository for DataKeyRepository {
             WHERE D.key_state != ? AND \
             D.key_type = ? AND D.visibility = ? \
             GROUP BY D.id")
-                    .bind(KeyState::Deleted.to_string())
-                    .bind(key_t.to_string())
-                    .bind(visibility.to_string())
-                    .fetch_all(&self.db_pool)
-                    .await?
+                       .bind(KeyState::Deleted.to_string())
+                       .bind(key_t.to_string())
+                       .bind(visibility.to_string())
+                       .fetch_all(&self.db_pool)
+                       .await?
+               } else {
+                   sqlx::query_as(
+                       "SELECT D.*, U.email AS user_email, GROUP_CONCAT(R.user_email) as request_delete_users, \
+            GROUP_CONCAT(K.user_email) as request_revoke_users \
+            FROM data_key D \
+            INNER JOIN user U ON D.user = U.id \
+            LEFT JOIN pending_operation R ON D.id = R.key_id and R.request_type = 'delete' \
+            LEFT JOIN pending_operation K ON D.id = K.key_id and K.request_type = 'revoke' \
+            WHERE D.key_state != ? AND \
+            D.key_type = ? AND D.visibility = ? AND D.user = ? \
+            GROUP BY D.id")
+                       .bind(KeyState::Deleted.to_string())
+                       .bind(key_t.to_string())
+                       .bind(visibility.to_string())
+                       .bind(user_id)
+                       .fetch_all(&self.db_pool)
+                       .await?
+               }
             }
         };
         let mut results = vec![];
