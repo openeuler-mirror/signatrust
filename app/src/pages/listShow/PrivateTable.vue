@@ -16,27 +16,18 @@
   <el-table
     ref="multipleTableRef"
     :data="useData.tablePriData"
+    border
     style="width: 100%"
   >
-    <el-table-column
-      label="Name"
-      show-overflow-tooltip
-      prop="name"
-      width="250"
-    >
+    <el-table-column label="Name" show-overflow-tooltip prop="name">
     </el-table-column>
     <el-table-column
       prop="key_state"
       label="State"
       align="left"
       show-overflow-tooltip
-      width="80"
     />
-    <el-table-column
-      label="Fingerprint"
-      align="left"
-      show-overflow-tooltip
-    >
+    <el-table-column label="Fingerprint" align="left" show-overflow-tooltip>
       <template #default="scope">
         <img
           src="@/assets/copy.png"
@@ -53,7 +44,6 @@
       prop="description"
       label="Descirption"
       align="left"
-      width="200"
       show-overflow-tooltip
     />
     <el-table-column
@@ -61,10 +51,9 @@
       label="Key Type"
       align="left"
       show-overflow-tooltip
-      width="90"
     >
       <template #default="scope">
-        {{ scope.row.key_type.toUpperCase() }}
+        {{ getKeyType(scope.row.key_type) }}
       </template>
     </el-table-column>
     <el-table-column
@@ -72,21 +61,18 @@
       label="Create Time"
       align="left"
       show-overflow-tooltip
-      width="200"
     />
     <el-table-column
       prop="expire_at"
       label="Expire Time"
       align="left"
       show-overflow-tooltip
-      width="200"
     >
     </el-table-column>
     <el-table-column
       prop="attributes.key_type"
       label="Key Algorithm"
       align="left"
-      width="150"
       show-overflow-tooltip
     >
       <template #default="scope">
@@ -97,7 +83,6 @@
       prop="attributes.digest_algorithm"
       label="Digest Algorithm"
       align="left"
-      width="140"
       show-overflow-tooltip
     >
       <template #default="scope">
@@ -109,7 +94,6 @@
       label="Key Size"
       align="left"
       show-overflow-tooltip
-      width="90"
     />
     <!-- <el-table-column
       prop="user"
@@ -118,48 +102,97 @@
       show-overflow-tooltip
       width="80"
     /> -->
-    <el-table-column fixed="right" label="Operations" width="400">
+    <el-table-column fixed="right" label="Operations">
       <template #default="scope">
-        <el-button
-          link
-          type="primary"
-          size="small"
-          @click="exportData(scope.row.id,scope.row.name)"
-          >Export</el-button
-        ><span v-if="scope.row.key_state === 'disabled'">|
-        <el-button link type="primary" size="small" @click="enableData(scope.row.id, 'enable')"
-          >Enable</el-button
-        ></span> 
-        <span v-else
-          >|
-          <el-button link type="" size="small" disabled
-            >Enable</el-button
-          ></span
-        ><span v-if="scope.row.key_state === 'enabled'">|
-        <el-button link type="primary" size="small" @click="disableData(scope.row.id, 'disable')"
-          >Disable</el-button
-        ></span>
-        <span v-else
-          >|
-          <el-button link type="" size="small" disabled
-            >Disable</el-button
-          ></span
-        ><span v-if="scope.row.key_state === 'disabled'"
-          >|
-          <el-button
-            link
-            type="primary"
-            size="small"
-            @click="requestData(scope.row.id, 'request delete')"
-            >Request Delete</el-button
-          ></span
-        >
-        <span v-else
-          >|
-          <el-button link type="" size="small" disabled
-            >Request Delete</el-button
-          ></span
-        >
+        <el-dropdown trigger="click">
+          <span
+            class="el-dropdown-link"
+            style="margin-right: 30px; cursor: pointer; color: #002fa7"
+          >
+            View<el-icon class="el-icon--right"><arrow-down /></el-icon>
+          </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item
+                @click="exportData(scope.row.id, scope.row.name, 'certificate')"
+                :disabled="
+                  scope.row.key_type === 'x509ca' ||
+                  scope.row.key_type === 'x509ica' ||
+                  scope.row.key_type === 'x509ee'
+                    ? false
+                    : true
+                "
+                >Certificate</el-dropdown-item
+              >
+              <el-dropdown-item
+                @click="exportData(scope.row.id, scope.row.name, 'publicKey')"
+                :disabled="scope.row.key_type === 'pgp' ? false : true"
+                >Pubilc Key</el-dropdown-item
+              >
+              <el-dropdown-item
+                @click="exportData(scope.row.id, scope.row.name, 'crl')"
+                :disabled="
+                  scope.row.key_type === 'x509ca' ||
+                  scope.row.key_type === 'x509ica'
+                    ? false
+                    : true
+                "
+                >CRL</el-dropdown-item
+              >
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+        <el-dropdown trigger="click">
+          <span
+            class="el-dropdown-link"
+            style="cursor: pointer; color: #002fa7"
+          >
+            Actions<el-icon class="el-icon--right"><arrow-down /></el-icon>
+          </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item
+                :disabled="
+                  scope.row.key_state === 'pending_delete' ? false : true
+                "
+                @click="getData(scope.row.id, 'cancel delete')"
+                >Cancel Delete</el-dropdown-item
+              >
+              <el-dropdown-item
+                :disabled="scope.row.key_state === 'disabled' ? false : true"
+                @click="getData(scope.row.id, 'enable')"
+                >Enable</el-dropdown-item
+              >
+              <el-dropdown-item
+                :disabled="scope.row.key_state === 'enabled' ? false : true"
+                @click="getData(scope.row.id, 'disable')"
+                >Disable</el-dropdown-item
+              >
+              <el-dropdown-item
+                :disabled="scope.row.key_state !== 'enabled' ? false : true"
+                @click="getData(scope.row.id, 'delete')"
+                >Delete</el-dropdown-item
+              >
+              <el-dropdown-item
+                :disabled="
+                  scope.row.key_type === 'x509ica' ||
+                  scope.row.key_type === 'x509ee'
+                    ? false
+                    : true
+                "
+                @click="getData(scope.row.id, 'revoke')"
+                >Revoke</el-dropdown-item
+              >
+              <el-dropdown-item
+                :disabled="
+                  scope.row.key_state === 'pending_revoke' ? false : true
+                "
+                @click="getData(scope.row.id, 'pending_revoke')"
+                >Cancel Revoke</el-dropdown-item
+              >
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </template>
     </el-table-column>
   </el-table>
@@ -176,35 +209,164 @@
       @size-change="sizeChange"
       ><span
         >{{ useData.paginationPri.currentPage }}/{{
-          Math.ceil(useData.paginationPri.totalCount / useData.paginationPri.pageSize)
+          Math.ceil(
+            useData.paginationPri.totalCount / useData.paginationPri.pageSize
+          )
         }}</span
-      ></el-pagination>
+      ></el-pagination
+    >
   </div>
-  <el-dialog v-model="dialogVisible" title="Confirmation" width="30%" center>
-    <span class="textCenter"> Confirm to {{witchChange}} </span>
+  <el-dialog
+    v-model="dialogVisible"
+    title="Confirmation"
+    width="30%"
+    center
+    :show-close="false"
+    :before-close="close"
+  >
+    <span class="textCenter">
+      Enter
+      <span style="color: red">{{
+        witchChange !== 'pending_revoke'
+          ? witchChange.toUpperCase()
+          : 'Cancel Revoke'
+      }}</span>
+      in the text box below to confirm the revoction</span
+    >
+    <div style="margin-top: 20px">
+      <el-input
+        v-model="textValue"
+        :placeholder="`Enter ${
+          witchChange !== 'pending_revoke'
+            ? witchChange.toUpperCase()
+            : 'Cancel Revoke'
+        } to confirm the revocation`"
+        @input="getText()"
+        onpaste="return false;"
+      />
+    </div>
+    <div style="margin-top: 20px" v-if="witchChange === 'revoke'">
+      <span style="margin-right: 20px; color: red">Reason</span>
+      <el-select
+        v-model="selectValue"
+        class="m-2"
+        :placeholder="selectValue.toUpperCase()"
+      >
+        <el-option
+          v-for="item in selectOptions"
+          :key="item.value"
+          :label="item.value.toUpperCase()"
+          :value="item.value"
+        />
+      </el-select>
+    </div>
 
     <div class="dialog-footer">
-      <el-button @click="dialogVisible = false">Cancel</el-button>
-      <el-button type="primary" @click="confirm()"> Confirm </el-button>
+      <el-button @click="cleanText()">Cancel</el-button>
+      <el-button type="primary" @click="confirm()" :disabled="trueText">
+        Confirm
+      </el-button>
+    </div>
+  </el-dialog>
+  <el-dialog
+    v-model="dialogTwoVisible"
+    :title="exportName?.toUpperCase()"
+    width="30%"
+    center
+    show-close
+  >
+    <el-input v-model="copyValue" type="textarea" :disabled="false" autosize />
+    <div
+      :data-clipboard-text="copyValue"
+      class="tag"
+      @click="copy()"
+      style="margin: 30px auto"
+    >
+      <button
+        style="
+          padding: 10px 25px;
+          background-color: #002fa7;
+          color: #fff;
+          cursor: pointer;
+        "
+      >
+        Copy
+      </button>
     </div>
   </el-dialog>
 </template>
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-import { Search } from "@element-plus/icons-vue";
-import { ElMessage } from "element-plus";
-import Clipboard from "clipboard";
-import { useDataStore } from "@/store/data";
+import { ref, onMounted } from 'vue';
+import { Search, ArrowDown } from '@element-plus/icons-vue';
+import { ElMessage } from 'element-plus';
+import Clipboard from 'clipboard';
+import { useDataStore } from '@/store/data';
 import {
   queryDeleteKey,
   queryDisableKey,
   queryEnableKey,
-  queryExportKey,
+  queryRevokeKey,
   queryRequestKey,
-} from "@/api/show";
+  queryCertificate,
+  queryCancelRevoke,
+  queryCrl,
+  queryPublicKey,
+} from '@/api/show';
 const dialogVisible = ref(false);
 const useData = useDataStore();
 const searchInput = ref();
+const dialogTwoVisible = ref(false);
+const textValue = ref();
+const trueText = ref(true);
+const copyValue = ref();
+//验证输入
+const close = () => {};
+const getText = () => {
+  if (textValue.value === witchChange.value.toUpperCase()) {
+    trueText.value = false;
+  } else {
+    trueText.value = true;
+  }
+};
+const cleanText = () => {
+  dialogVisible.value = false;
+  dialogTwoVisible.value = false;
+  textValue.value = '';
+  trueText.value = true;
+  selectValue.value = 'unspecified';
+};
+//选择框
+const selectValue = ref('unspecified');
+
+const selectOptions = [
+  {
+    value: 'unspecified',
+  },
+  {
+    value: 'key_compromise',
+  },
+  {
+    value: 'ca_compromise',
+  },
+  {
+    value: 'affiliation_changed',
+  },
+  {
+    value: 'superseded',
+  },
+  {
+    value: 'cessation_of_operation',
+  },
+  {
+    value: 'certificate_hold',
+  },
+  {
+    value: 'privilege_withdrawn',
+  },
+  {
+    value: 'aa_compromise',
+  },
+];
 // 显示第几页
 const handleCurrentChange = (val: any) => {
   // 改变默认的页数
@@ -226,29 +388,29 @@ const getAllData = () => {
 };
 
 const copy = () => {
-  let clipboard = new Clipboard(".tag");
-  clipboard.on("success", (e) => {
+  let clipboard = new Clipboard('.tag');
+  clipboard.on('success', e => {
     ElMessage({
-      message: "复制成功",
-      type: "success",
+      message: '复制成功',
+      type: 'success',
     });
     clipboard.destroy();
   });
-  clipboard.on("error", (e) => {
-    ElMessage.error("复制失败");
+  clipboard.on('error', e => {
+    ElMessage.error('复制失败');
     clipboard.destroy();
   });
 };
 //导出txt
 const exportText = (dataStr: any) => {
   const name = exportName.value;
-  const element = document.createElement("a");
+  const element = document.createElement('a');
   element.setAttribute(
-    "href",
-    "data:pgp/plain;charset=utf-8," + encodeURIComponent(dataStr)
+    'href',
+    'data:pgp/plain;charset=utf-8,' + encodeURIComponent(dataStr)
   );
-  element.setAttribute("download", name);
-  element.style.display = "none";
+  element.setAttribute('download', name);
+  element.style.display = 'none';
   element.click();
 };
 const deleteData = (val: any, value: any) => {
@@ -267,11 +429,37 @@ const disableData = (val: any, value: any) => {
   witchOne.value = val;
 };
 const exportName = ref();
-const exportData = (val: any, value: any) => {
-  queryExportKey(val).then(
-    (res: any) => exportText(res.public_key),
-    (exportName.value = value)
-  );
+const exportData = (val: any, value: any, name: any) => {
+  if (name === 'certificate') {
+    queryCertificate(val)
+      .then(
+        (res: any) => {
+          (dialogTwoVisible.value = true), (copyValue.value = res);
+        }
+        // exportText(res.public_key),
+        //   (exportName.value = value),
+      )
+      .catch((res: any) => {
+        ElMessage.error(res.response.data.detail);
+      });
+  } else if (name === 'crl') {
+    queryCrl(val)
+      .then((res: any) => {
+        (dialogTwoVisible.value = true), (copyValue.value = res);
+      })
+      .catch((res: any) => {
+        ElMessage.error(res.response.data.detail);
+      });
+  } else if (name === 'publicKey') {
+    queryPublicKey(val)
+      .then((res: any) => {
+        (dialogTwoVisible.value = true), (copyValue.value = res);
+      })
+      .catch((res: any) => {
+        ElMessage.error(res.response.data.detail);
+      });
+  }
+  exportName.value = name;
 };
 const requestData = (val: any, value: any) => {
   dialogVisible.value = true;
@@ -281,7 +469,7 @@ const requestData = (val: any, value: any) => {
 onMounted(() => getAllData());
 //搜索
 const querySearch = () => {
-  useData.paginationPri.searchInput = searchInput.value
+  useData.paginationPri.searchInput = searchInput.value;
   getAllData();
 };
 //清空搜索
@@ -292,18 +480,66 @@ const clearSearchInput = () => {
 const witchChange = ref();
 const witchOne = ref();
 const confirm = () => {
-  if (witchChange.value === "delete") {
-    queryDeleteKey(witchOne.value).then((res) => getAllData());
-    dialogVisible.value = false;
-  } else if (witchChange.value === "enable") {
-    queryEnableKey(witchOne.value).then((res) => getAllData());
-    dialogVisible.value = false;
-  } else if (witchChange.value === "disable") {
-    queryDisableKey(witchOne.value).then((res) => getAllData());
-    dialogVisible.value = false;
-  } else if (witchChange.value === "request delete") {
-    queryRequestKey(witchOne.value).then((res) => getAllData());
-    dialogVisible.value = false;
+  if (witchChange.value === 'cancel delete') {
+    queryDeleteKey(witchOne.value)
+      .then(res => getAllData())
+      .catch((res: any) => {
+        ElMessage.error(res.response.data.detail);
+      });
+  } else if (witchChange.value === 'enable') {
+    queryEnableKey(witchOne.value)
+      .then(res => getAllData())
+      .catch((res: any) => {
+        ElMessage.error(res.response.data.detail);
+      });
+  } else if (witchChange.value === 'disable') {
+    queryDisableKey(witchOne.value)
+      .then(res => getAllData())
+      .catch((res: any) => {
+        ElMessage.error(res.response.data.detail);
+      });
+  } else if (witchChange.value === 'delete') {
+    queryRequestKey(witchOne.value)
+      .then(res => getAllData())
+      .catch((res: any) => {
+        ElMessage.error(res.response.data.detail);
+      });
+  } else if (witchChange.value === 'revoke') {
+    const val = {
+      reason: selectValue.value,
+    };
+    queryRevokeKey(witchOne.value, val)
+      .then(res => getAllData())
+      .catch((res: any) => {
+        ElMessage.error(res.response.data.detail);
+      });
+  } else if (witchChange.value === 'pending_revoke') {
+    queryCancelRevoke(witchOne.value)
+      .then((res: any) => getAllData())
+      .catch((res: any) => {
+        ElMessage.error(res.response.data.detail);
+      });
+  }
+  cleanText();
+};
+
+const getData = (val: any, value: any) => {
+  dialogVisible.value = true;
+  witchChange.value = value;
+  witchOne.value = val;
+};
+
+//key type映射
+const getKeyType = (val: any) => {
+  switch (val) {
+    case 'pgp':
+      return 'OpenPGP';
+    case 'x509ca':
+      return 'X509 CA';
+    case 'x509ica':
+      return 'X509 Intermediate CA';
+    case 'x509ee':
+      return 'X509 End Entity';
   }
 };
 </script>

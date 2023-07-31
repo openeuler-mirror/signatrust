@@ -44,6 +44,32 @@
   >
     <GreateTokens @parent="getApiKeys" />
   </el-dialog>
+  <el-dialog
+    v-model="useBase.dialogTwoVisible"
+    title="Token"
+    width="30%"
+    center
+    show-close
+  >
+    <el-input v-model="useBase.copyValue" type="textarea" :disabled="false" autosize />
+    <div
+      :data-clipboard-text="useBase.copyValue"
+      class="tag"
+      @click="copy()"
+      style="margin: 30px auto"
+    >
+      <button
+        style="
+          padding: 10px 25px;
+          background-color: #002fa7;
+          color: #fff;
+          cursor: pointer;
+        "
+      >
+        Copy
+      </button>
+    </div>
+  </el-dialog>
 </template>
 <script setup lang="ts">
 import { ref, reactive, onMounted } from "vue";
@@ -51,6 +77,8 @@ import { ArrowRight } from "@element-plus/icons-vue";
 import AppFooter from "@/components/AppFooter.vue";
 import { useBaseStore } from "@/store/base";
 import GreateTokens from "./GreateTokens.vue";
+import { ElMessage } from 'element-plus';
+import Clipboard from 'clipboard';
 import { queryApiKeys, deleteApiKeys } from "@/api/show";
 const useBase = useBaseStore();
 const centerDialogVisible = ref(false);
@@ -81,6 +109,21 @@ const openDialog = (val: any) => {
   deletId.value = val;
 };
 onMounted(() => getApiKeys());
+
+const copy = () => {
+  let clipboard = new Clipboard('.tag');
+  clipboard.on('success', e => {
+    ElMessage({
+      message: 'Successfully copied',
+      type: 'success',
+    });
+    clipboard.destroy();
+  });
+  clipboard.on('error', e => {
+    ElMessage.error('Failed to copy');
+    clipboard.destroy();
+  });
+};
 </script>
 <style scoped lang="scss">
 .main {
@@ -154,11 +197,15 @@ onMounted(() => getApiKeys());
 }
 footer {
   position: absolute;
-  width: 100%;
   bottom: 0;
+  width: 100%;
+  height: 50px; /* 底部导航的高度 */
 }
 .textCenter {
   display: flex;
   justify-content: center;
+}
+.tag{
+  width: 1px;
 }
 </style>

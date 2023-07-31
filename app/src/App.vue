@@ -53,7 +53,13 @@ queryToken()
     margin: 0 auto;
   }
 }
+
 body {
+  position: relative;
+  min-height: 100vh;
   background: #f5f6f8;
+  padding-bottom: 50px; /* 底部导航的高度 */
 }
+
+
 </style>

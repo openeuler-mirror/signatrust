@@ -22,34 +22,39 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watch } from "vue";
-import { useBaseStore } from "@/store/base";
-import { getApiKeys } from "@/api/show";
+import { reactive, ref, watch } from 'vue';
+import { useBaseStore } from '@/store/base';
+import { getApiKeys } from '@/api/show';
 const useBase = useBaseStore();
 const formLabelAlign = reactive<any>({
-  description: "",
+  description: '',
 });
 const cleanForm = () => {
   const keys = Object.keys(formLabelAlign);
-  keys.forEach((key) => {
-    formLabelAlign[key] = "";
+  keys.forEach(key => {
+    formLabelAlign[key] = '';
   });
 };
 const cancle = () => {
   useBase.dialogVisible = false;
+  useBase.dialogTwoVisible = false
   cleanForm();
-  emit("parent");
+  emit('parent');
 };
 //接收父组件的parent方法
-const emit = defineEmits(["parent"]);
+const emit = defineEmits(['parent']);
 const getKeys = () => {
   const param = {
     description: formLabelAlign.description,
   };
-  getApiKeys(param).then(() => {
-    cancle();  
+  getApiKeys(param).then((res:any) => {
+    useBase.copyValue = res.token
+    cancle();
+    useBase.dialogTwoVisible = true
   });
 };
+
+
 </script>
 <style scoped lang="scss">
 .dialog-footer button:first-child {

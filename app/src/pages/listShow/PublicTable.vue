@@ -13,10 +13,10 @@
       :clearable="true"
     />
   </div>
-  <el-table ref="multipleTableRef" :data="useData.tableData">
-    <el-table-column label="Name" show-overflow-tooltip prop="name" width="150">
+  <el-table ref="multipleTableRef" :data="useData.tableData" border style="width: 100%">
+    <el-table-column label="Name" show-overflow-tooltip prop="name">
     </el-table-column>
-    <el-table-column prop="key_state" label="State" align="left" width="150">
+    <el-table-column prop="key_state" label="State" align="left">
       <template #default="scope">
         <span
           :title="
@@ -69,21 +69,21 @@
       label="Create Time"
       align="left"
       show-overflow-tooltip
-      width="200"
+     
     />
     <el-table-column
       prop="expire_at"
       label="Expire Time"
       align="left"
       show-overflow-tooltip
-      width="200"
+     
     >
     </el-table-column>
     <el-table-column
       prop="attributes.key_type"
       label="Key Algorithm"
       align="left"
-      width="120"
+     
       show-overflow-tooltip
     >
       <template #default="scope">
@@ -94,7 +94,6 @@
       prop="attributes.digest_algorithm"
       label="Digest Algorithm"
       align="left"
-      width="150"
       show-overflow-tooltip
     >
       <template #default="scope">
@@ -106,9 +105,8 @@
       label="Key Size"
       align="left"
       show-overflow-tooltip
-      width="90"
     />
-    <el-table-column fixed="right" label="Operations" width="200">
+    <el-table-column fixed="right" label="Operations">
       <template #default="scope">
         <el-dropdown trigger="click">
           <span
@@ -301,7 +299,7 @@
 </template>
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { Search } from '@element-plus/icons-vue';
+import { Search,ArrowDown } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import Clipboard from 'clipboard';
 import { useDataStore } from '@/store/data';
@@ -316,7 +314,6 @@ import {
   queryCrl,
   queryPublicKey,
 } from '@/api/show';
-import { ArrowDown } from '@element-plus/icons-vue';
 const dialogVisible = ref(false);
 const dialogTwoVisible = ref(false);
 const useData = useDataStore();
