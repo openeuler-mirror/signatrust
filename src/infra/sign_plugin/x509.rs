@@ -28,14 +28,14 @@ use openssl::nid::Nid;
 use openssl::pkcs7::{Pkcs7, Pkcs7Flags};
 use openssl::pkey::{PKey, Private};
 use openssl::rsa::Rsa;
-use openssl::stack::Stack;
+use openssl::stack::{Stack};
 use openssl::x509;
 use openssl::x509::extension::{AuthorityKeyIdentifier, BasicConstraints, KeyUsage, SubjectKeyIdentifier};
 use openssl::x509::{X509Crl, X509Extension};
 use secstr::SecVec;
 use serde::Deserialize;
 use foreign_types_shared::{ForeignType, ForeignTypeRef};
-use openssl_sys::{X509_CRL_new, X509_CRL_set_issuer_name, X509_CRL_set1_lastUpdate, X509_CRL_add0_revoked, X509_CRL_sign, X509_CRL_set1_nextUpdate, X509_REVOKED_new, X509_REVOKED_set_serialNumber, X509_REVOKED_set_revocationDate};
+use openssl_sys::{X509_CRL_new, X509_CRL_set_issuer_name, X509_CRL_set1_lastUpdate, X509_CRL_add0_revoked, X509_CRL_sign, X509_CRL_set1_nextUpdate, X509_REVOKED_new, X509_REVOKED_set_serialNumber, X509_REVOKED_set_revocationDate, X509};
 
 use validator::{Validate, ValidationError};
 use crate::util::options;
@@ -375,6 +375,11 @@ impl SignPlugins for X509Plugin {
     fn sign(&self, content: Vec<u8>, options: HashMap<String, String>) -> Result<Vec<u8>> {
         let private_key = PKey::private_key_from_pem(self.private_key.unsecure())?;
         let certificate = x509::X509::from_pem(self.certificate.unsecure())?;
+        let mut cert_stack = Stack::new()?;
+        cert_stack.push(certificate.clone())?;
+        if self.parent_key.is_some() {
+            cert_stack.push(x509::X509::from_pem(self.parent_key.clone().unwrap().certificate.unsecure())?)?;
+        }
         match SignType::from_str(options.get(options::SIGN_TYPE).unwrap_or(&SignType::Cms.to_string()))? {
             SignType::Authenticode => {
                 let p7b = efi_signer::EfiImage::pem_to_p7(self.certificate.unsecure())?;
@@ -389,7 +394,7 @@ impl SignPlugins for X509Plugin {
                 let pkcs7 = Pkcs7::sign(
                     &certificate,
                     &private_key,
-                    Stack::new().as_ref()?,
+                    &cert_stack,
                     &content,
                     Pkcs7Flags::DETACHED
                         | Pkcs7Flags::NOCERTS
@@ -403,7 +408,7 @@ impl SignPlugins for X509Plugin {
                 let cms_signature = CmsContentInfo::sign(
                     Some(&certificate),
                     Some(&private_key),
-                    None,
+                    Some(&cert_stack),
                     Some(&content),
                     CMSOptions::DETACHED
                         | CMSOptions::CMS_NOCERTS
