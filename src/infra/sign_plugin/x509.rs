@@ -35,7 +35,7 @@ use openssl::x509::{X509Crl, X509Extension};
 use secstr::SecVec;
 use serde::Deserialize;
 use foreign_types_shared::{ForeignType, ForeignTypeRef};
-use openssl_sys::{X509_CRL_new, X509_CRL_set_issuer_name, X509_CRL_set1_lastUpdate, X509_CRL_add0_revoked, X509_CRL_sign, X509_CRL_set1_nextUpdate, X509_REVOKED_new, X509_REVOKED_set_serialNumber, X509_REVOKED_set_revocationDate, X509};
+use openssl_sys::{X509_CRL_new, X509_CRL_set_issuer_name, X509_CRL_set1_lastUpdate, X509_CRL_add0_revoked, X509_CRL_sign, X509_CRL_set1_nextUpdate, X509_REVOKED_new, X509_REVOKED_set_serialNumber, X509_REVOKED_set_revocationDate};
 
 use validator::{Validate, ValidationError};
 use crate::util::options;

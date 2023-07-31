@@ -24,7 +24,7 @@ use crate::domain::datakey::entity::{KeyState, KeyType, RevokedKey, Visibility, 
 pub trait Repository: Send + Sync {
     async fn create(&self, data_key: DataKey) -> Result<DataKey>;
     async fn delete(&self, id: i32) -> Result<()>;
-    async fn get_all_keys(&self, key_type: Option<KeyType>, visibility: Visibility) -> Result<Vec<DataKey>>;
+    async fn get_all_keys(&self, key_type: Option<KeyType>, visibility: Visibility, user_id: i32) -> Result<Vec<DataKey>>;
     async fn get_by_id(&self, id: i32) -> Result<DataKey>;
     async fn get_by_name(&self, name: &str) -> Result<DataKey>;
     async fn update_state(&self, id: i32, state: KeyState) -> Result<()>;
