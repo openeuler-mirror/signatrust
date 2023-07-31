@@ -58,7 +58,11 @@
           class="ml-4"
           @change="getChange()"
         >
-          <!-- <el-radio label="private" title="The private key pairs are managed by yourself, no one else can seen/use your private key pairs.">Private</el-radio> -->
+          <el-radio
+            label="private"
+            title="The private key pairs are managed by yourself, no one else can seen/use your private key pairs."
+            >Private</el-radio
+          >
           <el-radio
             label="public"
             title="The public key pairs can be created/used by any administrator, but in order to delete it, it require triple confirms from different administrators."
@@ -167,6 +171,7 @@ import { queryNewKey, headName, queryAllData } from '@/api/show';
 import type { FormInstance, FormRules } from 'element-plus';
 import { originalDate } from '@/shared/utils/helper';
 import { useDataStore } from '@/store/data';
+import { ElMessage } from 'element-plus';
 const useData = useDataStore();
 const ruleFormRef = ref<FormInstance>();
 const useBase = useBaseStore();
@@ -194,7 +199,7 @@ const param = ref({
   description: 'hello world',
   key_type: 'x509',
   visibility: 'public',
-  parent_id:'',
+  parent_id: Number,
   attributes: {
     digest_algorithm: 'sha2_256',
     key_type: 'rsa',
@@ -212,19 +217,20 @@ const param = ref({
 //获取parentKey
 const getParentKey = () => {
   const param = {
+    visibility: formLabelAlign.visibility,
     key_type: '',
   };
   if (formLabelAlign.type === 'x509ica') {
     param.key_type = 'x509ca';
-    queryAllData(param).then(res => {
+    queryAllData(param).then((res:any) => {
       parentKey.value = res;
-      formLabelAlign.parentKey = parentKey.value[0].id;
+      formLabelAlign.parentKey = res?.length?parentKey.value[0].id:''
     });
   } else if (formLabelAlign.type === 'x509ee') {
     param.key_type = 'x509ica';
-    queryAllData(param).then(res => {
+    queryAllData(param).then((res:any) => {
       parentKey.value = res;
-      formLabelAlign.parentKey = parentKey.value[0].id
+      formLabelAlign.parentKey = res?.length?parentKey.value[0].id:'';
     });
   }
 };
@@ -411,13 +417,16 @@ const rules = reactive<FormRules>({
 });
 //表单请求
 const newKey = () => {
-  queryNewKey(param.value).then(res => {
-    useBase.dialogVisible = false;
-    useData.getTableData();
-    useData.getPriTableData();
-    cleanForm();
-  });
+  queryNewKey(param.value)
+    .then(res => {
+      useBase.dialogVisible = false;
+      useData.getTableData();
+      useData.getPriTableData();
+      cleanForm();
+    })
+    .catch((res: any) => ElMessage.error(res.response.data.detail));
 };
+
 //获取表单值
 const getData = () => {
   param.value.name = formLabelAlign.name;
@@ -435,7 +444,8 @@ const getData = () => {
   param.value.attributes.locality = formLabelAlign.locality;
   param.value.attributes.province_name = formLabelAlign.province_name;
   param.value.attributes.country_name = formLabelAlign.country_name;
-  param.value.parent_id = formLabelAlign.parentKey;
+  param.value.parent_id =
+    formLabelAlign.type === 'x509ca' ? Number : formLabelAlign.parentKey;
 };
 //提交表单
 const submitForm = async (formEl: FormInstance | undefined) => {
@@ -463,6 +473,8 @@ const pickerOptions = (time: any) => {
 //改变radio
 const getChange = () => {
   formLabelAlign.name = '';
+  getParentKey();
+  formLabelAlign.parentKey = '';
 };
 </script>
 <style scoped lang="scss">

@@ -36,7 +36,7 @@
           class="ml-4"
           @change="getChange()"
         >
-          <!-- <el-radio label="private" title="The private key pairs are managed by yourself, no one else can seen/use your private key pairs.">Private</el-radio> -->
+          <el-radio label="private" title="The private key pairs are managed by yourself, no one else can seen/use your private key pairs.">Private</el-radio>
           <el-radio label="public" title="The public key pairs can be created/used by any administrator, but in order to delete it, it require triple confirms from different administrators.">Public</el-radio>
         </el-radio-group>
       </el-form-item>

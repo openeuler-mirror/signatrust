@@ -32,8 +32,7 @@ export const useDataStore = defineStore('data', {
   actions: {
     async getTableData() {
       const param = {
-        // visibility: this.visibility,
-        // key_type:'x509ica'
+        visibility: this.visibility,
       };
       const res = await queryAllData(param);
       this.realData = res;
@@ -59,7 +58,7 @@ export const useDataStore = defineStore('data', {
     },
     async getPriTableData() {
       const param = {
-        // visibility: this.visib,
+        visibility: this.visib,
       };
       const res = await queryAllData(param);
       this.realPriData = res;
@@ -80,7 +79,7 @@ export const useDataStore = defineStore('data', {
         (item: any) => item.key_type === 'pgp'
       ).length;
       this.x509PriData = this.realPriData.filter(
-        (item: any) => item.key_type === 'x509'
+        (item: any) => item.key_type.includes('x509')
       ).length;
     },
   },
