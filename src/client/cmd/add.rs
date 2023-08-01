@@ -110,7 +110,7 @@ impl CommandAddHandler {
                             continue
                         }
                         if let Some(extension) = en.path().extension() {
-                            if self.file_candidates(extension.to_str().unwrap())? {
+                            if self.file_candidates(extension.to_str().unwrap()).is_ok() {
                                 container.push(
                                     sign_identity::SignIdentity::new(
                                         self.file_type.clone(),

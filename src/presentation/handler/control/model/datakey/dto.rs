@@ -214,6 +214,10 @@ impl DataKey {
         combined_attributes.insert("create_at".to_string(), now.clone().to_string());
         let visibility = Visibility::from_parameter(dto.visibility)?;
         let key_name = get_datakey_full_name(&dto.name, &identity.email, &visibility);
+        let mut key_state = KeyState::Disabled;
+        if visibility == Visibility::Private {
+            key_state = KeyState::Enabled;
+        }
         Ok(DataKey {
             id: 0,
             name: key_name,
@@ -230,7 +234,7 @@ impl DataKey {
             certificate: dto.certificate.into_bytes(),
             create_at: now,
             expire_at: now,
-            key_state: KeyState::default(),
+            key_state,
             user_email: None,
             request_delete_users: None,
             request_revoke_users: None,
@@ -246,6 +250,10 @@ impl DataKey {
         combined_attributes.insert("expire_at".to_string(), dto.expire_at.clone());
         let visibility = Visibility::from_parameter(dto.visibility)?;
         let key_name = get_datakey_full_name(&dto.name, &identity.email, &visibility);
+        let mut key_state = KeyState::Disabled;
+        if visibility == Visibility::Private {
+            key_state = KeyState::Enabled;
+        }
         Ok(DataKey {
             id: 0,
             name: key_name,
@@ -262,7 +270,7 @@ impl DataKey {
             certificate: vec![],
             create_at: now,
             expire_at: dto.expire_at.parse()?,
-            key_state: KeyState::default(),
+            key_state,
             user_email: None,
             request_delete_users: None,
             request_revoke_users: None,

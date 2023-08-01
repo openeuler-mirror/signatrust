@@ -32,7 +32,7 @@ use super::model::user::dto::UserIdentity;
 ///
 /// This will generate either a private/public pgp key pairs or a x509 private/public/cert keys.
 /// ## Naming convention
-/// The name of the key should be unique.
+/// The name of the key should be unique and ":" is not allowed in the name.
 /// ## Generate pgp key
 /// To generate a pgp key the required parameters in `attributes` are:
 /// 1. **digest_algorithm**: the digest algorithm used for pgp, for example: sha2_256
@@ -54,7 +54,6 @@ use super::model::user::dto::UserIdentity;
 ///     "email": "test@openeuler.org",
 ///     "passphrase": "password"
 ///   },
-///   "create_at": "2023-04-12 22:10:57+08:00",
 ///   "expire_at": "2024-05-12 22:10:57+08:00"
 /// }
 /// ```
@@ -95,7 +94,6 @@ use super::model::user::dto::UserIdentity;
 ///     "province_name": "province_name",
 ///     "country_name": "country_name"
 ///   },
-///   "create_at": "2023-04-12 22:10:57+08:00",
 ///   "expire_at": "2024-05-12 22:10:57+08:00"
 /// }
 /// ```
