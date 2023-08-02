@@ -55,10 +55,8 @@ num_cpus = "1.15.0"
 walkdir = "2.3.2"
 async-channel = "1.8.0"
 uuid = { version = "1.3.0", features = ["v4"]}
-rpm-infra ="0.0.3"
+rpm-infra ="0.12.1"
 dns-lookup = {version="1.0.8"}
-#sha1 is used in openpgp signature generation
-sha1 = "0.10.5"
 sha2 = "0.10.6"
 bincode = "2.0.0-rc.3"
 secstr = "0.5.1"

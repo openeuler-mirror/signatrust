@@ -28,7 +28,7 @@ use std::net::AddrParseError;
 use std::num::ParseIntError;
 use std::string::FromUtf8Error;
 use std::sync::PoisonError;
-use rpm::RPMError;
+use rpm::Error as RPMError;
 use thiserror::Error as ThisError;
 use tonic::transport::Error as TonicError;
 use bincode::error::{EncodeError, DecodeError};
