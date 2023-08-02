@@ -21,11 +21,9 @@ use async_trait::async_trait;
 use crate::util::error::Result;
 use std::fs::File;
 use std::io::{BufReader, Read};
-use rpm::{Header, IndexSignatureTag, RPMPackage};
+use rpm::{Header, IndexSignatureTag, Package, Digests};
 
-use super::sequential_cursor::SeqCursor;
 use uuid::Uuid;
-use sha1;
 use crate::util::options;
 use crate::util::sign::KeyType;
 use crate::util::error::Error;
@@ -67,7 +65,7 @@ impl FileHandler for RpmFileHandler {
     //2. header and content
     async fn split_data(&self, path: &PathBuf, _sign_options: &mut HashMap<String, String>) -> Result<Vec<Vec<u8>>> {
         let file = File::open(path)?;
-        let package = RPMPackage::parse(&mut BufReader::new(file))?;
+        let package = Package::parse(&mut BufReader::new(file))?;
         let mut header_bytes = Vec::<u8>::with_capacity(1024);
         //collect head and head&payload arrays
         package.metadata.header.write(&mut header_bytes)?;
@@ -86,46 +84,25 @@ impl FileHandler for RpmFileHandler {
     ) -> Result<(String, String)> {
         let temp_rpm = temp_dir.join(Uuid::new_v4().to_string());
         let file = File::open(path)?;
-        let mut package = RPMPackage::parse(&mut BufReader::new(file))?;
+        let mut package = Package::parse(&mut BufReader::new(file))?;
         let mut header_bytes = Vec::<u8>::with_capacity(1024);
         package.metadata.header.write(&mut header_bytes)?;
-        //calculate md5 and sha1 digest
-        let mut header_and_content_cursor =
-            SeqCursor::new(&[header_bytes.as_slice(), package.content.as_slice()]);
-        let digest_md5 = {
-            use md5::Digest;
-            let mut hasher = md5::Md5::default();
-            {
-                // avoid loading it into memory all at once
-                // since the content could be multiple 100s of MBs
-                let mut buf = [0u8; 256];
-                while let Ok(n) = header_and_content_cursor.read(&mut buf[..]) {
-                    if n == 0 {
-                        break;
-                    }
-                    hasher.update(&buf[0..n]);
-                }
-            }
-            let hash_result = hasher.finalize();
-            hash_result.to_vec()
-        };
-        let digest_sha1 = {
-            use sha1::Digest;
-            let mut hasher = sha1::Sha1::default();
-            hasher.update(&header_bytes);
-            let digest = hasher.finalize();
-            hex::encode(digest)
-        };
-        package.metadata.signature = Header::<IndexSignatureTag>::new_signature_header(
-            header_and_content_cursor
-                .len()
-                .try_into()
-                .expect("headers + payload can't be larger than 4gb"),
-            &digest_md5,
-            digest_sha1,
+        let Digests {
+            header_digest_sha256,
+            header_digest_sha1,
+            header_and_content_digest,
+        } = Package::create_sig_header_digests(header_bytes.as_slice(), &package.content.as_slice())?;
+
+        //Only RSA Signature is supported currently.
+        let builder = Header::<IndexSignatureTag>::builder().add_digest(
+            &header_digest_sha1,
+            &header_digest_sha256,
+            &header_and_content_digest,
+        ).add_rsa_signature(
             data[0].as_slice(),
             data[1].as_slice(),
         );
+        package.metadata.signature = builder.build(header_bytes.as_slice().len() + package.content.len());
         //save data into temp file
         let mut output = File::create(temp_rpm.clone())?;
         package.write(&mut output)?;
