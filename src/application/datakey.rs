@@ -184,6 +184,10 @@ where
         if let Some(parent_id) = data.parent_id {
             self.check_key_hierarchy(user, data, parent_id).await?;
         }
+        //check datakey existence
+        if self.repository.get_by_name(&data.name).await.is_ok() {
+            return Err(Error::ParameterError(format!("datakey '{}' already exists", data.name)));
+        }
         //we need to create a key in database first, then generate sensitive data
         let mut key = self.repository.create(data.clone()).await?;
         match self.sign_service.read().await.generate_keys(&mut key).await {
