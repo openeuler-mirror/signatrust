@@ -62,9 +62,10 @@ pub struct PgpKeyImportParameter {
 
 #[derive(Debug, Validate, Deserialize)]
 pub struct PgpKeyGenerationParameter {
-    #[validate(length(min = 4, max = 20, message="invalid openpgp attribute 'name'"))]
+    #[validate(length(min = 4, max = 100, message="invalid openpgp attribute 'name'"))]
     name: String,
-    #[validate(email(message="openpgp attribute 'email'"))]
+    // email format validation is disabled due to copr has the case of group prefixed email: `@group#project@copr.com`
+    #[validate(length(min = 2, max = 100, message="invalid openpgp attribute 'email'"))]
     email: String,
     #[validate(custom( function = "validate_key_type", message="invalid openpgp attribute 'key_type'"))]
     key_type: String,
@@ -431,7 +432,7 @@ mod test {
     fn test_email_generate_parameter() {
         let mut parameter = get_default_parameter();
         parameter.insert("email".to_string(), "fake".to_string());
-        attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect_err("invalid email");
+        attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect("invalid email should work");
         parameter.insert("email".to_string(), "".to_string());
         attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect_err("invalid empty email");
         parameter.insert("email".to_string(), "tommylikehu@gmail.com".to_string());
