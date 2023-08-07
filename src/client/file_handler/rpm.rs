@@ -20,11 +20,14 @@ use super::traits::FileHandler;
 use async_trait::async_trait;
 use crate::util::error::Result;
 use std::fs::File;
+use std::str::FromStr;
+#[allow(unused_imports)]
 use std::io::{BufReader, Read};
 use rpm::{Header, IndexSignatureTag, Package, Digests};
 
 use uuid::Uuid;
-use crate::util::options;
+use crate::domain::datakey::plugins::openpgp::OpenPGPKeyType;
+use crate::util::{options};
 use crate::util::sign::KeyType;
 use crate::util::error::Error;
 
@@ -38,6 +41,24 @@ impl RpmFileHandler {
     pub fn new() -> Self {
         Self {
 
+        }
+    }
+    //defaults to RSA
+    fn get_key_type(&self, key_attributes: &HashMap<String, String>) -> OpenPGPKeyType {
+        match key_attributes.get(options::KEY_TYPE) {
+            Some(value) => {
+                match OpenPGPKeyType::from_str(value) {
+                    Ok(key_type) => {
+                        key_type
+                    }
+                    Err(_) => {
+                        OpenPGPKeyType::RSA
+                    }
+                }
+            }
+            None => {
+                OpenPGPKeyType::RSA
+            }
         }
     }
 }
@@ -60,20 +81,29 @@ impl FileHandler for RpmFileHandler {
         Ok(())
     }
 
-    //rpm has two sections need to be signed
+    //rpm has two sections need to be signed for rsa
     //1. header
     //2. header and content
-    async fn split_data(&self, path: &PathBuf, _sign_options: &mut HashMap<String, String>) -> Result<Vec<Vec<u8>>> {
+    // while there is only section to be signed for dsa
+    //1. header
+    async fn split_data(
+        &self,
+        path: &PathBuf,
+        _sign_options: &mut HashMap<String, String>,
+        key_attributes: &HashMap<String, String>) -> Result<Vec<Vec<u8>>> {
         let file = File::open(path)?;
         let package = Package::parse(&mut BufReader::new(file))?;
         let mut header_bytes = Vec::<u8>::with_capacity(1024);
         //collect head and head&payload arrays
         package.metadata.header.write(&mut header_bytes)?;
-        let mut header_and_content = Vec::new();
-        header_and_content.extend(header_bytes.clone());
-        header_and_content.extend(package.content.clone());
-        Ok(vec![header_bytes, header_and_content])
-
+        return if self.get_key_type(key_attributes) == OpenPGPKeyType::RSA {
+            let mut header_and_content = Vec::new();
+            header_and_content.extend(header_bytes.clone());
+            header_and_content.extend(package.content.clone());
+            Ok(vec![header_bytes, header_and_content])
+        } else {
+            Ok(vec![header_bytes])
+        }
     }
     async fn assemble_data(
         &self,
@@ -81,6 +111,7 @@ impl FileHandler for RpmFileHandler {
         data: Vec<Vec<u8>>,
         temp_dir: &PathBuf,
         _sign_options: &HashMap<String, String>,
+        key_attributes: &HashMap<String, String>
     ) -> Result<(String, String)> {
         let temp_rpm = temp_dir.join(Uuid::new_v4().to_string());
         let file = File::open(path)?;
@@ -93,15 +124,28 @@ impl FileHandler for RpmFileHandler {
             header_and_content_digest,
         } = Package::create_sig_header_digests(header_bytes.as_slice(), &package.content.as_slice())?;
 
-        //Only RSA Signature is supported currently.
-        let builder = Header::<IndexSignatureTag>::builder().add_digest(
-            &header_digest_sha1,
-            &header_digest_sha256,
-            &header_and_content_digest,
-        ).add_rsa_signature(
-            data[0].as_slice(),
-            data[1].as_slice(),
-        );
+        let key_type = self.get_key_type(key_attributes);
+        let builder = match key_type {
+            OpenPGPKeyType::RSA => {
+                Header::<IndexSignatureTag>::builder().add_digest(
+                    &header_digest_sha1,
+                    &header_digest_sha256,
+                    &header_and_content_digest,
+                ).add_rsa_signature(
+                    data[0].as_slice(),
+                    data[1].as_slice(),
+                )
+            }
+            OpenPGPKeyType::EDDSA => {
+                Header::<IndexSignatureTag>::builder().add_digest(
+                    &header_digest_sha1,
+                    &header_digest_sha256,
+                    &header_and_content_digest,
+                ).add_eddsa_signature(
+                    data[0].as_slice(),
+                )
+            }
+        };
         package.metadata.signature = builder.build(header_bytes.as_slice().len() + package.content.len());
         //save data into temp file
         let mut output = File::create(temp_rpm.clone())?;
@@ -172,7 +216,7 @@ mod test {
         let mut sign_options = HashMap::new();
         let file_handler = RpmFileHandler::new();
         let path = get_signed_rpm().expect("get signed rpm failed");
-        let raw_content = file_handler.split_data(&path, &mut sign_options).await.expect("get raw content failed");
+        let raw_content = file_handler.split_data(&path, &mut sign_options, &HashMap::new()).await.expect("get raw content failed");
         assert_eq!(raw_content.len(), 2);
         assert_eq!(raw_content[0].len(), 4325);
         assert_eq!(raw_content[1].len(), 67757);
@@ -183,7 +227,7 @@ mod test {
         let mut sign_options = HashMap::new();
         let file_handler = RpmFileHandler::new();
         let path = generate_invalid_rpm().expect("generate invalid rpm failed");
-        let _raw_content = file_handler.split_data(&path, &mut sign_options).await.expect_err("split invalid rpm file would failed");
+        let _raw_content = file_handler.split_data(&path, &mut sign_options, &HashMap::new()).await.expect_err("split invalid rpm file would failed");
     }
 
     #[tokio::test]
@@ -192,7 +236,7 @@ mod test {
         let file_handler = RpmFileHandler::new();
         let path = generate_signed_rpm().expect("generate signed rpm failed");
         let fake_signature = vec![vec![1,2,3,4], vec![1,2,3,4]];
-        let _raw_content = file_handler.assemble_data(&path, fake_signature, &env::temp_dir(), &mut sign_options).await.expect("assemble data failed");
+        let _raw_content = file_handler.assemble_data(&path, fake_signature, &env::temp_dir(), &mut sign_options, &HashMap::new()).await.expect("assemble data failed");
     }
 
 }

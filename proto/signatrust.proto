@@ -5,7 +5,21 @@ package signatrust;
 
 // The Signatrust service definition.
 service Signatrust {
+  //Obtain key information
+  rpc GetKeyInfo(GetKeyInfoRequest) returns (GetKeyInfoResponse) {};
+  //Sign package
   rpc SignStream(stream SignStreamRequest) returns (SignStreamResponse) {};
+}
+
+message GetKeyInfoRequest {
+  string key_type = 1;
+  string key_id = 2;
+  optional string token = 3;
+}
+
+message GetKeyInfoResponse {
+  map<string, string> attributes = 1;
+  string error = 2;
 }
 
 message SignStreamRequest {

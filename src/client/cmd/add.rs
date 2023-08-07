@@ -37,6 +37,7 @@ use crate::client::worker::signer::RemoteSigner;
 use crate::client::worker::splitter::Splitter;
 use crate::client::worker::traits::SignHandler;
 use std::sync::atomic::{AtomicI32, Ordering};
+use crate::client::worker::key_fetcher::KeyFetcher;
 use crate::util::error::Error::CommandProcessFailed;
 use crate::util::key::file_exists;
 
@@ -163,7 +164,7 @@ impl SignCommand for CommandAddHandler {
         }
         let mut token = None;
         if let Ok(t) = config.read()?.get_string("token") {
-            if t != "" {
+            if !t.is_empty() {
                 token = Some(t);
             }
         }
@@ -199,7 +200,6 @@ impl SignCommand for CommandAddHandler {
     //            vector                sign_chn                      assemble_chn             collect_chn
     //  fetcher-----------splitter * N----------remote signer * N---------------assembler * N--------------collector * N
     fn handle(&self) -> Result<bool> {
-        let files = self.collect_file_candidates()?;
         let succeed_files = Arc::new(AtomicI32::new(0));
         let failed_files = Arc::new(AtomicI32::new(0));
         let runtime = runtime::Builder::new_multi_thread()
@@ -211,7 +211,6 @@ impl SignCommand for CommandAddHandler {
         let (sign_s, sign_r) = bounded::<sign_identity::SignIdentity>(self.max_concurrency);
         let (assemble_s, assemble_r) = bounded::<sign_identity::SignIdentity>(self.max_concurrency);
         let (collect_s, collect_r) = bounded::<sign_identity::SignIdentity>(self.max_concurrency);
-        info!("starting to sign {} files", files.len());
         let lb_config = self.config.read()?.get_table("server")?;
         let errored = runtime.block_on(async {
             let channel_provider = ChannelFactory::new(&lb_config).await;
@@ -222,6 +221,29 @@ impl SignCommand for CommandAddHandler {
             if let Err(err) = channel {
                 return Some(err)
             }
+            //fetch datakey attributes
+            info!("starting to fetch datakey [{}] {} attribute",self.key_type,  self.key_name);
+            let mut key_fetcher = KeyFetcher::new(channel.clone().unwrap(), self.token.clone());
+            let key_attributes;
+            match key_fetcher.get_key_attributes(&self.key_name, &self.key_type.to_string()).await {
+                Ok(attributes) => {
+                    key_attributes = attributes
+                }
+                Err(err) => {
+                    return Some(err)
+                }
+            }
+            //collect file candidates
+            let files;
+            match self.collect_file_candidates() {
+                Ok(f) => {
+                    files = f
+                }
+                Err(err) => {
+                    return Some(err)
+                }
+            }
+            info!("starting to sign {} files", files.len());
             let mut signer = RemoteSigner::new(channel.unwrap(), self.buffer_size, self.token.clone());
             //split file
             let send_handlers = files.into_iter().map(|file|{
@@ -238,12 +260,13 @@ impl SignCommand for CommandAddHandler {
             }).collect::<Vec<_>>();
             //do file split
             let task_sign_s = sign_s.clone();
+            let s_key_attributes = key_attributes.clone();
             let split_handler = tokio::spawn(async move {
                 loop {
                     let sign_identity = split_r.recv().await;
                     match sign_identity {
                         Ok(identity) => {
-                            let mut splitter = Splitter::new();
+                            let mut splitter = Splitter::new(s_key_attributes.clone());
                             splitter.handle(identity, task_sign_s.clone()).await;
                         },
                         Err(_) => {
@@ -277,7 +300,7 @@ impl SignCommand for CommandAddHandler {
                     let sign_identity = assemble_r.recv().await;
                     match sign_identity {
                         Ok(identity) => {
-                            let mut assembler = Assembler::new( working_dir.clone());
+                            let mut assembler = Assembler::new( working_dir.clone(), key_attributes.clone());
                             assembler.handle(identity, task_collect_s.clone()).await;
                         },
                         Err(_) => {

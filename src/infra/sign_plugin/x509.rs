@@ -22,12 +22,10 @@ use chrono::{DateTime, Utc};
 use openssl::asn1::{Asn1Integer, Asn1Time};
 use openssl::bn::{BigNum, MsbOption};
 use openssl::cms::{CmsContentInfo, CMSOptions};
-use openssl::dsa::Dsa;
 use openssl::hash::MessageDigest;
 use openssl::nid::Nid;
 use openssl::pkcs7::{Pkcs7, Pkcs7Flags};
-use openssl::pkey::{PKey, Private};
-use openssl::rsa::Rsa;
+use openssl::pkey::{PKey};
 use openssl::stack::{Stack};
 use openssl::x509;
 use openssl::x509::extension::{AuthorityKeyIdentifier, BasicConstraints, KeyUsage, SubjectKeyIdentifier};
@@ -41,14 +39,13 @@ use validator::{Validate, ValidationError};
 use crate::util::options;
 use crate::util::sign::SignType;
 use crate::domain::datakey::entity::{DataKey, DataKeyContent, INFRA_CONFIG_DOMAIN_NAME, KeyType, RevokedKey, SecDataKey, SecParentDateKey};
+use crate::domain::datakey::plugins::x509::{X509KeyType, X509_VALID_KEY_SIZE, X509DigestAlgorithm};
 use crate::util::error::{Error, Result};
 use crate::domain::sign_plugin::SignPlugins;
 use crate::util::key::{decode_hex_string_to_u8, encode_u8_to_hex_string};
 use super::util::{validate_utc_time_not_expire, validate_utc_time, attributes_validate};
-
-const VALID_KEY_TYPE: [&str; 2] = ["rsa", "dsa"];
-const VALID_KEY_SIZE: [&str; 3] = ["2048", "3072", "4096"];
-const VALID_DIGEST_ALGORITHM: [&str; 6] = ["md5", "sha1", "sha2_256","sha2_384","sha2_512","sha2_224"];
+#[allow(unused_imports)]
+use enum_iterator::{all};
 
 #[derive(Debug, Validate, Deserialize)]
 pub struct X509KeyGenerationParameter {
@@ -64,12 +61,10 @@ pub struct X509KeyGenerationParameter {
     province_name: String,
     #[validate(length(min = 2, max = 2, message="invalid x509 subject 'CountryName'"))]
     country_name: String,
-    #[validate(custom(function = "validate_x509_key_type", message="invalid x509 attribute 'key_type'"))]
-    key_type: String,
+    key_type: X509KeyType,
     #[validate(custom(function = "validate_x509_key_size", message="invalid x509 attribute 'key_length'"))]
     key_length: String,
-    #[validate(custom(function= "validate_x509_digest_algorithm_type", message="invalid digest algorithm"))]
-    digest_algorithm: String,
+    digest_algorithm: X509DigestAlgorithm,
     #[validate(custom(function = "validate_utc_time", message="invalid x509 attribute 'create_at'"))]
     create_at: String,
     #[validate(custom(function= "validate_utc_time_not_expire", message="invalid x509 attribute 'expire_at'"))]
@@ -78,11 +73,10 @@ pub struct X509KeyGenerationParameter {
 
 #[derive(Debug, Validate, Deserialize)]
 pub struct X509KeyImportParameter {
-    key_type: String,
+    key_type: X509KeyType,
     #[validate(custom(function = "validate_x509_key_size", message="invalid x509 attribute 'key_length'"))]
     key_length: String,
-    #[validate(custom(function= "validate_x509_digest_algorithm_type", message="invalid digest algorithm"))]
-    digest_algorithm: String,
+    digest_algorithm: X509DigestAlgorithm,
     #[validate(custom(function = "validate_utc_time", message="invalid x509 attribute 'create_at'"))]
     create_at: String,
     #[validate(custom(function= "validate_utc_time_not_expire", message="invalid x509 attribute 'expire_at'"))]
@@ -92,30 +86,6 @@ pub struct X509KeyImportParameter {
 
 
 impl X509KeyGenerationParameter {
-    pub fn get_key(&self) -> Result<PKey<Private>> {
-        return match self.key_type.as_str() {
-            "rsa" => Ok(PKey::from_rsa(Rsa::generate(self.key_length.parse()?)?)?),
-            "dsa" => Ok(PKey::from_dsa(Dsa::generate(self.key_length.parse()?)?)?),
-            _ => Err(Error::ParameterError(
-                "invalid key type for x509".to_string(),
-            )),
-        };
-    }
-
-    pub fn get_digest_algorithm(&self) -> Result<MessageDigest> {
-        return match self.digest_algorithm.as_str() {
-            "md5" => Ok(MessageDigest::md5()),
-            "sha1" => Ok(MessageDigest::sha1()),
-            "sha2_256" => Ok(MessageDigest::sha224()),
-            "sha2_384" => Ok(MessageDigest::sha256()),
-            "sha2_512" => Ok(MessageDigest::sha384()),
-            "sha2_224" => Ok(MessageDigest::sha512()),
-            _ => Err(Error::ParameterError(
-                "invalid digest algorithm for x509".to_string(),
-            )),
-        };
-    }
-
     pub fn get_subject_name(&self) -> Result<x509::X509Name> {
         let mut x509_name = x509::X509NameBuilder::new()?;
         x509_name.append_entry_by_text("CN", &self.common_name)?;
@@ -128,15 +98,8 @@ impl X509KeyGenerationParameter {
     }
 }
 
-fn validate_x509_key_type(key_type: &str) -> std::result::Result<(), ValidationError> {
-    if !VALID_KEY_TYPE.contains(&key_type) {
-        return Err(ValidationError::new("invalid key type, possible values are rsa/dsa"));
-    }
-    Ok(())
-}
-
 fn validate_x509_key_size(key_size: &str) -> std::result::Result<(), ValidationError> {
-    if !VALID_KEY_SIZE.contains(&key_size) {
+    if !X509_VALID_KEY_SIZE.contains(&key_size) {
         return Err(ValidationError::new("invalid key size, possible values are 2048/3072/4096"));
     }
     Ok(())
@@ -146,13 +109,6 @@ fn days_in_duration(time: &str) -> Result<i64> {
     let start = Utc::now();
     let end = time.parse::<DateTime<Utc>>()?;
     Ok((end - start).num_days())
-}
-
-fn validate_x509_digest_algorithm_type(key_type: &str) -> std::result::Result<(), ValidationError> {
-    if !VALID_DIGEST_ALGORITHM.contains(&key_type) {
-        return Err(ValidationError::new("invalid hash algorithm, possible values are none/md5/sha1/sha1/sha2_256/sha2_384/sha2_512/sha2_224"));
-    }
-    Ok(())
 }
 
 pub struct X509Plugin {
@@ -191,7 +147,7 @@ impl X509Plugin {
     fn generate_x509ca_keys(&self, _infra_config: &HashMap<String, String>) -> Result<DataKeyContent> {
         let parameter = attributes_validate::<X509KeyGenerationParameter>(&self.attributes)?;
         //generate self signed certificate
-        let keys = parameter.get_key()?;
+        let keys = parameter.key_type.get_real_key_type(parameter.key_length.parse()?)?;
         let mut generator = x509::X509Builder::new()?;
         let serial_number = X509Plugin::generate_serial_number()?;
         generator.set_subject_name(parameter.get_subject_name()?.as_ref())?;
@@ -209,7 +165,7 @@ impl X509Plugin {
         generator.append_extension(X509Extension::new_nid(None, None, Nid::NETSCAPE_COMMENT, "Signatrust Root CA")?)?;
         generator.append_extension(X509Extension::new_nid(None, None, Nid::NETSCAPE_CERT_TYPE, "objCA")?)?;
 
-        generator.sign(keys.as_ref(), parameter.get_digest_algorithm()?)?;
+        generator.sign(keys.as_ref(), parameter.digest_algorithm.get_real_algorithm())?;
         let cert = generator.build();
         Ok(DataKeyContent{
             private_key: keys.private_key_to_pem_pkcs8()?,
@@ -240,7 +196,7 @@ impl X509Plugin {
         let ca_key = PKey::private_key_from_pem(self.parent_key.clone().unwrap().private_key.unsecure())?;
         let ca_cert = x509::X509::from_pem(self.parent_key.clone().unwrap().certificate.unsecure())?;
         //generate self signed certificate
-        let keys = parameter.get_key()?;
+        let keys = parameter.key_type.get_real_key_type(parameter.key_length.parse()?)?;
         let mut generator = x509::X509Builder::new()?;
         let serial_number = X509Plugin::generate_serial_number()?;
         generator.set_subject_name(parameter.get_subject_name()?.as_ref())?;
@@ -258,7 +214,7 @@ impl X509Plugin {
         generator.append_extension(X509Extension::new_nid(None, None, Nid::CRL_DISTRIBUTION_POINTS, &self.generate_crl_endpoint(&self.parent_key.clone().unwrap().name, infra_config)?)?)?;
         generator.append_extension(X509Extension::new_nid(None, None, Nid::NETSCAPE_COMMENT, "Signatrust Intermediate CA")?)?;
         generator.append_extension(X509Extension::new_nid(None, None, Nid::NETSCAPE_CERT_TYPE, "objCA")?)?;
-        generator.sign(ca_key.as_ref(), parameter.get_digest_algorithm()?)?;
+        generator.sign(ca_key.as_ref(), parameter.digest_algorithm.get_real_algorithm())?;
         let cert = generator.build();
         //use parent private key to sign the certificate
         Ok(DataKeyContent{
@@ -291,7 +247,7 @@ impl X509Plugin {
         let ca_key = PKey::private_key_from_pem(self.parent_key.clone().unwrap().private_key.unsecure())?;
         let ca_cert = x509::X509::from_pem(self.parent_key.clone().unwrap().certificate.unsecure())?;
         //generate self signed certificate
-        let keys = parameter.get_key()?;
+        let keys = parameter.key_type.get_real_key_type(parameter.key_length.parse()?)?;
         let mut generator = x509::X509Builder::new()?;
         let serial_number = X509Plugin::generate_serial_number()?;
         generator.set_subject_name(parameter.get_subject_name()?.as_ref())?;
@@ -309,7 +265,7 @@ impl X509Plugin {
         generator.append_extension(X509Extension::new_nid(None, None, Nid::CRL_DISTRIBUTION_POINTS, &self.generate_crl_endpoint(&self.parent_key.clone().unwrap().name, infra_config)?)?)?;
         generator.append_extension(X509Extension::new_nid(None, None, Nid::NETSCAPE_COMMENT, "Signatrust Sign Certificate")?)?;
         generator.append_extension(X509Extension::new_nid(None, None, Nid::NETSCAPE_CERT_TYPE, "objsign")?)?;
-        generator.sign(ca_key.as_ref(), parameter.get_digest_algorithm()?)?;
+        generator.sign(ca_key.as_ref(), parameter.digest_algorithm.get_real_algorithm())?;
         let cert = generator.build();
         //use parent private key to sign the certificate
         Ok(DataKeyContent{
@@ -442,7 +398,7 @@ impl SignPlugins for X509Plugin {
                 unsafe {X509_CRL_add0_revoked(crl, revoked)};
             }
         }
-        unsafe {X509_CRL_sign(crl, private_key.as_ptr(), parameter.get_digest_algorithm()?.as_ptr())};
+        unsafe {X509_CRL_sign(crl, private_key.as_ptr(), parameter.digest_algorithm.get_real_algorithm().as_ptr())};
         let content = unsafe {X509Crl::from_ptr(crl)};
         Ok(content.to_pem()?)
     }
@@ -584,7 +540,7 @@ mod test {
         attributes_validate::<X509KeyGenerationParameter>(&parameter).expect_err("invalid key type");
         parameter.insert("key_type".to_string(), "".to_string());
         attributes_validate::<X509KeyGenerationParameter>(&parameter).expect_err("invalid empty key type");
-        for key_type in VALID_KEY_TYPE {
+        for key_type in all::<X509KeyType>().collect::<Vec<_>>() {
             parameter.insert("key_type".to_string(), key_type.to_string());
             attributes_validate::<X509KeyGenerationParameter>(&parameter).expect("valid key type");
         }
@@ -597,7 +553,7 @@ mod test {
         attributes_validate::<X509KeyGenerationParameter>(&parameter).expect_err("invalid key length");
         parameter.insert("key_length".to_string(), "".to_string());
         attributes_validate::<X509KeyGenerationParameter>(&parameter).expect_err("invalid empty key length");
-        for key_length in VALID_KEY_SIZE {
+        for key_length in X509_VALID_KEY_SIZE {
             parameter.insert("key_length".to_string(), key_length.to_string());
             attributes_validate::<X509KeyGenerationParameter>(&parameter).expect("valid key length");
         }
@@ -610,7 +566,7 @@ mod test {
         attributes_validate::<X509KeyGenerationParameter>(&parameter).expect_err("invalid digest algorithm");
         parameter.insert("digest_algorithm".to_string(),"".to_string());
         attributes_validate::<X509KeyGenerationParameter>(&parameter).expect_err("invalid empty digest algorithm");
-        for key_length in VALID_DIGEST_ALGORITHM {
+        for key_length in all::<X509DigestAlgorithm>().collect::<Vec<_>>() {
             parameter.insert("digest_algorithm".to_string(),key_length.to_string());
             attributes_validate::<X509KeyGenerationParameter>(&parameter).expect("valid digest algorithm");
         }
@@ -646,7 +602,7 @@ mod test {
         //choose 4 random digest algorithm
         let dummy_engine = get_encryption_engine();
         let infra_config = get_infra_config();
-        for hash in VALID_DIGEST_ALGORITHM {
+        for hash in all::<X509DigestAlgorithm>().collect::<Vec<_>>() {
             parameter.insert("digest_algorithm".to_string(), hash.to_string());
             let sec_datakey = SecDataKey::load(
                 &get_default_datakey(
@@ -661,7 +617,7 @@ mod test {
         let mut parameter = get_default_parameter();
         let dummy_engine = get_encryption_engine();
         let infra_config = get_infra_config();
-        for key_size in VALID_KEY_SIZE{
+        for key_size in X509_VALID_KEY_SIZE {
             parameter.insert("key_size".to_string(), key_size.to_string());
             let sec_datakey = SecDataKey::load(
                 &get_default_datakey(
@@ -676,7 +632,7 @@ mod test {
         let mut parameter = get_default_parameter();
         let dummy_engine = get_encryption_engine();
         let infra_config = get_infra_config();
-        for key_type in VALID_KEY_TYPE{
+        for key_type in all::<X509KeyType>().collect::<Vec<_>>() {
             parameter.insert("key_type".to_string(), key_type.to_string());
             let sec_datakey = SecDataKey::load(
                 &get_default_datakey(

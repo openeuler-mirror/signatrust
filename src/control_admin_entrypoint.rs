@@ -84,8 +84,8 @@ pub struct CommandGenerateKeys {
     #[arg(help = "specify the type of internal key used for keys generation, ie, rsa")]
     param_key_type: String,
     #[arg(long)]
-    #[arg(help = "specify the type of internal key used for keys generation, ie, 1024")]
-    param_key_size: String,
+    #[arg(help = "specify the type of internal key used for keys generation, ie, 2048")]
+    param_key_size: Option<String>,
     #[arg(long)]
     #[arg(help = "specify the type of digest algorithm used for signing, ie, sha1")]
     digest_algorithm: String,
@@ -132,7 +132,9 @@ pub struct CommandGenerateKeys {
 fn generate_keys_parameters(command: &CommandGenerateKeys) -> HashMap<String, String> {
     let mut attributes = HashMap::new();
     attributes.insert("key_type".to_string(), command.param_key_type.clone());
-    attributes.insert("key_length".to_string(), command.param_key_size.clone());
+    if command.param_key_size.is_some() {
+        attributes.insert("key_length".to_string(), command.param_key_size.clone().unwrap());
+    }
     attributes.insert("digest_algorithm".to_string(), command.digest_algorithm.clone());
     let key_type = EntityKeyTpe::from_str(&command.key_type).unwrap();
     if key_type == EntityKeyTpe::OpenPGP {

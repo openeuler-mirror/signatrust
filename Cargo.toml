@@ -76,6 +76,7 @@ efi_signer = "0.2.4"
 regex = "1"
 csrf= "0.4.1"
 data-encoding= "2.4.0"
+enum-iterator= "1.4.1"
 
 [build-dependencies]
 tonic-build = "0.8.4"

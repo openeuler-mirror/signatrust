@@ -23,7 +23,7 @@ use tokio_stream::StreamExt;
 
 use signatrust::{
     signatrust_server::Signatrust, signatrust_server::SignatrustServer, SignStreamRequest,
-    SignStreamResponse,
+    SignStreamResponse, GetKeyInfoRequest, GetKeyInfoResponse
 };
 use tonic::{Request, Response, Status, Streaming};
 use crate::application::datakey::KeyService;
@@ -51,7 +51,7 @@ where
             user_service
         }
     }
-    async fn validate_private_key_token(&self, token: Option<String>, name: &str) -> SignatrustResult<()> {
+    async fn validate_key_token_matched(&self, token: Option<String>, name: &str) -> SignatrustResult<()> {
         let names: Vec<_> = name.split(':').collect();
         if names.len() <= 1 {
             return Ok(())
@@ -69,6 +69,34 @@ where
     K: KeyService + 'static,
     U: UserService + 'static,
 {
+    async fn get_key_info(
+        &self,
+        request: Request<GetKeyInfoRequest>,
+    ) -> Result<Response<GetKeyInfoResponse>, Status>
+    {
+        let request = request.into_inner();
+        //perform token validation on private keys
+        if let Err(err) = self.validate_key_token_matched(request.token, &request.key_id).await {
+            return Ok(Response::new(GetKeyInfoResponse {
+                attributes: HashMap::new(),
+                error: err.to_string(),
+            }))
+        }
+        return match self.key_service.get_by_type_and_name(request.key_type, request.key_id).await {
+            Ok(datakey) => {
+                Ok(Response::new(GetKeyInfoResponse {
+                    attributes: datakey.attributes,
+                    error: "".to_string(),
+                }))
+            }
+            Err(err) => {
+                Ok(Response::new(GetKeyInfoResponse {
+                    attributes: HashMap::new(),
+                    error: err.to_string(),
+                }))
+            }
+        }
+    }
     async fn sign_stream(
         &self,
         request: Request<Streaming<SignStreamRequest>>,
@@ -88,7 +116,7 @@ where
             token = inner_result.token;
         }
         //perform token validation on private keys
-        if let Err(err) = self.validate_private_key_token(token, &key_name).await {
+        if let Err(err) = self.validate_key_token_matched(token, &key_name).await {
             return Ok(Response::new(SignStreamResponse {
                 signature: vec![],
                 error: err.to_string(),

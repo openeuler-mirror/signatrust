@@ -38,9 +38,14 @@ function create_default_x509_ee {
   --param-x509-common-name Infra --param-x509-organization Huawei --param-x509-locality ShenZhen --param-x509-province-name GuangDong --param-x509-country-name CN --param-x509-organizational-unit Infra --digest-algorithm sha2_256 --param-x509-parent-name default-x509ica --visibility public
 }
 
-function create_default_openpgp_keys {
+function create_default_openpgp_rsa {
   echo "start to create default openpgp keys identified with default-pgp"
-  RUST_LOG=info ./target/debug/control-admin --config ./config/server.toml generate-keys --name default-pgp --description "used for test purpose only" --key-type pgp --email tommylikehu@gmail.com --param-key-type rsa --param-key-size 2048 --param-pgp-email infra@openeuler.org --param-pgp-passphrase husheng1234 --digest-algorithm sha2_256 --visibility public
+  RUST_LOG=info ./target/debug/control-admin --config ./config/server.toml generate-keys --name default-pgp-rsa --description "used for test purpose only" --key-type pgp --email tommylikehu@gmail.com --param-key-type rsa --param-key-size 2048 --param-pgp-email infra@openeuler.org --param-pgp-passphrase husheng1234 --digest-algorithm sha2_256 --visibility public
+}
+
+function create_default_openpgp_eddsa {
+  echo "start to create default openpgp keys identified with default-pgp"
+  RUST_LOG=info ./target/debug/control-admin --config ./config/server.toml generate-keys --name default-pgp-eddsa --description "used for test purpose only" --key-type pgp --email tommylikehu@gmail.com --param-key-type eddsa --param-pgp-email infra@openeuler.org --param-pgp-passphrase husheng1234 --digest-algorithm sha2_256 --visibility public
 }
 
 
@@ -58,5 +63,7 @@ create_default_x509_ica
 
 create_default_x509_ee
 
-create_default_openpgp_keys
+create_default_openpgp_rsa
+
+create_default_openpgp_eddsa
 

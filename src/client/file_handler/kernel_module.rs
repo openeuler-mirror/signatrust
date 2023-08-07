@@ -177,6 +177,7 @@ impl FileHandler for KernelModuleFileHandler {
         &self,
         path: &PathBuf,
         sign_options: &mut HashMap<String, String>,
+        _key_attributes: &HashMap<String, String>
     ) -> Result<Vec<Vec<u8>>> {
         Ok(vec![self.get_raw_content(path, sign_options)?])
     }
@@ -188,6 +189,7 @@ impl FileHandler for KernelModuleFileHandler {
         data: Vec<Vec<u8>>,
         temp_dir: &PathBuf,
         sign_options: &HashMap<String, String>,
+        _key_attributes: &HashMap<String, String>
     ) -> Result<(String, String)> {
         let temp_file = temp_dir.join(Uuid::new_v4().to_string());
         //convert bytes into string
@@ -332,7 +334,7 @@ mod test {
         let path = PathBuf::from("./test_data/test.ko");
         let data = vec![vec![1, 2, 3]];
         let temp_dir = env::temp_dir();
-        let result = handler.assemble_data(&path, data, &temp_dir, &options).await;
+        let result = handler.assemble_data(&path, data, &temp_dir, &options, &HashMap::new()).await;
         assert!(result.is_ok());
         let (temp_file, file_name) = result.expect("invoke assemble data should work");
         assert_eq!(temp_file.starts_with(temp_dir.to_str().unwrap()), true);
@@ -350,7 +352,7 @@ mod test {
         let path = PathBuf::from(name.clone());
         let data = vec![vec![1, 2, 3]];
         let temp_dir = env::temp_dir();
-        let result = handler.assemble_data(&path, data, &temp_dir, &options).await;
+        let result = handler.assemble_data(&path, data, &temp_dir, &options, &HashMap::new()).await;
         assert!(result.is_ok());
         let (temp_file, file_name) = result.expect("invoke assemble data should work");
         assert_eq!(temp_file.starts_with(temp_dir.to_str().unwrap()), true);
@@ -365,7 +367,7 @@ mod test {
         let file_handler = KernelModuleFileHandler::new();
         let (name, original_content) = generate_unsigned_kernel_module(SIGNATURE_SIZE-1).expect("generate unsigned kernel module failed");
         let path = PathBuf::from(name);
-        let raw_content = file_handler.split_data(&path, &mut sign_options).await.expect("get raw content failed");
+        let raw_content = file_handler.split_data(&path, &mut sign_options, &HashMap::new()).await.expect("get raw content failed");
         assert_eq!(raw_content[0].len(), SIGNATURE_SIZE-1);
         assert_eq!(original_content, raw_content[0]);
     }

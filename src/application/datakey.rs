@@ -49,6 +49,7 @@ pub trait KeyService: Send + Sync{
     async fn disable(&self, user: Option<UserIdentity>, id_or_name: String) -> Result<()>;
     //used for data server
     async fn sign(&self, key_type: String, key_name: String, options: &HashMap<String, String>, data: Vec<u8>) ->Result<Vec<u8>>;
+    async fn get_by_type_and_name(&self, key_type: String, key_name: String) ->Result<DataKey>;
 
     //method below used for maintenance
     fn start_cache_cleanup_loop(&self, cancel_token: CancellationToken) -> Result<()>;
@@ -281,6 +282,10 @@ where
     async fn sign(&self, key_type: String, key_name: String, options: &HashMap<String, String>, data: Vec<u8>) -> Result<Vec<u8>> {
         let key = self.container.get_data_key(key_type, key_name).await?;
         self.sign_service.read().await.sign(&key, data, options.clone()).await
+    }
+
+    async fn get_by_type_and_name(&self, key_type: String, key_name: String) -> Result<DataKey> {
+        self.container.get_data_key(key_type, key_name).await
     }
 
     fn start_cache_cleanup_loop(&self, cancel_token: CancellationToken) -> Result<()> {
