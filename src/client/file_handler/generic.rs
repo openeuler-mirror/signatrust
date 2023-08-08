@@ -66,6 +66,7 @@ impl FileHandler for GenericFileHandler {
         data: Vec<Vec<u8>>,
         temp_dir: &PathBuf,
         _sign_options: &HashMap<String, String>,
+        _key_attributes: &HashMap<String, String>
     ) -> Result<(String, String)> {
         let temp_file = temp_dir.join(Uuid::new_v4().to_string());
         //convert bytes into string
@@ -120,7 +121,7 @@ mod test {
         let path = PathBuf::from("./test_data/test.txt");
         let data = vec![vec![1, 2, 3]];
         let temp_dir = env::temp_dir();
-        let result = handler.assemble_data(&path, data, &temp_dir, &options).await;
+        let result = handler.assemble_data(&path, data, &temp_dir, &options, &HashMap::new()).await;
         assert!(result.is_ok());
         let (temp_file, file_name) = result.expect("invoke assemble data should work");
         assert_eq!(temp_file.starts_with(temp_dir.to_str().unwrap()), true);

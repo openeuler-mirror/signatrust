@@ -20,7 +20,7 @@ use crate::util::error::{Error, Result};
 use crate::util::options;
 use chrono::{DateTime, Utc};
 use pgp::composed::signed_key::{SignedSecretKey, SignedPublicKey};
-use pgp::composed::{key::SecretKeyParamsBuilder, KeyType};
+use pgp::composed::{key::SecretKeyParamsBuilder};
 use pgp::crypto::{hash::HashAlgorithm, sym::SymmetricKeyAlgorithm};
 use pgp::packet::SignatureConfig;
 use pgp::packet::*;
@@ -33,25 +33,23 @@ use smallvec::*;
 use std::collections::HashMap;
 use std::io::{Cursor};
 use std::str::from_utf8;
+use std::str::FromStr;
 use validator::{Validate, ValidationError};
 use pgp::composed::StandaloneSignature;
 use crate::domain::datakey::entity::{DataKey, DataKeyContent, SecDataKey, KeyType as EntityKeyType, RevokedKey};
+use crate::domain::datakey::plugins::openpgp::{OpenPGPDigestAlgorithm, OpenPGPKeyType, PGP_VALID_KEY_SIZE};
 use crate::util::key::encode_u8_to_hex_string;
 use super::util::{validate_utc_time_not_expire, validate_utc_time, attributes_validate};
+#[allow(unused_imports)]
+use enum_iterator::{all};
 
-// NOTE: `eddsa` will be supported only when it's supported in rpm library, check https://github.com/rpm-rs/rpm/pull/146
-const VALID_KEY_TYPE: [&str; 1] = ["rsa"];
-const VALID_KEY_SIZE: [&str; 3] = ["2048", "3072", "4096"];
-const VALID_DIGEST_ALGORITHM: [&str; 10] = ["none", "md5", "sha1", "sha1", "sha2_256", "sha2_384","sha2_512","sha2_224","sha3_256", "sha3_512"];
 
 #[derive(Debug, Validate, Deserialize)]
 pub struct PgpKeyImportParameter {
-    #[validate(custom( function = "validate_key_type", message="invalid openpgp attribute 'key_type'"))]
-    key_type: String,
+    key_type: OpenPGPKeyType,
     #[validate(custom(function = "validate_key_size", message="invalid openpgp attribute 'key_length'"))]
-    key_length: String,
-    #[validate(custom(function= "validate_digest_algorithm_type", message="invalid digest algorithm"))]
-    digest_algorithm: String,
+    key_length: Option<String>,
+    digest_algorithm: OpenPGPDigestAlgorithm,
     #[validate(custom(function = "validate_utc_time", message="invalid openpgp attribute 'create_at'"))]
     create_at: String,
     #[validate(custom(function= "validate_utc_time_not_expire", message="invalid openpgp attribute 'expire_at'"))]
@@ -67,12 +65,10 @@ pub struct PgpKeyGenerationParameter {
     // email format validation is disabled due to copr has the case of group prefixed email: `@group#project@copr.com`
     #[validate(length(min = 2, max = 100, message="invalid openpgp attribute 'email'"))]
     email: String,
-    #[validate(custom( function = "validate_key_type", message="invalid openpgp attribute 'key_type'"))]
-    key_type: String,
+    key_type: OpenPGPKeyType,
     #[validate(custom(function = "validate_key_size", message="invalid openpgp attribute 'key_length'"))]
-    key_length: String,
-    #[validate(custom(function= "validate_digest_algorithm_type", message="invalid digest algorithm"))]
-    digest_algorithm: String,
+    key_length: Option<String>,
+    digest_algorithm: OpenPGPDigestAlgorithm,
     #[validate(custom(function = "validate_utc_time", message="invalid openpgp attribute 'create_at'"))]
     create_at: String,
     #[validate(custom(function= "validate_utc_time_not_expire", message="invalid openpgp attribute 'expire_at'"))]
@@ -81,54 +77,13 @@ pub struct PgpKeyGenerationParameter {
 }
 
 impl PgpKeyGenerationParameter {
-    pub fn get_key(&self) -> Result<KeyType> {
-        return match self.key_type.as_str() {
-            "rsa" => Ok(KeyType::Rsa(self.key_length.parse::<u32>()?)),
-            "eddsa" => Ok(KeyType::EdDSA),
-            _ => Err(Error::ParameterError(
-                "invalid key type for openpgp".to_string(),
-            )),
-        };
-    }
-
     pub fn get_user_id(&self) -> String {
         format!("{} <{}>", self.name, self.email)
     }
 }
 
-pub fn get_digest_algorithm(hash_digest: &str) -> Result<HashAlgorithm> {
-    match hash_digest {
-        "none" => Ok(HashAlgorithm::None),
-        "md5" => Ok(HashAlgorithm::MD5),
-        "sha1" => Ok(HashAlgorithm::SHA1),
-        "sha2_256" => Ok(HashAlgorithm::SHA2_256),
-        "sha2_384" => Ok(HashAlgorithm::SHA2_384),
-        "sha2_512" => Ok(HashAlgorithm::SHA2_512),
-        "sha2_224" => Ok(HashAlgorithm::SHA2_224),
-        "sha3_256" => Ok(HashAlgorithm::SHA3_256),
-        "sha3_512" => Ok(HashAlgorithm::SHA3_512),
-        _ => Err(Error::ParameterError(
-            "invalid digest algorithm for openpgp".to_string(),
-        )),
-    }
-}
-
-fn validate_key_type(key_type: &str) -> std::result::Result<(), ValidationError> {
-    if !VALID_KEY_TYPE.contains(&key_type) {
-        return Err(ValidationError::new("invalid key type, possible values are rsa/ecdh/eddsa"));
-    }
-    Ok(())
-}
-
-fn validate_digest_algorithm_type(key_type: &str) -> std::result::Result<(), ValidationError> {
-    if !VALID_DIGEST_ALGORITHM.contains(&key_type) {
-        return Err(ValidationError::new("invalid hash algorithm, possible values are none/md5/sha1/sha1/sha2_256/sha2_384/sha2_512/sha2_224/sha3_256/sha3_512"));
-    }
-    Ok(())
-}
-
 fn validate_key_size(key_size: &str) -> std::result::Result<(), ValidationError> {
-    if !VALID_KEY_SIZE.contains(&key_size) {
+    if !PGP_VALID_KEY_SIZE.contains(&key_size) {
         return Err(ValidationError::new("invalid key size, possible values are 2048/3072/4096"));
     }
     Ok(())
@@ -181,10 +136,6 @@ impl SignPlugins for OpenPGPPlugin {
 
     fn validate_and_update(key: &mut DataKey) -> Result<()> where Self: Sized {
         let _ = attributes_validate::<PgpKeyImportParameter>(&key.attributes)?;
-        //validate the digest
-        if let Some(digest_str) = key.attributes.get("digest_algorithm") {
-            let _ = get_digest_algorithm(digest_str)?;
-        }
         //validate keys
         let private = from_utf8(&key.private_key).map_err(|e| Error::KeyParseError(e.to_string()))?;
         let (secret_key, _) =
@@ -219,12 +170,12 @@ impl SignPlugins for OpenPGPPlugin {
         let expire :DateTime<Utc> = parameter.expire_at.parse()?;
         let duration: core::time::Duration = (expire - Utc::now()).to_std()?;
         key_params
-            .key_type(parameter.get_key()?)
+            .key_type(parameter.key_type.get_real_key_type(parameter.key_length.clone()))
             .can_create_certificates(false)
             .can_sign(true)
             .primary_user_id(parameter.get_user_id())
             .preferred_symmetric_algorithms(smallvec![SymmetricKeyAlgorithm::AES256,])
-            .preferred_hash_algorithms(smallvec![get_digest_algorithm(parameter.digest_algorithm.as_str())?])
+            .preferred_hash_algorithms(smallvec![parameter.digest_algorithm.get_real_algorithm()])
             .preferred_compression_algorithms(smallvec![CompressionAlgorithm::ZLIB,])
             .created_at(create_at)
             .expiration(Some(duration));
@@ -253,7 +204,7 @@ impl SignPlugins for OpenPGPPlugin {
     fn sign(&self, content: Vec<u8>, options: HashMap<String, String>) -> Result<Vec<u8>> {
         let mut digest = HashAlgorithm::SHA2_256;
         if let Some(digest_str) = options.get("digest_algorithm") {
-                digest = get_digest_algorithm(digest_str)?
+                digest = OpenPGPDigestAlgorithm::from_str(digest_str)?.get_real_algorithm();
         }
         let passwd_fn = || return match options.get("passphrase") {
             None => {
@@ -372,7 +323,7 @@ mod test {
         attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect_err("invalid key type");
         parameter.insert("key_type".to_string(), "".to_string());
         attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect_err("invalid empty key type");
-        for key_type in VALID_KEY_TYPE {
+        for key_type in all::<OpenPGPKeyType>().collect::<Vec<_>>() {
             parameter.insert("key_type".to_string(), key_type.to_string());
             attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect("valid key type");
         }
@@ -385,7 +336,7 @@ mod test {
         attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect_err("invalid key length");
         parameter.insert("key_length".to_string(), "".to_string());
         attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect_err("invalid empty key length");
-        for key_length in VALID_KEY_SIZE {
+        for key_length in PGP_VALID_KEY_SIZE {
             parameter.insert("key_length".to_string(), key_length.to_string());
             attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect("valid key length");
         }
@@ -398,7 +349,7 @@ mod test {
         attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect_err("invalid digest algorithm");
         parameter.insert("digest_algorithm".to_string(),"".to_string());
         attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect_err("invalid empty digest algorithm");
-        for key_length in VALID_DIGEST_ALGORITHM {
+        for key_length in all::<OpenPGPDigestAlgorithm>().collect::<Vec<_>>() {
             parameter.insert("digest_algorithm".to_string(),key_length.to_string());
             attributes_validate::<PgpKeyGenerationParameter>(&parameter).expect("valid digest algorithm");
         }
@@ -443,15 +394,16 @@ mod test {
     async fn test_generate_key_with_possible_digest_hash() {
         let mut parameter = get_default_parameter();
         let dummy_engine = get_encryption_engine();
+        let algorithms = all::<OpenPGPDigestAlgorithm>().collect::<Vec<_>>();
         //choose 3 random digest algorithm
         for _ in [1,2,3] {
-            let num = rand::thread_rng().gen_range(0..VALID_DIGEST_ALGORITHM.len());
-            parameter.insert("digest_algorithm".to_string(), VALID_DIGEST_ALGORITHM[num].to_string());
+            let num = rand::thread_rng().gen_range(0..algorithms.len());
+            parameter.insert("digest_algorithm".to_string(), algorithms[num].to_string());
             let sec_datakey = SecDataKey::load(
                 &get_default_datakey(
                     None, Some(parameter.clone())), &dummy_engine).await.expect("load sec datakey successfully");
             let plugin = OpenPGPPlugin::new(sec_datakey).expect("create openpgp plugin successfully");
-            plugin.generate_keys(&KeyType::OpenPGP, &HashMap::new()).expect(format!("generate key with digest {} successfully", VALID_DIGEST_ALGORITHM[num]).as_str());
+            plugin.generate_keys(&KeyType::OpenPGP, &HashMap::new()).expect(format!("generate key with digest {} successfully", algorithms[num]).as_str());
         }
 
     }
@@ -460,7 +412,7 @@ mod test {
     async fn test_generate_key_with_possible_length() {
         let mut parameter = get_default_parameter();
         let dummy_engine = get_encryption_engine();
-        for key_size in VALID_KEY_SIZE{
+        for key_size in PGP_VALID_KEY_SIZE {
             parameter.insert("key_size".to_string(), key_size.to_string());
             let sec_datakey = SecDataKey::load(
                 &get_default_datakey(
@@ -474,7 +426,7 @@ mod test {
     async fn test_generate_key_with_possible_key_type() {
         let mut parameter = get_default_parameter();
         let dummy_engine = get_encryption_engine();
-        for key_type in VALID_KEY_TYPE{
+        for key_type in all::<OpenPGPKeyType>().collect::<Vec<_>>(){
             parameter.insert("key_type".to_string(), key_type.to_string());
             let sec_datakey = SecDataKey::load(
                 &get_default_datakey(

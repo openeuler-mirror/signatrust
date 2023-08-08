@@ -27,6 +27,7 @@ pub trait FileHandler: Send + Sync {
         &self,
         path: &PathBuf,
         _sign_options: &mut HashMap<String, String>,
+        _key_attributes: &HashMap<String, String>
     ) -> Result<Vec<Vec<u8>>> {
         let content = fs::read(path).await?;
         Ok(vec![content])
@@ -38,5 +39,6 @@ pub trait FileHandler: Send + Sync {
         data: Vec<Vec<u8>>,
         temp_dir: &PathBuf,
         sign_options: &HashMap<String, String>,
+        key_attributes: &HashMap<String, String>
     ) -> Result<(String, String)>;
 }

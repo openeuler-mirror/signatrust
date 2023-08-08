@@ -50,6 +50,7 @@ impl FileHandler for EfiFileHandler {
         &self,
         path: &PathBuf,
         _sign_options: &mut HashMap<String, String>,
+        _key_attributes: &HashMap<String, String>
     ) -> Result<Vec<Vec<u8>>> {
         let buf = read(path)?;
         let pe = EfiImage::parse(&buf)?;
@@ -67,6 +68,7 @@ impl FileHandler for EfiFileHandler {
         data: Vec<Vec<u8>>,
         temp_dir: &PathBuf,
         _sign_options: &HashMap<String, String>,
+        _key_attributes: &HashMap<String, String>
     ) -> Result<(String, String)> {
         let temp_file = temp_dir.join(Uuid::new_v4().to_string());
         let buf = read(path)?;
@@ -162,7 +164,7 @@ mod test {
 
         let temp_dir = env::temp_dir();
         let result = handler
-            .assemble_data(&path, vec![signature_buf], &temp_dir, &options)
+            .assemble_data(&path, vec![signature_buf], &temp_dir, &options, &HashMap::new())
             .await;
         assert!(result.is_ok());
         let (temp_file, file_name) = result.expect("efi sign should work");
