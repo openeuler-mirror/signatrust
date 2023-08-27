@@ -20,11 +20,16 @@ use once_cell::sync::OnceCell;
 use sqlx::mysql::{MySql, MySqlPoolOptions};
 use sqlx::pool::Pool;
 use std::collections::HashMap;
+use std::time::Duration;
+use sea_orm::{DatabaseConnection, ConnectOptions, Database};
 
 use crate::util::error::{Error, Result};
 pub type DbPool = Pool<MySql>;
 
+//Now we have database pool for sqlx framework and database connection for sea-orm framework,
+//db_pool will be removed when all database operations has been upgraded into sea-orm
 static DB_POOL: OnceCell<DbPool> = OnceCell::new();
+static DB_CONNECTION: OnceCell<DatabaseConnection> = OnceCell::new();
 
 pub async fn create_pool(config: &HashMap<String, Value>) -> Result<()> {
     let max_connections: u32 = config
@@ -54,6 +59,20 @@ pub async fn create_pool(config: &HashMap<String, Value>) -> Result<()> {
         .await
         .map_err(Error::from)?;
     DB_POOL.set(pool).expect("db pool configured");
+
+    //initialize the database connection
+    let mut opt = ConnectOptions::new(db_connection);
+    opt.max_connections(max_connections)
+        .min_connections(5)
+        .connect_timeout(Duration::from_secs(8))
+        .acquire_timeout(Duration::from_secs(8))
+        .idle_timeout(Duration::from_secs(8))
+        .max_lifetime(Duration::from_secs(8))
+        .sqlx_logging(true)
+        .sqlx_logging_level(log::LevelFilter::Info);
+
+    DB_CONNECTION.set(Database::connect(opt).await?).expect("database connection configured");
+    get_db_connection()?.ping().await.expect("database connection failed");
     ping().await?;
     Ok(())
 }
@@ -61,6 +80,15 @@ pub async fn create_pool(config: &HashMap<String, Value>) -> Result<()> {
 pub fn get_db_pool() -> Result<DbPool> {
     return match DB_POOL.get() {
         None => Err(error::Error::DatabaseError(
+            "failed to get database pool".to_string(),
+        )),
+        Some(pool) => Ok(pool.clone()),
+    };
+}
+
+pub fn get_db_connection() -> Result<DatabaseConnection> {
+    return match DB_CONNECTION.get() {
+        None => Err(Error::DatabaseError(
             "failed to get database pool".to_string(),
         )),
         Some(pool) => Ok(pool.clone()),
