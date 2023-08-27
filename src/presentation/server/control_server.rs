@@ -31,7 +31,7 @@ use time::Duration as timeDuration;
 use std::time::Duration;
 
 use crate::infra::database::model::datakey::repository as datakeyRepository;
-use crate::infra::database::pool::{create_pool, get_db_pool};
+use crate::infra::database::pool::{create_pool, get_db_connection, get_db_pool};
 use crate::presentation::handler::control::*;
 use actix_web::{dev::ServiceRequest};
 use actix_web::cookie::SameSite;
@@ -123,10 +123,10 @@ impl ControlServer {
             get_db_pool()?,
         );
         let sign_backend = SignBackendFactory::new_engine(
-            server_config.clone(), get_db_pool()?).await?;
+            server_config.clone(), get_db_connection()?).await?;
         //initialize repos
-        let user_repo = UserRepository::new(get_db_pool()?);
-        let token_repo = TokenRepository::new(get_db_pool()?);
+        let user_repo = UserRepository::new(get_db_connection()?);
+        let token_repo = TokenRepository::new(get_db_connection()?);
 
         //initialize the service
         let user_service = Arc::new(

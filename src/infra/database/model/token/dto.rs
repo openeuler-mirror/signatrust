@@ -13,14 +13,16 @@
  *  * // See the Mulan PSL v2 for more details.
  *
  */
-use sqlx::FromRow;
 use chrono::{DateTime, Utc};
 
 use crate::domain::token::entity::Token;
-use crate::util::key::get_token_hash;
+use sea_orm::entity::prelude::*;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, FromRow, Clone)]
-pub(super) struct TokenDTO {
+#[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Deserialize, Serialize)]
+#[sea_orm(table_name = "token")]
+pub struct Model {
+    #[sea_orm(primary_key)]
     pub id: i32,
     pub user_id: i32,
     pub description: String,
@@ -29,21 +31,13 @@ pub(super) struct TokenDTO {
     pub expire_at: DateTime<Utc>,
 }
 
-impl From<Token> for TokenDTO {
-    fn from(token: Token) -> Self {
-        Self {
-            id: token.id,
-            user_id: token.user_id,
-            description: token.description.clone(),
-            token: get_token_hash(&token.token),
-            create_at: token.create_at,
-            expire_at: token.expire_at,
-        }
-    }
-}
+#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+pub enum Relation {}
 
-impl From<TokenDTO> for Token {
-    fn from(dto: TokenDTO) -> Self {
+impl ActiveModelBehavior for ActiveModel {}
+
+impl From<Model> for Token {
+    fn from(dto: Model) -> Self {
         Self {
             id: dto.id,
             user_id: dto.user_id,
@@ -59,25 +53,10 @@ impl From<TokenDTO> for Token {
 mod tests {
     use super::*;
     use chrono::Utc;
-
-    #[test]
-    fn test_token_dto_from_entity() {
-        let token = Token::new(1, "Test token".to_string(), "abc123".to_string()).unwrap();
-        let token_hash = get_token_hash(&token.token);
-        let dto = TokenDTO::from(token.clone());
-        assert_eq!(dto.id, token.id);
-        assert_eq!(dto.user_id, token.user_id);
-        assert_eq!(dto.description, token.description);
-        assert_ne!(dto.token, token.token);
-        assert_eq!(dto.token, token_hash);
-        assert_eq!(dto.create_at, token.create_at);
-        assert_eq!(dto.expire_at, token.expire_at);
-    }
-
     #[test]
     fn test_token_entity_from_dto() {
         let now = Utc::now();
-        let dto = TokenDTO {
+        let dto = Model {
             id: 1,
             user_id: 2,
             description: "Test token".to_string(),

@@ -14,78 +14,83 @@
  *
  */
 
-use crate::infra::database::pool::DbPool;
 use crate::domain::token::entity::{Token};
 use crate::domain::token::repository::Repository;
 use crate::util::error::Result;
 use async_trait::async_trait;
-use std::boxed::Box;
-
-use crate::infra::database::model::token::dto::TokenDTO;
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, ActiveValue::Set, Condition, ActiveModelTrait};
+use crate::infra::database::model::token;
+use crate::infra::database::model::token::dto::Entity as TokenDTO;
+use crate::util::error;
 use crate::util::key::get_token_hash;
 
 
 #[derive(Clone)]
 pub struct TokenRepository {
-    db_pool: DbPool,
+    db_connection: DatabaseConnection
 }
 
 impl TokenRepository {
-    pub fn new(db_pool: DbPool) -> Self {
+    pub fn new(db_connection: DatabaseConnection) -> Self {
         Self {
-            db_pool,
+            db_connection,
         }
     }
 }
 
 #[async_trait]
 impl Repository for TokenRepository {
-
     async fn create(&self, token: Token) -> Result<Token> {
-        let dto = TokenDTO::from(token);
-        let record : u64 = sqlx::query("INSERT INTO token(user_id, description, token, create_at, expire_at) VALUES (?, ?, ?, ?, ?)")
-            .bind(dto.user_id)
-            .bind(&dto.description)
-            .bind(&dto.token)
-            .bind(dto.create_at)
-            .bind(dto.expire_at)
-            .execute(&self.db_pool)
-            .await?.last_insert_id();
-        self.get_token_by_id(record as i32).await
+        let token = token::dto::ActiveModel {
+            user_id: Set(token.user_id),
+            description: Set(token.description),
+            token: Set(get_token_hash(&token.token)),
+            create_at:Set(token.create_at),
+            expire_at: Set(token.expire_at),
+            ..Default::default()
+        };
+        Ok(Token::from(token.insert(&self.db_connection).await?))
     }
 
     async fn get_token_by_id(&self, id: i32) -> Result<Token> {
-        let selected: TokenDTO = sqlx::query_as("SELECT * FROM token WHERE id = ?")
-            .bind(id)
-            .fetch_one(&self.db_pool)
-            .await?;
-        Ok(Token::from(selected))
+        match TokenDTO::find_by_id(id).one(&self.db_connection).await? {
+            None => {
+                Err(error::Error::NotFoundError)
+            }
+            Some(token) => {
+                Ok(Token::from(token))
+            }
+        }
     }
 
     async fn get_token_by_value(&self, token: &str) -> Result<Token> {
-        let selected: TokenDTO = sqlx::query_as("SELECT * FROM token WHERE token = ?")
-            .bind(get_token_hash(token))
-            .fetch_one(&self.db_pool)
-            .await?;
-        Ok(Token::from(selected))
+        match TokenDTO::find().filter(
+            token::dto::Column::Token.eq(get_token_hash(token))).one(
+            &self.db_connection).await? {
+            None => {
+                Err(error::Error::NotFoundError)
+            }
+            Some(token) => {
+                Ok(Token::from(token))
+            }
+        }
+
+
     }
 
     async fn delete_by_user_and_id(&self, id: i32, user_id: i32) -> Result<()> {
-        let _: Option<TokenDTO> = sqlx::query_as("DELETE FROM token where id = ? AND user_id = ?")
-            .bind(id)
-            .bind(user_id)
-            .fetch_optional(&self.db_pool)
+        let _ = TokenDTO::delete_many().filter(Condition::all()
+            .add(token::dto::Column::Id.eq(id))
+            .add(token::dto::Column::UserId.eq(user_id))).exec(&self.db_connection)
             .await?;
         Ok(())
     }
 
     async fn get_token_by_user_id(&self, id: i32) -> Result<Vec<Token>> {
-        let dtos: Vec<TokenDTO> = sqlx::query_as("SELECT * FROM token WHERE user_id = ?")
-            .bind(id)
-            .fetch_all(&self.db_pool)
-            .await?;
+        let tokens = TokenDTO::find().filter(
+            token::dto::Column::UserId.eq(id)).all(&self.db_connection).await?;
         let mut results = vec![];
-        for dto in dtos.into_iter() {
+        for dto in tokens.into_iter() {
             results.push(Token::from(dto));
         }
         Ok(results)

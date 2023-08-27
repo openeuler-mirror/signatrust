@@ -77,6 +77,7 @@ regex = "1"
 csrf= "0.4.1"
 data-encoding= "2.4.0"
 enum-iterator= "1.4.1"
+sea-orm = { version = "0.12.2", features = [ "sqlx-mysql", "runtime-tokio-rustls", "macros", "with-chrono"] }
 
 [build-dependencies]
 tonic-build = "0.8.4"

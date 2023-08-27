@@ -14,23 +14,24 @@
  *
  */
 
-use super::dto::ClusterKeyDTO;
-use crate::infra::database::pool::DbPool;
+use super::dto::Entity as ClusterKeyDTO;
+use crate::infra::database::model::clusterkey;
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, ActiveValue::Set, QueryOrder};
 use crate::domain::clusterkey::entity::ClusterKey;
 use crate::domain::clusterkey::repository::Repository;
-use crate::util::error::Result;
+use crate::util::error::{Result, Error};
 use async_trait::async_trait;
-use std::boxed::Box;
+use sea_orm::sea_query::OnConflict;
 
 #[derive(Clone)]
 pub struct ClusterKeyRepository {
-    db_pool: DbPool,
+    db_connection: DatabaseConnection,
 }
 
 impl ClusterKeyRepository {
-    pub fn new(db_pool: DbPool) -> Self {
+    pub fn new(db_connection: DatabaseConnection) -> Self {
         Self {
-            db_pool,
+            db_connection,
         }
     }
 }
@@ -38,43 +39,47 @@ impl ClusterKeyRepository {
 #[async_trait]
 impl Repository for ClusterKeyRepository {
     async fn create(&self, cluster_key: ClusterKey) -> Result<()> {
-        let dto = ClusterKeyDTO::from(cluster_key);
-        let _ : Option<ClusterKeyDTO> = sqlx::query_as("INSERT IGNORE INTO cluster_key(data, algorithm, identity, create_at) VALUES (?, ?, ?, ?)")
-            .bind(&dto.data)
-            .bind(&dto.algorithm)
-            .bind(&dto.identity)
-            .bind(dto.create_at)
-            .fetch_optional(&self.db_pool)
-            .await?;
+        let cluster_key = clusterkey::dto::ActiveModel {
+            data: Set(cluster_key.data),
+            algorithm: Set(cluster_key.algorithm),
+            identity: Set(cluster_key.identity),
+            create_at: Set(cluster_key.create_at),
+            ..Default::default()
+        };
+        //TODO: https://github.com/SeaQL/sea-orm/issues/1790
+        ClusterKeyDTO::insert(cluster_key).on_conflict(OnConflict::new()
+            .update_column(clusterkey::dto::Column::Id).to_owned()
+        ).exec(&self.db_connection).await?;
         Ok(())
     }
 
     async fn get_latest(&self, algorithm: &str) -> Result<Option<ClusterKey>> {
-        let latest: Option<ClusterKeyDTO> = sqlx::query_as(
-            "SELECT * FROM cluster_key WHERE algorithm = ? ORDER BY id DESC LIMIT 1",
-        )
-        .bind(algorithm)
-        .fetch_optional(&self.db_pool)
-        .await?;
-        match latest {
-            Some(l) => return Ok(Some(ClusterKey::from(l))),
-            None => Ok(None),
+        match ClusterKeyDTO::find().filter(
+            clusterkey::dto::Column::Algorithm.eq(algorithm)
+        ).order_by_desc(clusterkey::dto::Column::Id).one(
+            &self.db_connection).await? {
+            None => {
+                Ok(None)
+            }
+            Some(cluster_key) => {
+                Ok(Some(ClusterKey::from(cluster_key)))
+            }
         }
     }
 
     async fn get_by_id(&self, id: i32) -> Result<ClusterKey> {
-        let selected: ClusterKeyDTO = sqlx::query_as("SELECT * FROM cluster_key WHERE id = ?")
-            .bind(id)
-            .fetch_one(&self.db_pool)
-            .await?;
-        Ok(ClusterKey::from(selected))
+        match ClusterKeyDTO::find_by_id(id).one(&self.db_connection).await? {
+             None => {
+                 Err(Error::NotFoundError)
+                }
+                Some(cluster_key) => {
+                 Ok(ClusterKey::from(cluster_key))
+                }
+        }
     }
-
     async fn delete_by_id(&self, id: i32) -> Result<()> {
-        let _: Option<ClusterKeyDTO> = sqlx::query_as("DELETE FROM cluster_key where id = ?")
-            .bind(id)
-            .fetch_optional(&self.db_pool)
-            .await?;
+        let _ = ClusterKeyDTO::delete_by_id(
+            id).exec(&self.db_connection).await?;
         Ok(())
     }
 }

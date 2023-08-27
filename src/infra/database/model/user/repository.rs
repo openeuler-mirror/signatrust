@@ -14,24 +14,23 @@
  *
  */
 
-use super::dto::UserDTO;
-
-use crate::infra::database::pool::DbPool;
+use super::dto::Entity as UserDTO;
+use crate::infra::database::model::user;
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, ActiveValue::Set, ActiveModelTrait};
 use crate::domain::user::entity::User;
 use crate::domain::user::repository::Repository;
-use crate::util::error::Result;
+use crate::util::error::{Error, Result};
 use async_trait::async_trait;
-use std::boxed::Box;
 
 #[derive(Clone)]
 pub struct UserRepository {
-    db_pool: DbPool,
+    db_connection: DatabaseConnection
 }
 
 impl UserRepository {
-    pub fn new(db_pool: DbPool) -> Self {
+    pub fn new(db_connection: DatabaseConnection) -> Self {
         Self {
-            db_pool,
+            db_connection,
         }
     }
 }
@@ -45,36 +44,42 @@ impl Repository for UserRepository {
                 Ok(existed)
             }
             Err(_err) => {
-                let dto = UserDTO::from(user);
-                let record : u64 = sqlx::query("INSERT INTO user(email) VALUES (?)")
-                    .bind(&dto.email)
-                    .execute(&self.db_pool)
-                    .await?.last_insert_id();
-                self.get_by_id(record as i32).await
+                let user = user::dto::ActiveModel {
+                    email: Set(user.email),
+                    ..Default::default()
+                };
+                Ok(User::from(user.insert(&self.db_connection).await?))
             }
         }
     }
 
     async fn get_by_id(&self, id: i32) -> Result<User> {
-        let selected: UserDTO = sqlx::query_as("SELECT * FROM user WHERE id = ?")
-            .bind(id)
-            .fetch_one(&self.db_pool)
-            .await?;
-        Ok(User::from(selected))
+        match UserDTO::find_by_id(id).one(
+            &self.db_connection).await? {
+            None => {
+                Err(Error::NotFoundError)
+            }
+            Some(user) => {
+                Ok(User::from(user))
+            }
+        }
     }
 
     async fn get_by_email(&self, email: &str) -> Result<User> {
-        let selected: UserDTO = sqlx::query_as("SELECT * FROM user WHERE email = ?")
-            .bind(email)
-            .fetch_one(&self.db_pool)
-            .await?;
-        Ok(User::from(selected))
+        match UserDTO::find().filter(
+            user::dto::Column::Email.eq(email)).one(
+            &self.db_connection).await? {
+            None => {
+                Err(Error::NotFoundError)
+            }
+            Some(user) => {
+                Ok(User::from(user))
+            }
+        }
     }
 
     async fn delete_by_id(&self, id: i32) -> Result<()> {
-        let _: Option<UserDTO> = sqlx::query_as("DELETE FROM user where id = ?")
-            .bind(id)
-            .fetch_optional(&self.db_pool)
+        let _ = UserDTO::delete_by_id(id).exec(&self.db_connection)
             .await?;
         Ok(())
     }
