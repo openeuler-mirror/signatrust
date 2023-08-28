@@ -4,8 +4,7 @@ LABEL Author=TommyLike<tommylikehu@gmail.com>
 WORKDIR /app
 COPY .. /app
 
-
-RUN cargo +nightly build --release --bin $BINARY --target x86_64-unknown-linux-musl
+RUN rustup target add x86_64-unknown-linux-musl && cargo build --release --bin $BINARY --target x86_64-unknown-linux-musl
 
 FROM openeuler/openeuler:22.03
 ARG USERNAME=signatrust
