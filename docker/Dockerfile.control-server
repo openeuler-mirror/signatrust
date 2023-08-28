@@ -5,7 +5,7 @@ WORKDIR /app
 COPY .. /app
 
 
-RUN cargo +nightly build --release --bin $BINARY --target x86_64-unknown-linux-musl
+RUN rustup target add x86_64-unknown-linux-musl && cargo build --release --bin $BINARY --target x86_64-unknown-linux-musl
 
 #The sql-cli@0.7.1 binary is pre-build with dockerfile `Dockerfile.sqlx-cli`.
 FROM tommylike/sqlx-cli:0.7.1 as sqlx-cli

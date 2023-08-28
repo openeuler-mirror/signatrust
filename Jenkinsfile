@@ -66,7 +66,7 @@ EOF
 				sh '''#!/bin/bash
 				
 				source $HOME/.cargo/env && cd PR-$giteePullRequestIid
-				cargo  +nightly clippy
+				cargo clippy
 				'''
 			}
 		}
@@ -75,7 +75,7 @@ EOF
 				sh '''#!/bin/bash
 				
 				source $HOME/.cargo/env && cd PR-$giteePullRequestIid
-				cargo  +nightly test
+				cargo test
 				'''
 			}
 		}
@@ -84,7 +84,7 @@ EOF
 				sh '''#!/bin/bash
 
 				source $HOME/.cargo/env && cd PR-$giteePullRequestIid
-				cargo  +nightly build
+				cargo build
 				'''
 			}
 		}       
