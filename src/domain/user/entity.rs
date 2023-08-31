@@ -19,7 +19,7 @@ use std::fmt::{Display, Formatter};
 
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct User {
     pub id: i32,
     pub email: String

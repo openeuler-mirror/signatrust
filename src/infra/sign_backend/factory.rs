@@ -25,7 +25,7 @@ use crate::infra::sign_backend::memory::backend::MemorySignBackend;
 pub struct SignBackendFactory {}
 
 impl SignBackendFactory {
-    pub async fn new_engine(config: Arc<RwLock<Config>>, db_connection: DatabaseConnection) -> Result<Box<dyn SignBackend>> {
+    pub async fn new_engine(config: Arc<RwLock<Config>>, db_connection: &'static DatabaseConnection) -> Result<Box<dyn SignBackend>> {
         let engine_type = SignBackendType::from_str(
             config.read()?.get_string("sign-backend.type")?.as_str(),
         )?;

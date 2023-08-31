@@ -50,7 +50,7 @@ impl MemorySignBackend {
     /// 2. initialize the cluster repo
     /// 2. initialize the encryption engine including the cluster key
     /// 3. initialize the signing plugins
-    pub async fn new(server_config: Arc<RwLock<Config>>, db_connection: DatabaseConnection) -> Result<MemorySignBackend> {
+    pub async fn new(server_config: Arc<RwLock<Config>>, db_connection: &'static DatabaseConnection) -> Result<MemorySignBackend> {
         //initialize the kms backend
         let kms_provider = factory::KMSProviderFactory::new_provider(
             &server_config.read()?.get_table("memory.kms-provider")?

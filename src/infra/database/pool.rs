@@ -86,12 +86,12 @@ pub fn get_db_pool() -> Result<DbPool> {
     };
 }
 
-pub fn get_db_connection() -> Result<DatabaseConnection> {
+pub fn get_db_connection() -> Result<&'static DatabaseConnection> {
     return match DB_CONNECTION.get() {
         None => Err(Error::DatabaseError(
             "failed to get database pool".to_string(),
         )),
-        Some(pool) => Ok(pool.clone()),
+        Some(pool) => Ok(pool),
     };
 }
 

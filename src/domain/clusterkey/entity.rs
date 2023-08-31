@@ -22,7 +22,7 @@ use std::vec::Vec;
 
 use crate::domain::kms_provider::KMSProvider;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct ClusterKey {
     pub id: i32,
     pub data: Vec<u8>,
@@ -88,7 +88,6 @@ impl Default for SecClusterKey {
         }
     }
 }
-
 
 impl SecClusterKey {
     pub async fn load<K>(cluster_key: ClusterKey, kms_provider: &Box<K>) -> Result<SecClusterKey>
