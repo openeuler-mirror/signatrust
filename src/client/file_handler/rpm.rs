@@ -52,12 +52,12 @@ impl RpmFileHandler {
                         key_type
                     }
                     Err(_) => {
-                        OpenPGPKeyType::RSA
+                        OpenPGPKeyType::Rsa
                     }
                 }
             }
             None => {
-                OpenPGPKeyType::RSA
+                OpenPGPKeyType::Rsa
             }
         }
     }
@@ -96,7 +96,7 @@ impl FileHandler for RpmFileHandler {
         let mut header_bytes = Vec::<u8>::with_capacity(1024);
         //collect head and head&payload arrays
         package.metadata.header.write(&mut header_bytes)?;
-        return if self.get_key_type(key_attributes) == OpenPGPKeyType::RSA {
+        return if self.get_key_type(key_attributes) == OpenPGPKeyType::Rsa {
             let mut header_and_content = Vec::new();
             header_and_content.extend(header_bytes.clone());
             header_and_content.extend(package.content.clone());
@@ -126,7 +126,7 @@ impl FileHandler for RpmFileHandler {
 
         let key_type = self.get_key_type(key_attributes);
         let builder = match key_type {
-            OpenPGPKeyType::RSA => {
+            OpenPGPKeyType::Rsa => {
                 Header::<IndexSignatureTag>::builder().add_digest(
                     &header_digest_sha1,
                     &header_digest_sha256,
@@ -136,7 +136,7 @@ impl FileHandler for RpmFileHandler {
                     data[1].as_slice(),
                 )
             }
-            OpenPGPKeyType::EDDSA => {
+            OpenPGPKeyType::Eddsa => {
                 Header::<IndexSignatureTag>::builder().add_digest(
                     &header_digest_sha1,
                     &header_digest_sha256,
