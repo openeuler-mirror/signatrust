@@ -13,6 +13,8 @@ db: redis
 init:
 	./scripts/initialize-user-and-keys.sh
 
+builder-image:
+	docker build -t tommylike/signatrust-builder:$(GIT_COMMIT) -f docker/Dockerfile.openeuler .
 client-image:
 	docker build -t tommylike/signatrust-client:$(GIT_COMMIT) --build-arg BINARY=client -f docker/Dockerfile .
 

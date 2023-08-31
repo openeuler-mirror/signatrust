@@ -1,11 +1,11 @@
-FROM clux/muslrust:nightly as builder
+FROM tommylike/signatrust-builder:0.0.1 as builder
 ARG BINARY
 LABEL Author=TommyLike<tommylikehu@gmail.com>
 WORKDIR /app
 COPY .. /app
 
 
-RUN rustup target add x86_64-unknown-linux-musl && cargo build --release --bin $BINARY --target x86_64-unknown-linux-musl
+RUN cargo build --release --bin $BINARY
 
 FROM openeuler/openeuler:22.03
 ARG USERNAME=signatrust
@@ -21,7 +21,7 @@ RUN yum install -y shadow && groupadd --gid $USER_GID $USERNAME \
 
 USER $USERNAME
 WORKDIR /app
-COPY --from=builder --chown=$USER_UID:$USER_GID /app/target/x86_64-unknown-linux-musl/release/$BINARY /app
+COPY --from=builder --chown=$USER_UID:$USER_GID /app/target/release/$BINARY /app
 COPY --chown=$USER_UID:$USER_GID $CONFIG /app/config/
 
 ENTRYPOINT /app/$(echo $BINARY)
