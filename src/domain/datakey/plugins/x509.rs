@@ -27,9 +27,9 @@ pub const X509_VALID_KEY_SIZE: [&str; 3] = ["2048", "3072", "4096"];
 #[derive(Debug, Clone, PartialEq, Sequence, Deserialize)]
 pub enum X509KeyType {
     #[serde(rename = "rsa")]
-    RSA,
+    Rsa,
     #[serde(rename = "dsa")]
-    DSA,
+    Dsa,
 }
 
 impl FromStr for X509KeyType {
@@ -37,8 +37,8 @@ impl FromStr for X509KeyType {
 
     fn from_str(s: &str) -> Result<Self> {
         match s {
-            "rsa" => Ok(X509KeyType::RSA),
-            "dsa" => Ok(X509KeyType::DSA),
+            "rsa" => Ok(X509KeyType::Rsa),
+            "dsa" => Ok(X509KeyType::Dsa),
             _ => Err(Error::UnsupportedTypeError(format!("unsupported x509 key type {}", s))),
         }
     }
@@ -47,8 +47,8 @@ impl FromStr for X509KeyType {
 impl Display for X509KeyType {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            X509KeyType::RSA => write!(f, "rsa"),
-            X509KeyType::DSA => write!(f, "dsa"),
+            X509KeyType::Rsa => write!(f, "rsa"),
+            X509KeyType::Dsa => write!(f, "dsa"),
         }
     }
 }
@@ -56,8 +56,8 @@ impl Display for X509KeyType {
 impl X509KeyType {
     pub fn get_real_key_type(&self, key_length: u32) -> Result<PKey<Private>> {
         match self {
-            X509KeyType::RSA => Ok(PKey::from_rsa(Rsa::generate(key_length)?)?),
-            X509KeyType::DSA => Ok(PKey::from_dsa(Dsa::generate(key_length)?)?),
+            X509KeyType::Rsa => Ok(PKey::from_rsa(Rsa::generate(key_length)?)?),
+            X509KeyType::Dsa => Ok(PKey::from_dsa(Dsa::generate(key_length)?)?),
         }
     }
 }

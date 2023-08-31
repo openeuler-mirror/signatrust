@@ -26,9 +26,9 @@ pub const PGP_VALID_KEY_SIZE: [&str; 3] = ["2048", "3072", "4096"];
 #[derive(Debug, Clone, PartialEq, Sequence, Deserialize)]
 pub enum OpenPGPKeyType {
     #[serde(rename = "rsa")]
-    RSA,
+    Rsa,
     #[serde(rename = "eddsa")]
-    EDDSA,
+    Eddsa,
 }
 
 impl FromStr for OpenPGPKeyType {
@@ -36,8 +36,8 @@ impl FromStr for OpenPGPKeyType {
 
     fn from_str(s: &str) -> Result<Self> {
         match s {
-            "rsa" => Ok(OpenPGPKeyType::RSA),
-            "eddsa" => Ok(OpenPGPKeyType::EDDSA),
+            "rsa" => Ok(OpenPGPKeyType::Rsa),
+            "eddsa" => Ok(OpenPGPKeyType::Eddsa),
             _ => Err(Error::UnsupportedTypeError(format!("unsupported openpgp key state {}", s))),
         }
     }
@@ -46,8 +46,8 @@ impl FromStr for OpenPGPKeyType {
 impl Display for OpenPGPKeyType {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            OpenPGPKeyType::RSA => write!(f, "rsa"),
-            OpenPGPKeyType::EDDSA => write!(f, "eddsa"),
+            OpenPGPKeyType::Rsa => write!(f, "rsa"),
+            OpenPGPKeyType::Eddsa => write!(f, "eddsa"),
         }
     }
 }
@@ -56,14 +56,14 @@ impl OpenPGPKeyType {
     //key length defaults to 2048
     pub fn get_real_key_type(&self, key_length: Option<String>) -> KeyType {
         match self {
-           OpenPGPKeyType::RSA => {
-               if key_length.is_none() {
-                   KeyType::Rsa(2048)
+           OpenPGPKeyType::Rsa => {
+               if let Some(length) = key_length {
+                   KeyType::Rsa(length.parse().unwrap())
                } else {
-                   KeyType::Rsa(key_length.unwrap().parse().unwrap())
+                   KeyType::Rsa(2048)
                }
            },
-           OpenPGPKeyType::EDDSA => KeyType::EdDSA
+           OpenPGPKeyType::Eddsa => KeyType::EdDSA
         }
     }
 }
