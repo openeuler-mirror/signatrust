@@ -14,7 +14,7 @@
  *
  */
 
-use crate::domain::datakey::entity::{DataKey, KeyState, Visibility, X509CRL};
+use crate::domain::datakey::entity::{DataKey, KeyState, Visibility};
 use crate::domain::datakey::entity::KeyType;
 use crate::domain::datakey::traits::ExtendableAttributes;
 use crate::util::error::{Error};
@@ -23,9 +23,15 @@ use crate::util::key;
 use chrono::{DateTime, Utc};
 use sqlx::FromRow;
 use std::str::FromStr;
+use sea_orm::ActiveValue::Set;
 
-#[derive(Debug, FromRow)]
-pub(super) struct DataKeyDTO {
+use sea_orm::entity::prelude::*;
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Deserialize, Serialize)]
+#[sea_orm(table_name = "data_key")]
+pub struct Model {
+    #[sea_orm(primary_key)]
     pub id: i32,
     pub name: String,
     pub description: String,
@@ -53,10 +59,17 @@ pub(super) struct DataKeyDTO {
 }
 
 
-impl TryFrom<DataKeyDTO> for DataKey {
+#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+pub enum Relation {}
+
+impl ActiveModelBehavior for ActiveModel {}
+
+
+
+impl TryFrom<Model> for DataKey {
     type Error = Error;
 
-    fn try_from(dto: DataKeyDTO) -> Result<Self, Self::Error> {
+    fn try_from(dto: Model) -> Result<Self, Self::Error> {
         Ok(DataKey {
             id: dto.id,
             name: dto.name.clone(),
@@ -82,74 +95,37 @@ impl TryFrom<DataKeyDTO> for DataKey {
     }
 }
 
-impl TryFrom<DataKey> for DataKeyDTO {
+impl TryFrom<DataKey> for ActiveModel {
     type Error = Error;
 
     fn try_from(data_key: DataKey) -> Result<Self, Self::Error> {
-        Ok(DataKeyDTO {
-            id: data_key.id,
-            name: data_key.name.clone(),
-            description: data_key.description.clone(),
-            visibility: data_key.visibility.to_string(),
-            user: data_key.user,
-            attributes: data_key.serialize_attributes()?,
-            key_type: data_key.key_type.to_string(),
-            parent_id: data_key.parent_id,
-            fingerprint: data_key.fingerprint.clone(),
-            serial_number: data_key.serial_number,
-            private_key: key::encode_u8_to_hex_string(
-                &data_key.private_key
+        Ok(ActiveModel {
+            id: Set(data_key.id),
+            name: Set(data_key.name.clone()),
+            description: Set(data_key.description.clone()),
+            visibility: Set(data_key.visibility.to_string()),
+            user: Set(data_key.user),
+            attributes: Set(data_key.serialize_attributes()?),
+            key_type: Set(data_key.key_type.to_string()),
+            parent_id: Set(data_key.parent_id),
+            fingerprint: Set(data_key.fingerprint.clone()),
+            serial_number: Set(data_key.serial_number),
+            private_key: Set(key::encode_u8_to_hex_string(
+                &data_key.private_key)
             ),
-            public_key: key::encode_u8_to_hex_string(
-                &data_key.public_key
+            public_key: Set(key::encode_u8_to_hex_string(
+                &data_key.public_key)
             ),
-            certificate: key::encode_u8_to_hex_string(
+            certificate: Set(key::encode_u8_to_hex_string(
                 &data_key.certificate
-            ),
-            create_at: data_key.create_at,
-            expire_at: data_key.expire_at,
-            key_state: data_key.key_state.to_string(),
-            user_email: None,
-            request_delete_users: None,
-            request_revoke_users: None,
-            x509_crl_update_at: None,
-        })
-    }
-}
-
-#[derive(Debug, FromRow)]
-pub struct X509CRLDTO {
-    pub id: i32,
-    pub ca_id: i32,
-    pub data: String,
-    pub create_at: DateTime<Utc>,
-    pub update_at: DateTime<Utc>,
-}
-
-impl TryFrom<X509CRLDTO> for X509CRL {
-    type Error = Error;
-
-    fn try_from(value: X509CRLDTO) -> Result<Self, Self::Error> {
-        Ok(X509CRL {
-            id: value.id,
-            ca_id: value.ca_id,
-            data: key::decode_hex_string_to_u8(&value.data),
-            create_at: value.create_at,
-            update_at: value.update_at,
-        })
-    }
-}
-
-impl TryFrom<X509CRL> for X509CRLDTO {
-    type Error = Error;
-
-    fn try_from(value: X509CRL) -> Result<Self, Self::Error> {
-        Ok(X509CRLDTO {
-            id: value.id,
-            ca_id: value.ca_id,
-            data: key::encode_u8_to_hex_string(&value.data),
-            create_at: value.create_at,
-            update_at: value.update_at,
+            )),
+            create_at: Set(data_key.create_at),
+            expire_at: Set(data_key.expire_at),
+            key_state: Set(data_key.key_state.to_string()),
+            user_email: Set(None),
+            request_delete_users: Set(None),
+            request_revoke_users: Set(None),
+            x509_crl_update_at: Set(None),
         })
     }
 }
@@ -184,7 +160,7 @@ mod tests {
             request_revoke_users: None,
             parent_key: None,
         };
-        let dto = DataKeyDTO::try_from(key).unwrap();
+        let dto = Model::try_from(key).unwrap();
         assert_eq!(dto.id, 0);
         assert_eq!(dto.name, "Test Key");
         assert_eq!(dto.visibility, Visibility::Public.to_string());
@@ -196,7 +172,7 @@ mod tests {
 
     #[test]
     fn test_data_key_entity_from_dto() {
-        let dto = DataKeyDTO {
+        let dto = Model {
             id: 1,
             name: "Test Key".to_string(),
             description: "".to_string(),
