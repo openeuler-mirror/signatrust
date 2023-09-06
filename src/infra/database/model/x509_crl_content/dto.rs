@@ -13,17 +13,14 @@
  *  * // See the Mulan PSL v2 for more details.
  *
  */
-use std::fmt::{Display, Formatter};
-use std::str::FromStr;
-use sqlx::FromRow;
 use chrono::{DateTime, Utc};
-use crate::domain::datakey::entity::{RevokedKey, X509CRL, X509RevokeReason};
+use crate::domain::datakey::entity::{X509CRL};
 use crate::util::error::Error;
 
 use sqlx::types::chrono;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
-use crate::util::key::encode_u8_to_hex_string;
+use crate::util::key::{decode_hex_string_to_u8, encode_u8_to_hex_string};
 
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Deserialize, Serialize)]
@@ -51,7 +48,35 @@ impl TryFrom<X509CRL> for Model {
     }
 }
 
+impl TryFrom<Model> for X509CRL {
+    type Error = Error;
+
+    fn try_from(value: Model) -> Result<Self, Self::Error> {
+        Ok(X509CRL {
+            id: value.id,
+            ca_id: value.ca_id,
+            data: decode_hex_string_to_u8(&value.data),
+            create_at: value.create_at,
+            update_at: value.update_at,
+        })
+    }
+}
+
+
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
-pub enum Relation {}
+pub enum Relation {
+    #[sea_orm(
+    belongs_to = "super::super::datakey::dto::Entity",
+    from = "Column::CaId",
+    to = "super::super::datakey::dto::Column::Id"
+    )]
+    Datakey,
+}
+
+impl Related<super::super::datakey::dto::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Datakey.def()
+    }
+}
 impl ActiveModelBehavior for ActiveModel {}
 

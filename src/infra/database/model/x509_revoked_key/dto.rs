@@ -13,14 +13,10 @@
  *  * // See the Mulan PSL v2 for more details.
  *
  */
-use std::fmt::{Display, Formatter};
 use std::str::FromStr;
-use sqlx::FromRow;
 use chrono::{DateTime, Utc};
 use crate::domain::datakey::entity::{RevokedKey, X509RevokeReason};
 use crate::util::error::Error;
-
-use sqlx::types::chrono;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -33,6 +29,7 @@ pub struct Model {
     pub key_id: i32,
     pub ca_id: i32,
     pub reason: String,
+    #[sea_orm(ignore)]
     pub serial_number: Option<String>,
     pub create_at: DateTime<Utc>,
 }
@@ -75,6 +72,6 @@ mod tests {
         assert_eq!(revoked_key.key_id, 1);
         assert_eq!(revoked_key.ca_id, 2);
         assert_eq!(revoked_key.reason, X509RevokeReason::KeyCompromise);
-        assert!(revoked_key.create_at > now);
+        assert_eq!(revoked_key.create_at, now);
     }
 }

@@ -15,21 +15,21 @@
  */
 
 use super::dto as datakey_dto;
-use crate::infra::database::pool::DbPool;
+use super::super::user::dto as user_dto;
+use super::super::request_delete::dto as request_dto;
+use super::super::x509_crl_content::dto as crl_content_dto;
+use super::super::x509_revoked_key::dto as revoked_key_dto;
 use crate::domain::datakey::entity::{DataKey, KeyState, KeyType, ParentKey, RevokedKey, Visibility, X509CRL, X509RevokeReason};
 use crate::domain::datakey::repository::Repository;
 use crate::util::error::{Error, Result};
 use async_trait::async_trait;
 use chrono::Duration;
+use sea_query::Expr;
 use chrono::Utc;
-use crate::infra::database::model::x509_crl_content::dto as x509_crl_content_dto;
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, ActiveValue::Set, QueryOrder, Condition, TransactionTrait, DatabaseTransaction};
-use sea_orm::sea_query::OnConflict;
-use crate::infra::database::model::request_delete::dto as pending_operation_dto;
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, ActiveValue::Set, TransactionTrait, DatabaseTransaction, QuerySelect, JoinType, sea_query, RelationTrait, RelationBuilder, ExecResult, ConnectionTrait, Statement, DatabaseBackend};
+use sea_orm::sea_query::{Alias, IntoCondition, OnConflict};
+use sea_orm::Condition;
 use crate::infra::database::model::request_delete::dto::RequestType;
-use crate::infra::database::model::x509_crl_content;
-use crate::infra::database::model::x509_revoked_key::dto as x509_revoked_key_dto;
-use crate::util::error;
 use crate::util::key::encode_u8_to_hex_string;
 
 const PUBLICKEY_PENDING_THRESHOLD: i32 = 3;
@@ -37,20 +37,18 @@ const PRIVATEKEY_PENDING_THRESHOLD: i32 = 1;
 
 #[derive(Clone)]
 pub struct DataKeyRepository<'a> {
-    db_pool: DbPool,
     db_connection: &'a DatabaseConnection
 }
 
 impl<'a> DataKeyRepository<'a> {
-    pub fn new(db_pool: DbPool, db_connection: &'a DatabaseConnection) -> Self {
+    pub fn new(db_connection: &'a DatabaseConnection) -> Self {
         Self {
-            db_pool,
             db_connection
         }
     }
 
-    async fn create_pending_operation(&self, pending_operation: pending_operation_dto::Model, tx: &mut DatabaseTransaction) -> Result<()> {
-        let operation = pending_operation_dto::ActiveModel {
+    async fn create_pending_operation(&self, pending_operation: request_dto::Model, tx: &mut DatabaseTransaction) -> Result<()> {
+        let operation = request_dto::ActiveModel {
             user_id: Set(pending_operation.user_id),
             key_id: Set(pending_operation.key_id),
             request_type: Set(pending_operation.request_type),
@@ -59,43 +57,51 @@ impl<'a> DataKeyRepository<'a> {
             ..Default::default()
         };
         //TODO: https://github.com/SeaQL/sea-orm/issues/1790
-        pending_operation_dto::Entity::insert(operation).on_conflict(OnConflict::new()
-            .update_column(pending_operation_dto::Column::Id).to_owned()
+        request_dto::Entity::insert(operation).on_conflict(OnConflict::new()
+            .update_column(request_dto::Column::Id).to_owned()
         ).exec(tx).await?;
         Ok(())
     }
 
-    async fn delete_pending_operation(&self, user_id: i32, id: i32, request_type: pending_operation_dto::RequestType, tx: &mut DatabaseTransaction) -> Result<()> {
-        let _ = pending_operation_dto::Entity::delete_many().filter(Condition::all()
-            .add(pending_operation_dto::Column::UserId.eq(user_id))
-            .add(pending_operation_dto::Column::RequestType.eq(request_type))
-            .add(pending_operation_dto::Column::KeyId.eq(id))).exec(tx)
+    async fn delete_pending_operation(&self, user_id: i32, id: i32, request_type: request_dto::RequestType, tx: &mut DatabaseTransaction) -> Result<()> {
+        let _ = request_dto::Entity::delete_many().filter(Condition::all()
+            .add(request_dto::Column::UserId.eq(user_id))
+            .add(request_dto::Column::RequestType.eq(request_type.to_string()))
+            .add(request_dto::Column::KeyId.eq(id))).exec(tx)
             .await?;
         Ok(())
     }
 
     async fn create_revoke_record(&self, key_id: i32, ca_id: i32, reason: X509RevokeReason, tx: &mut DatabaseTransaction) -> Result<()> {
-        let revoked = x509_revoked_key_dto::ActiveModel{
+        let revoked = revoked_key_dto::ActiveModel{
             id: Default::default(),
             key_id: Set(key_id),
             ca_id: Set(ca_id),
             reason: Set(reason.to_string()),
-            serial_number: Set(None),
             create_at: Set(Utc::now()),
         };
         //TODO: https://github.com/SeaQL/sea-orm/issues/1790
-        x509_revoked_key_dto::Entity::insert(revoked).on_conflict(OnConflict::new()
-            .update_column(pending_operation_dto::Column::Id).to_owned()
+        revoked_key_dto::Entity::insert(revoked).on_conflict(OnConflict::new()
+            .update_column(request_dto::Column::Id).to_owned()
         ).exec(tx).await?;
         Ok(())
     }
 
     async fn delete_revoke_record(&self, key_id: i32, ca_id: i32, tx: &mut DatabaseTransaction) -> Result<()> {
-        let _ = x509_revoked_key_dto::Entity::delete_many().filter(Condition::all()
-            .add(x509_revoked_key_dto::Column::KeyId.eq(key_id))
-            .add(x509_revoked_key_dto::Column::CaId.eq(ca_id))).exec(self.db_connection)
+        let _ = revoked_key_dto::Entity::delete_many().filter(Condition::all()
+            .add(revoked_key_dto::Column::KeyId.eq(key_id))
+            .add(revoked_key_dto::Column::CaId.eq(ca_id))).exec(tx)
             .await?;
         Ok(())
+    }
+
+    fn get_pending_operation_relation(&self, request_type: RequestType) -> RelationBuilder<request_dto::Entity, datakey_dto::Entity> {
+        request_dto::Entity::belongs_to(datakey_dto::Entity).from(
+            request_dto::Column::KeyId).to(
+            datakey_dto::Column::Id).on_condition(move |left, _right| {
+            Expr::col((left, request_dto::Column::RequestType)).eq(request_type.clone().to_string()).into_condition()
+        }
+        )
     }
 
     async fn _obtain_datakey_parent(&self, datakey: &mut DataKey) -> Result<()> {
@@ -112,7 +118,7 @@ impl<'a> DataKeyRepository<'a> {
                     })
                 }
                 _ => {
-                    return Err(error::Error::DatabaseError("unable to find parent key".to_string()));
+                    return Err(Error::DatabaseError("unable to find parent key".to_string()));
                 }
             }
         }
@@ -121,10 +127,11 @@ impl<'a> DataKeyRepository<'a> {
 }
 
 #[async_trait]
-impl Repository for DataKeyRepository {
+impl<'a> Repository for DataKeyRepository<'a> {
     async fn create(&self, data_key: DataKey) -> Result<DataKey> {
-        let dto = datakey_dto::ActiveModel::try_from(data_key);
-        let insert_result = datakey_dto::Entity::insert(dto).exec(self.db_connection).await?;
+        let dto = datakey_dto::ActiveModel::try_from(data_key)?;
+        let insert_result =datakey_dto::Entity::insert(dto).exec(self.db_connection).await?;
+
         let mut datakey = self.get_by_id(insert_result.last_insert_id).await?;
         //fetch parent key if 'parent_id' exists.
         if let Err(err) = self._obtain_datakey_parent(&mut datakey).await {
@@ -132,266 +139,266 @@ impl Repository for DataKeyRepository {
             let _ = self.delete(insert_result.last_insert_id).await;
             return Err(err);
         }
-
         Ok(datakey)
     }
 
     async fn delete(&self, id: i32) -> Result<()> {
-        let _: Option<DataKeyDTO> = sqlx::query_as("DELETE FROM data_key WHERE id = ?")
-            .bind(id)
-            .fetch_optional(&self.db_pool)
-            .await?;
+        datakey_dto::Entity::delete_by_id(id).exec(self.db_connection).await?;
         Ok(())
     }
 
     async fn get_all_keys(&self, key_type: Option<KeyType>, visibility: Visibility, user_id: i32) -> Result<Vec<DataKey>> {
-        let dtos: Vec<DataKeyDTO> = match key_type {
-            None => {
-                if visibility == Visibility::Public {
-                    sqlx::query_as(
-                        "SELECT D.*, U.email AS user_email, GROUP_CONCAT(R.user_email) as request_delete_users, \
-            GROUP_CONCAT(K.user_email) as request_revoke_users \
-            FROM data_key D \
-            INNER JOIN user U ON D.user = U.id \
-            LEFT JOIN pending_operation R ON D.id = R.key_id and R.request_type = 'delete' \
-            LEFT JOIN pending_operation K ON D.id = K.key_id and K.request_type = 'revoke' \
-            WHERE D.key_state != ? AND D.visibility = ? \
-            GROUP BY D.id")
-                        .bind(KeyState::Deleted.to_string())
-                        .bind(visibility.to_string())
-                        .fetch_all(&self.db_pool)
-                        .await?
-                } else {
-                    sqlx::query_as(
-                        "SELECT D.*, U.email AS user_email, GROUP_CONCAT(R.user_email) as request_delete_users, \
-            GROUP_CONCAT(K.user_email) as request_revoke_users \
-            FROM data_key D \
-            INNER JOIN user U ON D.user = U.id \
-            LEFT JOIN pending_operation R ON D.id = R.key_id and R.request_type = 'delete' \
-            LEFT JOIN pending_operation K ON D.id = K.key_id and K.request_type = 'revoke' \
-            WHERE D.key_state != ? AND D.visibility = ? AND D.user = ? \
-            GROUP BY D.id")
-                        .bind(KeyState::Deleted.to_string())
-                        .bind(visibility.to_string())
-                        .bind(user_id)
-                        .fetch_all(&self.db_pool)
-                        .await?
-                }
-            }
-            Some(key_t) => {
-               if visibility == Visibility::Public {
-                   sqlx::query_as(
-                       "SELECT D.*, U.email AS user_email, GROUP_CONCAT(R.user_email) as request_delete_users, \
-            GROUP_CONCAT(K.user_email) as request_revoke_users \
-            FROM data_key D \
-            INNER JOIN user U ON D.user = U.id \
-            LEFT JOIN pending_operation R ON D.id = R.key_id and R.request_type = 'delete' \
-            LEFT JOIN pending_operation K ON D.id = K.key_id and K.request_type = 'revoke' \
-            WHERE D.key_state != ? AND \
-            D.key_type = ? AND D.visibility = ? \
-            GROUP BY D.id")
-                       .bind(KeyState::Deleted.to_string())
-                       .bind(key_t.to_string())
-                       .bind(visibility.to_string())
-                       .fetch_all(&self.db_pool)
-                       .await?
-               } else {
-                   sqlx::query_as(
-                       "SELECT D.*, U.email AS user_email, GROUP_CONCAT(R.user_email) as request_delete_users, \
-            GROUP_CONCAT(K.user_email) as request_revoke_users \
-            FROM data_key D \
-            INNER JOIN user U ON D.user = U.id \
-            LEFT JOIN pending_operation R ON D.id = R.key_id and R.request_type = 'delete' \
-            LEFT JOIN pending_operation K ON D.id = K.key_id and K.request_type = 'revoke' \
-            WHERE D.key_state != ? AND \
-            D.key_type = ? AND D.visibility = ? AND D.user = ? \
-            GROUP BY D.id")
-                       .bind(KeyState::Deleted.to_string())
-                       .bind(key_t.to_string())
-                       .bind(visibility.to_string())
-                       .bind(user_id)
-                       .fetch_all(&self.db_pool)
-                       .await?
-               }
-            }
-        };
-        let mut results = vec![];
-        for dto in dtos.into_iter() {
-            results.push(DataKey::try_from(dto)?);
+        let mut conditions = Condition::all().add(
+            datakey_dto::Column::KeyState.ne(KeyState::Deleted.to_string())).add(
+            datakey_dto::Column::Visibility.eq(visibility.to_string())
+        );
+        if let Some(k_type) = key_type {
+            conditions = conditions.add(datakey_dto::Column::KeyType.eq(k_type.to_string()))
         }
-        Ok(results)
+        if visibility == Visibility::Private {
+            conditions = conditions.add(datakey_dto::Column::User.eq(user_id))
+        }
+        match datakey_dto::Entity::find().column_as(
+            Expr::col((Alias::new("user_table"), user_dto::Column::Email)),
+            "user_email").column_as(
+            Expr::col((Alias::new("request_delete_table"), request_dto::Column::UserEmail)),
+            "request_delete_users").column_as(
+            Expr::col((Alias::new("request_revoke_table"), request_dto::Column::UserEmail)),
+            "request_revoke_users").join_as_rev(
+            JoinType::InnerJoin, user_dto::Relation::Datakey.def(), Alias::new("user_table")).join_as_rev(
+            JoinType::LeftJoin, self.get_pending_operation_relation(RequestType::Delete).into(),
+            Alias::new("request_delete_table")).join_as_rev(
+            JoinType::LeftJoin, self.get_pending_operation_relation(RequestType::Revoke).into(),
+            Alias::new("request_revoke_table")).group_by(datakey_dto::Column::Id).filter(conditions).all(self.db_connection).await {
+            Err(_) => {
+                Err(Error::NotFoundError)
+            }
+            Ok(data_keys) => {
+                let mut results = vec![];
+                for dto in data_keys.into_iter() {
+                    results.push(DataKey::try_from(dto)?);
+                }
+                Ok(results)
+            }
+        }
     }
 
     async fn get_keys_for_crl_update(&self, duration: Duration) -> Result<Vec<DataKey>> {
         let now = Utc::now();
-        let dtos: Vec<DataKeyDTO> = sqlx::query_as(
-            "SELECT D.id, D.name, D.description, D.user, D.attributes, D.key_type, D.fingerprint, D.private_key, D.public_key, D.certificate, D.create_at, D.expire_at, D.key_state, D.visibility, D.parent_id, D.serial_number, R.update_at AS x509_crl_update_at \
-            FROM data_key D \
-            LEFT JOIN x509_crl_content R ON D.id = R.ca_id \
-            WHERE (D.key_type = ? OR D.key_type = ?) AND D.key_state != ?")
-            .bind(KeyType::X509ICA.to_string())
-            .bind(KeyType::X509CA.to_string())
-            .bind(KeyState::Deleted.to_string())
-            .fetch_all(&self.db_pool)
-            .await?;
-        let mut results = vec![];
-        for dto in dtos.into_iter() {
-            if dto.x509_crl_update_at.is_none() {
-                results.push(DataKey::try_from(dto)?);
-            } else {
-                let update_at = dto.x509_crl_update_at.unwrap();
-                if update_at + duration <= now {
-                    results.push(DataKey::try_from(dto)?);
+        match datakey_dto::Entity::find().column_as(
+            Expr::col((Alias::new("crl_table"), crl_content_dto::Column::UpdateAt)),
+            "x509_crl_update_at").join_as_rev(
+            JoinType::LeftJoin, crl_content_dto::Relation::Datakey.def(), Alias::new("crl_table")).filter(
+            Condition::all().add(
+                Condition::any().add(datakey_dto::Column::KeyType.eq(KeyType::X509CA.to_string())
+                ).add(datakey_dto::Column::KeyType.eq(KeyType::X509ICA.to_string()))).add(
+                datakey_dto::Column::KeyState.ne(KeyState::Deleted.to_string()))
+        ).all(self.db_connection).await {
+            Err(_) => {
+                Ok(vec![])
+            }
+            Ok(keys) => {
+                let mut results = vec![];
+                for dto in keys.into_iter() {
+                    if dto.x509_crl_update_at.is_none() {
+                        results.push(DataKey::try_from(dto)?);
+                    } else {
+                        let update_at = dto.x509_crl_update_at.unwrap();
+                        if update_at + duration <= now {
+                            results.push(DataKey::try_from(dto)?);
+                        }
+                    }
                 }
+                Ok(results)
             }
         }
-        Ok(results)
     }
 
     async fn get_revoked_serial_number_by_parent_id(&self, id: i32) -> Result<Vec<RevokedKey>> {
-        let dtos : Vec<RevokedKeyDTO> = sqlx::query_as(
-            "SELECT R.*, D.serial_number \
-             FROM x509_keys_revoked R \
-             INNER JOIN data_key D ON R.key_id = D.id \
-             WHERE R.ca_id = ? AND D.key_state = ?")
-            .bind(id)
-            .bind(KeyState::Revoked.to_string())
-            .fetch_all(&self.db_pool)
-            .await?;
-        let mut results = vec![];
-        for dto in dtos.into_iter() {
-            results.push(RevokedKey::try_from(dto)?);
+        match revoked_key_dto::Entity::find().column_as(
+            Expr::col((Alias::new("datakey_table"), datakey_dto::Column::SerialNumber)),
+            "serial_number").join_as_rev(
+            JoinType::InnerJoin, datakey_dto::Entity::belongs_to(revoked_key_dto::Entity).from(
+                datakey_dto::Column::Id).to(
+                revoked_key_dto::Column::KeyId).on_condition(
+                move |left, right| {
+                Condition::all().add(
+                    Expr::col((left, datakey_dto::Column::KeyState)).eq(KeyState::Revoked.to_string())).add(
+                    Expr::col((right, revoked_key_dto::Column::CaId)).eq(id)
+                ).into_condition()
+            }
+            ).into(),
+            Alias::new("datakey_table")).all(self.db_connection).await {
+            Err(_) => {
+                Err(Error::NotFoundError)
+            }
+            Ok(revoked_keys) => {
+                let mut results = vec![];
+                for dto in revoked_keys.into_iter() {
+                    results.push(RevokedKey::try_from(dto)?);
+                }
+                Ok(results)
+            }
         }
-        Ok(results)
     }
 
     async fn get_by_id(&self, id: i32) -> Result<DataKey> {
-        let dto: DataKeyDTO = sqlx::query_as(
-            "SELECT D.*, U.email AS user_email, GROUP_CONCAT(R.user_email) as request_delete_users, \
-            GROUP_CONCAT(K.user_email) as request_revoke_users \
-            FROM data_key D \
-            INNER JOIN user U ON D.user = U.id \
-            LEFT JOIN pending_operation R ON D.id = R.key_id and R.request_type = 'delete' \
-            LEFT JOIN pending_operation K ON D.id = K.key_id and K.request_type = 'revoke' \
-            WHERE D.id = ? AND D.key_state != ? \
-            GROUP BY D.id")
-            .bind(id)
-            .bind(KeyState::Deleted.to_string())
-            .fetch_one(&self.db_pool)
-            .await?;
-        Ok(DataKey::try_from(dto)?)
+        match datakey_dto::Entity::find().column_as(
+                Expr::col((Alias::new("user_table"), user_dto::Column::Email)),
+                "user_email").column_as(
+            Expr::col((Alias::new("request_delete_table"), request_dto::Column::UserEmail)),
+            "request_delete_users").column_as(
+            Expr::col((Alias::new("request_revoke_table"), request_dto::Column::UserEmail)),
+            "request_revoke_users").join_as_rev(
+            JoinType::InnerJoin, user_dto::Relation::Datakey.def(), Alias::new("user_table")).join_as_rev(
+            JoinType::LeftJoin, self.get_pending_operation_relation(RequestType::Delete).into(),
+            Alias::new("request_delete_table")).join_as_rev(
+            JoinType::LeftJoin, self.get_pending_operation_relation(RequestType::Revoke).into(),
+            Alias::new("request_revoke_table")).group_by(datakey_dto::Column::Id).filter(
+            Condition::all().add(
+                datakey_dto::Column::Id.eq(id)).add(
+                datakey_dto::Column::KeyState.ne(KeyState::Deleted.to_string()))
+        ).one(self.db_connection).await? {
+            None => {
+                Err(Error::NotFoundError)
+            }
+            Some(datakey) => {
+                Ok(DataKey::try_from(datakey)?)
+            }
+        }
     }
 
     async fn get_by_parent_id(&self, parent_id: i32) -> Result<Vec<DataKey>> {
-        let dtos: Vec<DataKeyDTO> = sqlx::query_as(
-            "SELECT D.*, U.email AS user_email, GROUP_CONCAT(R.user_email) as request_delete_users, \
-            GROUP_CONCAT(K.user_email) as request_revoke_users \
-            FROM data_key D \
-            INNER JOIN user U ON D.user = U.id \
-            LEFT JOIN pending_operation R ON D.id = R.key_id and R.request_type = 'delete' \
-            LEFT JOIN pending_operation K ON D.id = K.key_id and K.request_type = 'revoke' \
-            WHERE D.parent_id = ? AND D.key_state != ? \
-            GROUP BY D.id")
-            .bind(parent_id)
-            .bind(KeyState::Deleted.to_string())
-            .fetch_all(&self.db_pool)
-            .await?;
-        let mut results = vec![];
-        for dto in dtos.into_iter() {
-            results.push(DataKey::try_from(dto)?);
+        match datakey_dto::Entity::find().column_as(
+            Expr::col((Alias::new("user_table"), user_dto::Column::Email)),
+            "user_email").column_as(
+            Expr::col((Alias::new("request_delete_table"), request_dto::Column::UserEmail)),
+            "request_delete_users").column_as(
+            Expr::col((Alias::new("request_revoke_table"), request_dto::Column::UserEmail)),
+            "request_revoke_users").join_as_rev(
+            JoinType::InnerJoin, user_dto::Relation::Datakey.def(), Alias::new("user_table")).join_as_rev(
+            JoinType::LeftJoin, self.get_pending_operation_relation(RequestType::Delete).into(),
+            Alias::new("request_delete_table")).join_as_rev(
+            JoinType::LeftJoin, self.get_pending_operation_relation(RequestType::Revoke).into(),
+            Alias::new("request_revoke_table")).group_by(datakey_dto::Column::Id).filter(
+            Condition::all().add(
+                datakey_dto::Column::ParentId.eq(parent_id)).add(
+                datakey_dto::Column::KeyState.ne(KeyState::Deleted.to_string()))
+        ).all(self.db_connection).await {
+            Err(_) => {
+                Err(Error::NotFoundError)
+            }
+            Ok(datakeys) => {
+                let mut results = vec![];
+                for dto in datakeys.into_iter() {
+                    results.push(DataKey::try_from(dto)?);
+                }
+                Ok(results)
+            }
         }
-        Ok(results)
     }
 
     async fn get_by_name(&self, name: &str) -> Result<DataKey> {
-        let dto: DataKeyDTO = sqlx::query_as(
-            "SELECT D.*, U.email AS user_email, GROUP_CONCAT(R.user_email) as request_delete_users, \
-            GROUP_CONCAT(K.user_email) as request_revoke_users \
-            FROM data_key D \
-            INNER JOIN user U ON D.user = U.id \
-            LEFT JOIN pending_operation R ON D.id = R.key_id and R.request_type = 'delete' \
-            LEFT JOIN pending_operation K ON D.id = K.key_id and K.request_type = 'revoke' \
-            WHERE D.name = ? AND D.key_state != ? \
-            GROUP BY D.id")
-            .bind(name)
-            .bind(KeyState::Deleted.to_string())
-            .fetch_one(&self.db_pool)
-            .await?;
-        Ok(DataKey::try_from(dto)?)
+        match datakey_dto::Entity::find().column_as(
+            Expr::col((Alias::new("user_table"), user_dto::Column::Email)),
+            "user_email").column_as(
+            Expr::col((Alias::new("request_delete_table"), request_dto::Column::UserEmail)),
+            "request_delete_users").column_as(
+            Expr::col((Alias::new("request_revoke_table"), request_dto::Column::UserEmail)),
+            "request_revoke_users").join_as_rev(
+            JoinType::InnerJoin, user_dto::Relation::Datakey.def(), Alias::new("user_table")).join_as_rev(
+            JoinType::LeftJoin, self.get_pending_operation_relation(RequestType::Delete).into(),
+            Alias::new("request_delete_table")).join_as_rev(
+            JoinType::LeftJoin, self.get_pending_operation_relation(RequestType::Revoke).into(),
+            Alias::new("request_revoke_table")).group_by(datakey_dto::Column::Id).filter(
+            Condition::all().add(
+                datakey_dto::Column::Name.eq(name)).add(
+                datakey_dto::Column::KeyState.ne(KeyState::Deleted.to_string()))
+        ).one(self.db_connection).await? {
+            None => {
+                Err(Error::NotFoundError)
+            }
+            Some(datakey) => {
+                Ok(DataKey::try_from(datakey)?)
+            }
+        }
     }
 
     async fn update_state(&self, id: i32, state: KeyState) -> Result<()> {
         //Note: if the key in deleted status, it cannot be updated to other states
-        let _: Option<DataKeyDTO>  = sqlx::query_as("UPDATE data_key SET key_state = ? WHERE id = ? AND key_state != ?")
-            .bind(state.to_string())
-            .bind(id)
-            .bind(KeyState::Deleted.to_string())
-            .fetch_optional(&self.db_pool)
-            .await?;
+        let _ = datakey_dto::Entity::update_many().col_expr(
+            datakey_dto::Column::KeyState, Expr::value(state.to_string())
+        ).filter(Condition::all().add(
+            datakey_dto::Column::Id.eq(id)).add(
+            datakey_dto::Column::KeyState.ne(KeyState::Deleted.to_string()))
+        ).exec(self.db_connection).await?;
         Ok(())
     }
 
     async fn update_key_data(&self, data_key: DataKey) -> Result<()> {
         //Note: if the key in deleted status, it cannot be updated to other states
-        let dto = DataKeyDTO::try_from(data_key)?;
-        let _: Option<DataKeyDTO>  = sqlx::query_as("UPDATE data_key SET serial_number = ?, fingerprint = ?, private_key = ?, public_key = ?, certificate = ? WHERE id = ? AND key_state != ?")
-            .bind(dto.serial_number)
-            .bind(dto.fingerprint)
-            .bind(dto.private_key)
-            .bind(dto.public_key)
-            .bind(dto.certificate)
-            .bind(dto.id)
-            .bind(KeyState::Deleted.to_string())
-            .fetch_optional(&self.db_pool)
-            .await?;
+        let _ = datakey_dto::Entity::update_many().col_expr(
+            datakey_dto::Column::SerialNumber, Expr::value(data_key.serial_number)
+        ).col_expr(
+            datakey_dto::Column::Fingerprint, Expr::value(data_key.fingerprint)
+        ).col_expr(
+            datakey_dto::Column::PrivateKey, Expr::value(encode_u8_to_hex_string(&data_key.private_key))
+        ).col_expr(
+            datakey_dto::Column::PublicKey, Expr::value(encode_u8_to_hex_string(&data_key.public_key))
+        ).col_expr(
+            datakey_dto::Column::Certificate, Expr::value(encode_u8_to_hex_string(&data_key.certificate))
+        ).filter(Condition::all().add(
+            datakey_dto::Column::Id.eq(data_key.id)).add(
+            datakey_dto::Column::KeyState.ne(KeyState::Deleted.to_string()))
+        ).exec(self.db_connection).await?;
         Ok(())
     }
 
     async fn get_enabled_key_by_type_and_name(&self, key_type: String, name: String) -> Result<DataKey> {
-        let dto: DataKeyDTO = sqlx::query_as(
-            "SELECT D.*, U.email AS user_email, GROUP_CONCAT(R.user_email) as request_delete_users, \
-            GROUP_CONCAT(K.user_email) as request_revoke_users \
-            FROM data_key D \
-            INNER JOIN user U ON D.user = U.id \
-            LEFT JOIN pending_operation R ON D.id = R.key_id and R.request_type = 'delete' \
-            LEFT JOIN pending_operation K ON D.id = K.key_id and K.request_type = 'revoke' \
-            WHERE D.name = ? AND D.key_type = ? AND D.key_state = ? \
-            GROUP BY D.id")
-            .bind(name)
-            .bind(key_type)
-            .bind(KeyState::Enabled.to_string())
-            .fetch_one(&self.db_pool)
-            .await?;
-        let mut datakey = DataKey::try_from(dto)?;
-        self._obtain_datakey_parent(&mut datakey).await?;
-        return Ok(datakey)
+        match datakey_dto::Entity::find().column_as(
+            Expr::col((Alias::new("user_table"), user_dto::Column::Email)),
+            "user_email").column_as(
+            Expr::col((Alias::new("request_delete_table"), request_dto::Column::UserEmail)),
+            "request_delete_users").column_as(
+            Expr::col((Alias::new("request_revoke_table"), request_dto::Column::UserEmail)),
+            "request_revoke_users").join_as_rev(
+            JoinType::InnerJoin, user_dto::Relation::Datakey.def(), Alias::new("user_table")).join_as_rev(
+            JoinType::LeftJoin, self.get_pending_operation_relation(RequestType::Delete).into(),
+            Alias::new("request_delete_table")).join_as_rev(
+            JoinType::LeftJoin, self.get_pending_operation_relation(RequestType::Revoke).into(),
+            Alias::new("request_revoke_table")).group_by(datakey_dto::Column::Id).filter(
+            Condition::all().add(
+                datakey_dto::Column::Name.eq(name)).add(
+                datakey_dto::Column::KeyType.eq(key_type)).add(
+                datakey_dto::Column::KeyState.eq(KeyState::Enabled.to_string()))
+        ).one(self.db_connection).await? {
+            None => {
+                Err(Error::NotFoundError)
+            }
+            Some(datakey) => {
+                Ok(DataKey::try_from(datakey)?)
+            }
+        }
     }
 
     async fn request_delete_key(&self, user_id: i32, user_email: String, id: i32, public_key: bool) -> Result<()> {
         let mut txn = self.db_connection.begin().await?;
         let threshold = if public_key { PUBLICKEY_PENDING_THRESHOLD } else { PRIVATEKEY_PENDING_THRESHOLD };
         //1. update key state to pending delete if needed.
-        let _: Option<DataKeyDTO> = sqlx::query_as(
-            "UPDATE data_key SET key_state = ? \
-            WHERE id = ?")
-            .bind(KeyState::PendingDelete.to_string())
-            .bind(id)
-            .fetch_optional(&mut txn)
-            .await?;
+        let _ = datakey_dto::Entity::update_many().col_expr(
+            datakey_dto::Column::KeyState, Expr::value(KeyState::PendingDelete.to_string())
+        ).filter(datakey_dto::Column::Id.eq(id)).exec(&txn).await?;
         //2. add request delete record
-        let pending_delete = pending_operation_dto::Model::new_for_delete(id, user_id, user_email);
+        let pending_delete = request_dto::Model::new_for_delete(id, user_id, user_email);
         self.create_pending_operation(pending_delete, &mut txn).await?;
         //3. delete datakey if pending delete count >= threshold
-        let _: Option<DataKeyDTO> = sqlx::query_as(
+        let _: ExecResult = txn.execute(Statement::from_sql_and_values(
+            DatabaseBackend::MySql,
             "UPDATE data_key SET key_state = ? \
             WHERE id = ? AND ( \
-            SELECT COUNT(*) FROM pending_operation WHERE key_id = ?) >= ?")
-            .bind(KeyState::Deleted.to_string())
-            .bind(id)
-            .bind(id)
-            .bind(threshold)
-            .fetch_optional(&mut txn)
-            .await?;
+            SELECT COUNT(*) FROM pending_operation WHERE key_id = ?) >= ?",
+            [KeyState::Deleted.to_string().into(), id.into(), id.into(), threshold.into()],
+        )).await?;
         txn.commit().await?;
         Ok(())
     }
@@ -400,29 +407,22 @@ impl Repository for DataKeyRepository {
         let mut txn = self.db_connection.begin().await?;
         let threshold = if public_key { PUBLICKEY_PENDING_THRESHOLD } else { PRIVATEKEY_PENDING_THRESHOLD };
         //1. update key state to pending delete if needed.
-        let _: Option<DataKeyDTO> = sqlx::query_as(
-            "UPDATE data_key SET key_state = ? \
-            WHERE id = ?")
-            .bind(KeyState::PendingRevoke.to_string())
-            .bind(id)
-            .fetch_optional(&mut txn)
-            .await?;
+        let _ = datakey_dto::Entity::update_many().col_expr(
+            datakey_dto::Column::KeyState, Expr::value(KeyState::PendingDelete.to_string())
+        ).filter(datakey_dto::Column::Id.eq(id)).exec(&txn).await?;
         //2. add request revoke pending record
-        let pending_revoke = pending_operation_dto::Model::new_for_revoke(id, user_id, user_email);
+        let pending_revoke = request_dto::Model::new_for_revoke(id, user_id, user_email);
         self.create_pending_operation(pending_revoke, &mut txn).await?;
         //3. add revoked record
         self.create_revoke_record(id, parent_id, reason, &mut txn).await?;
         //4. mark datakey revoked if pending revoke count >= threshold
-        let _: Option<DataKeyDTO> = sqlx::query_as(
+        let _: ExecResult = txn.execute(Statement::from_sql_and_values(
+            DatabaseBackend::MySql,
             "UPDATE data_key SET key_state = ? \
             WHERE id = ? AND ( \
-            SELECT COUNT(*) FROM pending_operation WHERE key_id = ?) >= ?")
-            .bind(KeyState::Revoked.to_string())
-            .bind(id)
-            .bind(id)
-            .bind(threshold)
-            .fetch_optional(&mut txn)
-            .await?;
+            SELECT COUNT(*) FROM pending_operation WHERE key_id = ?) >= ?",
+            [KeyState::Revoked.to_string().into(), id.into(), id.into(), threshold.into()],
+        )).await?;
         txn.commit().await?;
         Ok(())
     }
@@ -430,17 +430,16 @@ impl Repository for DataKeyRepository {
     async fn cancel_delete_key(&self, user_id: i32, id: i32) -> Result<()> {
         let mut txn = self.db_connection.begin().await?;
         //1. delete pending delete record
-        self.delete_pending_operation(user_id, id, RequestType::Delete, &mut txn).await?;
+        self.delete_pending_operation(
+            user_id, id, RequestType::Delete, &mut txn).await?;
         //2. update status if there is not any pending delete record.
-        let _: Option<DataKeyDTO> = sqlx::query_as(
+        let _: ExecResult = txn.execute(Statement::from_sql_and_values(
+            DatabaseBackend::MySql,
             "UPDATE data_key SET key_state = ? \
             WHERE id = ? AND ( \
-            SELECT COUNT(*) FROM pending_operation WHERE key_id = ?) = ?")
-            .bind(KeyState::Disabled.to_string())
-            .bind(id)
-            .bind(id)
-            .bind(0)
-            .fetch_optional(&mut txn)
+            SELECT COUNT(*) FROM pending_operation WHERE key_id = ?) = ?",
+            [KeyState::Disabled.to_string().into(), id.into(), id.into(), 0i32.into()],
+        ))
             .await?;
         txn.commit().await?;
         Ok(())
@@ -453,23 +452,21 @@ impl Repository for DataKeyRepository {
         //2. delete revoked record
         self.delete_revoke_record(id, parent_id, &mut txn).await?;
         //3. update status if there is not any pending delete record.
-        let _: Option<DataKeyDTO> = sqlx::query_as(
-            "UPDATE data_key SET key_state = ? \
-            WHERE id = ? AND ( \
-            SELECT COUNT(*) FROM pending_operation WHERE key_id = ?) = ?")
-            .bind(KeyState::Disabled.to_string())
-            .bind(id)
-            .bind(id)
-            .bind(0)
-            .fetch_optional(&mut txn)
+        let _: ExecResult = txn.execute(Statement::from_sql_and_values(
+                DatabaseBackend::MySql,
+                "UPDATE data_key SET key_state = ? \
+                WHERE id = ? AND ( \
+                SELECT COUNT(*) FROM pending_operation WHERE key_id = ?) = ?",
+                [KeyState::Disabled.to_string().into(), id.into(), id.into(), 0i32.into()],
+            ))
             .await?;
         txn.commit().await?;
         Ok(())
     }
 
     async fn get_x509_crl_by_ca_id(&self, id: i32) -> Result<X509CRL> {
-        match x509_crl_content_dto::Entity::find().filter(
-            x509_crl_content_dto::Column::CaId.eq(id)
+        match crl_content_dto::Entity::find().filter(
+            crl_content_dto::Column::CaId.eq(id)
         ).one(
             self.db_connection).await? {
             None => {
@@ -483,7 +480,7 @@ impl Repository for DataKeyRepository {
 
     async fn upsert_x509_crl(&self, crl: X509CRL) -> Result<()> {
         let ca_id = crl.ca_id.clone();
-        let crl_model = x509_crl_content_dto::ActiveModel {
+        let crl_model = crl_content_dto::ActiveModel {
             id: Set(crl.id),
             ca_id: Set(crl.ca_id),
             data: Set(encode_u8_to_hex_string(&crl.data)),
@@ -493,13 +490,834 @@ impl Repository for DataKeyRepository {
         match self.get_x509_crl_by_ca_id(ca_id).await {
             Ok(_) => {
                 //update crl content with new version
-                x509_crl_content_dto::Entity::update(crl_model.clone).filter(
-                    x509_crl_content_dto::Column::CaId.eq(ca_id)).exec(self.db_connection).await?
+                crl_content_dto::Entity::update(crl_model.clone()).filter(
+                    crl_content_dto::Column::CaId.eq(ca_id)).exec(self.db_connection).await?;
             }
             Err(_) => {
-                x509_crl_content_dto::Entity::insert(crl_model).exec(self.db_connection).await?
+                crl_content_dto::Entity::insert(crl_model).exec(self.db_connection).await?;
             }
-        }
+        };
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+    use sea_orm::{DatabaseBackend, MockDatabase, MockExecResult, Transaction, TransactionTrait};
+    use crate::domain::datakey::entity::{DataKey, KeyState, KeyType, ParentKey, RevokedKey, Visibility};
+    use super::super::super::x509_revoked_key::dto as revoked_key_dto;
+    use chrono::{Duration};
+    use super::super::super::request_delete::dto as request_dto;
+    use crate::domain::datakey::repository::Repository;
+    use crate::infra::database::model::datakey::dto;
+    use crate::util::error::Result;
+    use crate::infra::database::model::datakey::repository::{DataKeyRepository};
+    use crate::infra::database::model::request_delete::dto::RequestType;
+
+
+    #[tokio::test]
+    async fn test_datakey_repository_get_all_sql_statement() -> Result<()> {
+        let now = chrono::Utc::now();
+        let db = MockDatabase::new(DatabaseBackend::MySql)
+            .append_query_results([
+                //get public
+                vec![dto::Model {
+                    id: 1,
+                    name: "Test Key".to_string(),
+                    description: "".to_string(),
+                    visibility: Visibility::Public.to_string(),
+                    user: 0,
+                    attributes: "{}".to_string(),
+                    key_type: "pgp".to_string(),
+                    parent_id: None,
+                    fingerprint: "".to_string(),
+                    serial_number: None,
+                    private_key: "0708090A".to_string(),
+                    public_key: "040506".to_string(),
+                    certificate: "010203".to_string(),
+                    create_at: now.clone(),
+                    expire_at: now.clone(),
+                    key_state: "disabled".to_string(),
+                    user_email: None,
+                    request_delete_users: None,
+                    request_revoke_users: None,
+                    x509_crl_update_at: None,
+                }],
+                //get private
+                vec![dto::Model {
+                    id: 1,
+                    name: "Test Key".to_string(),
+                    description: "".to_string(),
+                    visibility: Visibility::Public.to_string(),
+                    user: 0,
+                    attributes: "{}".to_string(),
+                    key_type: "pgp".to_string(),
+                    parent_id: None,
+                    fingerprint: "".to_string(),
+                    serial_number: None,
+                    private_key: "0708090A".to_string(),
+                    public_key: "040506".to_string(),
+                    certificate: "010203".to_string(),
+                    create_at: now.clone(),
+                    expire_at: now.clone(),
+                    key_state: "disabled".to_string(),
+                    user_email: None,
+                    request_delete_users: None,
+                    request_revoke_users: None,
+                    x509_crl_update_at: None,
+                }],
+                //get private with type
+                vec![dto::Model {
+                    id: 1,
+                    name: "Test Key".to_string(),
+                    description: "".to_string(),
+                    visibility: Visibility::Public.to_string(),
+                    user: 0,
+                    attributes: "{}".to_string(),
+                    key_type: "pgp".to_string(),
+                    parent_id: None,
+                    fingerprint: "".to_string(),
+                    serial_number: None,
+                    private_key: "0708090A".to_string(),
+                    public_key: "040506".to_string(),
+                    certificate: "010203".to_string(),
+                    create_at: now.clone(),
+                    expire_at: now.clone(),
+                    key_state: "disabled".to_string(),
+                    user_email: None,
+                    request_delete_users: None,
+                    request_revoke_users: None,
+                    x509_crl_update_at: None,
+                }],
+            ]).into_connection();
+
+        let datakey_repository = DataKeyRepository::new(&db);
+        let datakey = DataKey{
+            id: 1,
+            name: "Test Key".to_string(),
+            description: "".to_string(),
+            visibility: Visibility::Public,
+            user: 0,
+            attributes: HashMap::new(),
+            key_type: KeyType::OpenPGP,
+            parent_id: None,
+            fingerprint: "".to_string(),
+            serial_number: None,
+            private_key: vec![7,8,9,10],
+            public_key: vec![4,5,6],
+            certificate: vec![1,2,3],
+            create_at: now.clone(),
+            expire_at: now.clone(),
+            key_state: KeyState::Disabled,
+            user_email: None,
+            request_delete_users: None,
+            request_revoke_users: None,
+            parent_key: None,
+        };
+        assert_eq!(
+            datakey_repository.get_all_keys(None, Visibility::Public, 1).await?, vec![datakey.clone()]
+        );
+        assert_eq!(
+            datakey_repository.get_all_keys(None, Visibility::Private, 1).await?, vec![datakey.clone()]
+        );
+        assert_eq!(
+            datakey_repository.get_all_keys(Some(KeyType::OpenPGP), Visibility::Private, 1).await?, vec![datakey]
+        );
+        assert_eq!(
+            db.into_transaction_log(),
+            [
+                Transaction::from_sql_and_values(
+                    DatabaseBackend::MySql,
+                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, `user_table`.`email` AS `user_email`, `request_delete_table`.`user_email` AS `request_delete_users`, `request_revoke_table`.`user_email` AS `request_revoke_users` FROM `data_key` INNER JOIN `user` AS `user_table` ON `user_table`.`id` = `data_key`.`user` LEFT JOIN `pending_operation` AS `request_delete_table` ON `request_delete_table`.`key_id` = `data_key`.`id` AND `request_delete_table`.`request_type` = ? LEFT JOIN `pending_operation` AS `request_revoke_table` ON `request_revoke_table`.`key_id` = `data_key`.`id` AND `request_revoke_table`.`request_type` = ? WHERE `data_key`.`key_state` <> ? AND `data_key`.`visibility` = ? GROUP BY `data_key`.`id`"#,
+                    ["delete".into(), "revoke".into(), "deleted".into(), "public".into()]
+                ),
+                Transaction::from_sql_and_values(
+                    DatabaseBackend::MySql,
+                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, `user_table`.`email` AS `user_email`, `request_delete_table`.`user_email` AS `request_delete_users`, `request_revoke_table`.`user_email` AS `request_revoke_users` FROM `data_key` INNER JOIN `user` AS `user_table` ON `user_table`.`id` = `data_key`.`user` LEFT JOIN `pending_operation` AS `request_delete_table` ON `request_delete_table`.`key_id` = `data_key`.`id` AND `request_delete_table`.`request_type` = ? LEFT JOIN `pending_operation` AS `request_revoke_table` ON `request_revoke_table`.`key_id` = `data_key`.`id` AND `request_revoke_table`.`request_type` = ? WHERE `data_key`.`key_state` <> ? AND `data_key`.`visibility` = ? AND `data_key`.`user` = ? GROUP BY `data_key`.`id`"#,
+                    ["delete".into(), "revoke".into(), "deleted".into(), "private".into(), 1i32.into()]
+                ),
+                Transaction::from_sql_and_values(
+                    DatabaseBackend::MySql,
+                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, `user_table`.`email` AS `user_email`, `request_delete_table`.`user_email` AS `request_delete_users`, `request_revoke_table`.`user_email` AS `request_revoke_users` FROM `data_key` INNER JOIN `user` AS `user_table` ON `user_table`.`id` = `data_key`.`user` LEFT JOIN `pending_operation` AS `request_delete_table` ON `request_delete_table`.`key_id` = `data_key`.`id` AND `request_delete_table`.`request_type` = ? LEFT JOIN `pending_operation` AS `request_revoke_table` ON `request_revoke_table`.`key_id` = `data_key`.`id` AND `request_revoke_table`.`request_type` = ? WHERE `data_key`.`key_state` <> ? AND `data_key`.`visibility` = ? AND `data_key`.`key_type` = ? AND `data_key`.`user` = ? GROUP BY `data_key`.`id`"#,
+                    ["delete".into(), "revoke".into(), "deleted".into(), "private".into(), "pgp".into(), 1i32.into()]
+                ),
+            ]
+        );
+
+        Ok(())
+    }
+    #[tokio::test]
+    async fn test_datakey_repository_get_by_id_sql_statement() -> Result<()> {
+        let now = chrono::Utc::now();
+        let db = MockDatabase::new(DatabaseBackend::MySql)
+            .append_query_results([
+                vec![dto::Model {
+                    id: 1,
+                    name: "Test Key".to_string(),
+                    description: "".to_string(),
+                    visibility: Visibility::Public.to_string(),
+                    user: 0,
+                    attributes: "{}".to_string(),
+                    key_type: "pgp".to_string(),
+                    parent_id: None,
+                    fingerprint: "".to_string(),
+                    serial_number: None,
+                    private_key: "0708090A".to_string(),
+                    public_key: "040506".to_string(),
+                    certificate: "010203".to_string(),
+                    create_at: now.clone(),
+                    expire_at: now.clone(),
+                    key_state: "disabled".to_string(),
+                    user_email: None,
+                    request_delete_users: None,
+                    request_revoke_users: None,
+                    x509_crl_update_at: None,
+                }],
+        ]).into_connection();
+
+        let datakey_repository = DataKeyRepository::new(&db);
+        let user = DataKey{
+            id: 1,
+            name: "Test Key".to_string(),
+            description: "".to_string(),
+            visibility: Visibility::Public,
+            user: 0,
+            attributes: HashMap::new(),
+            key_type: KeyType::OpenPGP,
+            parent_id: None,
+            fingerprint: "".to_string(),
+            serial_number: None,
+            private_key: vec![7,8,9,10],
+            public_key: vec![4,5,6],
+            certificate: vec![1,2,3],
+            create_at: now.clone(),
+            expire_at: now.clone(),
+            key_state: KeyState::Disabled,
+            user_email: None,
+            request_delete_users: None,
+            request_revoke_users: None,
+            parent_key: None,
+        };
+        assert_eq!(
+            datakey_repository.get_by_id(1).await?, user
+        );
+        assert_eq!(
+            db.into_transaction_log(),
+            [
+                Transaction::from_sql_and_values(
+                    DatabaseBackend::MySql,
+                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, `user_table`.`email` AS `user_email`, `request_delete_table`.`user_email` AS `request_delete_users`, `request_revoke_table`.`user_email` AS `request_revoke_users` FROM `data_key` INNER JOIN `user` AS `user_table` ON `user_table`.`id` = `data_key`.`user` LEFT JOIN `pending_operation` AS `request_delete_table` ON `request_delete_table`.`key_id` = `data_key`.`id` AND `request_delete_table`.`request_type` = ? LEFT JOIN `pending_operation` AS `request_revoke_table` ON `request_revoke_table`.`key_id` = `data_key`.`id` AND `request_revoke_table`.`request_type` = ? WHERE `data_key`.`id` = ? AND `data_key`.`key_state` <> ? GROUP BY `data_key`.`id` LIMIT ?"#,
+                    ["delete".into(), "revoke".into(), 1i32.into(), "deleted".into(), 1u64.into()]
+                ),
+            ]
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_datakey_repository_update_key_sql_statement() -> Result<()> {
+        let now = chrono::Utc::now();
+        let db = MockDatabase::new(DatabaseBackend::MySql)
+            .append_exec_results([
+                MockExecResult{
+                    last_insert_id: 1,
+                    rows_affected: 1,
+                },
+                MockExecResult{
+                    last_insert_id: 1,
+                    rows_affected: 1,
+                }
+            ]).into_connection();
+
+        let datakey_repository = DataKeyRepository::new(&db);
+        let datakey = DataKey{
+            id: 1,
+            name: "Test Key".to_string(),
+            description: "".to_string(),
+            visibility: Visibility::Public,
+            user: 0,
+            attributes: HashMap::new(),
+            key_type: KeyType::OpenPGP,
+            parent_id: None,
+            fingerprint: "456".to_string(),
+            serial_number: Some("123".to_string()),
+            private_key: vec![7,8,9,10],
+            public_key: vec![4,5,6],
+            certificate: vec![1,2,3],
+            create_at: now.clone(),
+            expire_at: now.clone(),
+            key_state: KeyState::Disabled,
+            user_email: None,
+            request_delete_users: None,
+            request_revoke_users: None,
+            parent_key: None,
+        };
+        assert_eq!(datakey_repository.update_state(1, KeyState::Enabled).await?,());
+        assert_eq!(datakey_repository.update_key_data( datakey).await?,());
+        assert_eq!(
+            db.into_transaction_log(),
+            [
+                Transaction::from_sql_and_values(
+                    DatabaseBackend::MySql,
+                    r#"UPDATE `data_key` SET `key_state` = ? WHERE `data_key`.`id` = ? AND `data_key`.`key_state` <> ?"#,
+                    [KeyState::Enabled.to_string().into(), 1i32.into(), "deleted".into()]
+                ),
+                Transaction::from_sql_and_values(
+                    DatabaseBackend::MySql,
+                    r#"UPDATE `data_key` SET `serial_number` = ?, `fingerprint` = ?, `private_key` = ?, `public_key` = ?, `certificate` = ? WHERE `data_key`.`id` = ? AND `data_key`.`key_state` <> ?"#,
+                    ["123".into(), "456".into(), "0708090A".into(), "040506".into(), "010203".into(), 1i32.into(), "deleted".into()]
+                )
+            ]
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_datakey_repository_get_keys_for_crl_update_sql_statement() -> Result<()> {
+        let now = chrono::Utc::now();
+        let db = MockDatabase::new(DatabaseBackend::MySql)
+            .append_query_results([
+                vec![dto::Model {
+                    id: 1,
+                    name: "Test Key".to_string(),
+                    description: "".to_string(),
+                    visibility: Visibility::Public.to_string(),
+                    user: 0,
+                    attributes: "{}".to_string(),
+                    key_type: "pgp".to_string(),
+                    parent_id: None,
+                    fingerprint: "456".to_string(),
+                    serial_number: Some("123".to_string()),
+                    private_key: "0708090A".to_string(),
+                    public_key: "040506".to_string(),
+                    certificate: "010203".to_string(),
+                    create_at: now.clone(),
+                    expire_at: now.clone(),
+                    key_state: "disabled".to_string(),
+                    user_email: None,
+                    request_delete_users: None,
+                    request_revoke_users: None,
+                    x509_crl_update_at: None,
+                }],
+            ]).into_connection();
+
+        let datakey_repository = DataKeyRepository::new(&db);
+        let datakey = DataKey{
+            id: 1,
+            name: "Test Key".to_string(),
+            description: "".to_string(),
+            visibility: Visibility::Public,
+            user: 0,
+            attributes: HashMap::new(),
+            key_type: KeyType::OpenPGP,
+            parent_id: None,
+            fingerprint: "456".to_string(),
+            serial_number: Some("123".to_string()),
+            private_key: vec![7,8,9,10],
+            public_key: vec![4,5,6],
+            certificate: vec![1,2,3],
+            create_at: now.clone(),
+            expire_at: now.clone(),
+            key_state: KeyState::Disabled,
+            user_email: None,
+            request_delete_users: None,
+            request_revoke_users: None,
+            parent_key: None,
+        };
+        let duration = Duration::days(1);
+        assert_eq!(datakey_repository.get_keys_for_crl_update(duration).await?, vec![datakey]);
+        assert_eq!(
+            db.into_transaction_log(),
+            [
+                Transaction::from_sql_and_values(
+                    DatabaseBackend::MySql,
+                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, `crl_table`.`update_at` AS `x509_crl_update_at` FROM `data_key` LEFT JOIN `x509_crl_content` AS `crl_table` ON `crl_table`.`ca_id` = `data_key`.`id` WHERE (`data_key`.`key_type` = ? OR `data_key`.`key_type` = ?) AND `data_key`.`key_state` <> ?"#,
+                    [KeyType::X509CA.to_string().into(), KeyType::X509ICA.to_string().into(), "deleted".into()]
+                )
+            ]
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_datakey_repository_get_revoked_serial_number_sql_statement() -> Result<()> {
+        let now = chrono::Utc::now();
+        let db = MockDatabase::new(DatabaseBackend::MySql)
+            .append_query_results([
+                vec![revoked_key_dto::Model {
+                    id: 1,
+                    key_id: 1,
+                    ca_id: 1,
+                    serial_number: Some("123".to_string()),
+                    create_at: now.clone(),
+                    reason: "unspecified".to_string(),
+                }],
+            ]).into_connection();
+
+        let datakey_repository = DataKeyRepository::new(&db);
+        let revoked_key = revoked_key_dto::Model{
+            id: 1,
+            key_id: 1,
+            ca_id: 1,
+            serial_number: None,
+            create_at: now.clone(),
+            reason: "unspecified".to_string(),
+        };
+        assert_eq!(datakey_repository.get_revoked_serial_number_by_parent_id(1).await?,
+                   vec![RevokedKey::try_from(revoked_key)?]);
+        assert_eq!(
+            db.into_transaction_log(),
+            [
+                Transaction::from_sql_and_values(
+                    DatabaseBackend::MySql,
+                    r#"SELECT `x509_keys_revoked`.`id`, `x509_keys_revoked`.`key_id`, `x509_keys_revoked`.`ca_id`, `x509_keys_revoked`.`reason`, `x509_keys_revoked`.`create_at`, `datakey_table`.`serial_number` AS `serial_number` FROM `x509_keys_revoked` INNER JOIN `data_key` AS `datakey_table` ON `datakey_table`.`id` = `x509_keys_revoked`.`key_id` AND (`datakey_table`.`key_state` = ? AND `x509_keys_revoked`.`ca_id` = ?)"#,
+                    [KeyState::Revoked.to_string().into(), 1i32.into()]
+                )
+            ]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_datakey_repository_get_by_name_sql_statement() -> Result<()> {
+        let now = chrono::Utc::now();
+        let db = MockDatabase::new(DatabaseBackend::MySql)
+            .append_query_results([
+                vec![dto::Model {
+                    id: 1,
+                    name: "Test Key".to_string(),
+                    description: "".to_string(),
+                    visibility: Visibility::Public.to_string(),
+                    user: 0,
+                    attributes: "{}".to_string(),
+                    key_type: "pgp".to_string(),
+                    parent_id: None,
+                    fingerprint: "".to_string(),
+                    serial_number: None,
+                    private_key: "0708090A".to_string(),
+                    public_key: "040506".to_string(),
+                    certificate: "010203".to_string(),
+                    create_at: now.clone(),
+                    expire_at: now.clone(),
+                    key_state: "disabled".to_string(),
+                    user_email: None,
+                    request_delete_users: None,
+                    request_revoke_users: None,
+                    x509_crl_update_at: None,
+                }],
+            ]).into_connection();
+
+        let datakey_repository = DataKeyRepository::new(&db);
+        let user = DataKey{
+            id: 1,
+            name: "Test Key".to_string(),
+            description: "".to_string(),
+            visibility: Visibility::Public,
+            user: 0,
+            attributes: HashMap::new(),
+            key_type: KeyType::OpenPGP,
+            parent_id: None,
+            fingerprint: "".to_string(),
+            serial_number: None,
+            private_key: vec![7,8,9,10],
+            public_key: vec![4,5,6],
+            certificate: vec![1,2,3],
+            create_at: now.clone(),
+            expire_at: now.clone(),
+            key_state: KeyState::Disabled,
+            user_email: None,
+            request_delete_users: None,
+            request_revoke_users: None,
+            parent_key: None,
+        };
+        assert_eq!(
+            datakey_repository.get_by_name("Test Key").await?, user
+        );
+        assert_eq!(
+            db.into_transaction_log(),
+            [
+                Transaction::from_sql_and_values(
+                    DatabaseBackend::MySql,
+                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, `user_table`.`email` AS `user_email`, `request_delete_table`.`user_email` AS `request_delete_users`, `request_revoke_table`.`user_email` AS `request_revoke_users` FROM `data_key` INNER JOIN `user` AS `user_table` ON `user_table`.`id` = `data_key`.`user` LEFT JOIN `pending_operation` AS `request_delete_table` ON `request_delete_table`.`key_id` = `data_key`.`id` AND `request_delete_table`.`request_type` = ? LEFT JOIN `pending_operation` AS `request_revoke_table` ON `request_revoke_table`.`key_id` = `data_key`.`id` AND `request_revoke_table`.`request_type` = ? WHERE `data_key`.`name` = ? AND `data_key`.`key_state` <> ? GROUP BY `data_key`.`id` LIMIT ?"#,
+                    ["delete".into(), "revoke".into(), "Test Key".into(), "deleted".into(), 1u64.into()]
+                ),
+            ]
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_datakey_repository_delete_datakey_sql_statement() -> Result<()> {
+        let db = MockDatabase::new(DatabaseBackend::MySql)
+            .append_exec_results([
+                MockExecResult {
+                    last_insert_id: 0,
+                    rows_affected: 0,
+                }
+            ]).into_connection();
+
+        let datakey_repository = DataKeyRepository::new(&db);
+        assert_eq!(
+            datakey_repository.delete(1).await?, ()
+        );
+        assert_eq!(
+            db.into_transaction_log(),
+            [
+                Transaction::from_sql_and_values(
+                    DatabaseBackend::MySql,
+                    r#"DELETE FROM `data_key` WHERE `data_key`.`id` = ?"#,
+                    [1i32.into()]
+                ),
+            ]
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_datakey_repository_get_enabled_key_sql_statement() -> Result<()> {
+        let now = chrono::Utc::now();
+        let db = MockDatabase::new(DatabaseBackend::MySql)
+            .append_query_results([
+                vec![dto::Model {
+                    id: 1,
+                    name: "Test Key".to_string(),
+                    description: "".to_string(),
+                    visibility: Visibility::Public.to_string(),
+                    user: 0,
+                    attributes: "{}".to_string(),
+                    key_type: "pgp".to_string(),
+                    parent_id: None,
+                    fingerprint: "".to_string(),
+                    serial_number: None,
+                    private_key: "0708090A".to_string(),
+                    public_key: "040506".to_string(),
+                    certificate: "010203".to_string(),
+                    create_at: now.clone(),
+                    expire_at: now.clone(),
+                    key_state: "disabled".to_string(),
+                    user_email: None,
+                    request_delete_users: None,
+                    request_revoke_users: None,
+                    x509_crl_update_at: None,
+                }],
+            ]).into_connection();
+
+        let datakey_repository = DataKeyRepository::new(&db);
+        let user = DataKey{
+            id: 1,
+            name: "Test Key".to_string(),
+            description: "".to_string(),
+            visibility: Visibility::Public,
+            user: 0,
+            attributes: HashMap::new(),
+            key_type: KeyType::OpenPGP,
+            parent_id: None,
+            fingerprint: "".to_string(),
+            serial_number: None,
+            private_key: vec![7,8,9,10],
+            public_key: vec![4,5,6],
+            certificate: vec![1,2,3],
+            create_at: now.clone(),
+            expire_at: now.clone(),
+            key_state: KeyState::Disabled,
+            user_email: None,
+            request_delete_users: None,
+            request_revoke_users: None,
+            parent_key: None,
+        };
+        assert_eq!(
+            datakey_repository.get_enabled_key_by_type_and_name("openpgp".to_string(), "fake_name".to_string()).await?, user
+        );
+        assert_eq!(
+            db.into_transaction_log(),
+            [
+                Transaction::from_sql_and_values(
+                    DatabaseBackend::MySql,
+                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, `user_table`.`email` AS `user_email`, `request_delete_table`.`user_email` AS `request_delete_users`, `request_revoke_table`.`user_email` AS `request_revoke_users` FROM `data_key` INNER JOIN `user` AS `user_table` ON `user_table`.`id` = `data_key`.`user` LEFT JOIN `pending_operation` AS `request_delete_table` ON `request_delete_table`.`key_id` = `data_key`.`id` AND `request_delete_table`.`request_type` = ? LEFT JOIN `pending_operation` AS `request_revoke_table` ON `request_revoke_table`.`key_id` = `data_key`.`id` AND `request_revoke_table`.`request_type` = ? WHERE `data_key`.`name` = ? AND `data_key`.`key_type` = ? AND `data_key`.`key_state` = ? GROUP BY `data_key`.`id` LIMIT ?"#,
+                    ["delete".into(), "revoke".into(), "fake_name".into(), "openpgp".into(), "enabled".into(), 1u64.into()]
+                ),
+            ]
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_datakey_repository_create_datakey_sql_statement() -> Result<()> {
+        let now = chrono::Utc::now();
+        let db = MockDatabase::new(DatabaseBackend::MySql)
+            .append_query_results([
+                vec![dto::Model {
+                    id: 1,
+                    name: "Test Key".to_string(),
+                    description: "".to_string(),
+                    visibility: Visibility::Public.to_string(),
+                    user: 0,
+                    attributes: "{}".to_string(),
+                    key_type: "pgp".to_string(),
+                    parent_id: Some(2),
+                    fingerprint: "".to_string(),
+                    serial_number: Some("123".to_string()),
+                    private_key: "0708090A".to_string(),
+                    public_key: "040506".to_string(),
+                    certificate: "010203".to_string(),
+                    create_at: now.clone(),
+                    expire_at: now.clone(),
+                    key_state: "disabled".to_string(),
+                    user_email: None,
+                    request_delete_users: None,
+                    request_revoke_users: None,
+                    x509_crl_update_at: None,
+                }],
+                vec![dto::Model {
+                    id: 2,
+                    name: "Test Parent Key".to_string(),
+                    description: "".to_string(),
+                    visibility: Visibility::Public.to_string(),
+                    user: 0,
+                    attributes: "{}".to_string(),
+                    key_type: "pgp".to_string(),
+                    parent_id: None,
+                    fingerprint: "".to_string(),
+                    serial_number: Some("123".to_string()),
+                    private_key: "0708090A".to_string(),
+                    public_key: "040506".to_string(),
+                    certificate: "010203".to_string(),
+                    create_at: now.clone(),
+                    expire_at: now.clone(),
+                    key_state: "disabled".to_string(),
+                    user_email: None,
+                    request_delete_users: None,
+                    request_revoke_users: None,
+                    x509_crl_update_at: None,
+                }],
+            ]).append_exec_results(
+            [  MockExecResult {
+                last_insert_id: 1,
+                rows_affected: 1,
+            }]
+        ).into_connection();
+
+        let datakey_repository = DataKeyRepository::new(&db);
+        let datakey = DataKey{
+            id: 1,
+            name: "Test Key".to_string(),
+            description: "".to_string(),
+            visibility: Visibility::Public,
+            user: 0,
+            attributes: HashMap::new(),
+            key_type: KeyType::OpenPGP,
+            parent_id: Some(2),
+            fingerprint: "".to_string(),
+            serial_number: Some("123".to_string()),
+            private_key: vec![7,8,9,10],
+            public_key: vec![4,5,6],
+            certificate: vec![1,2,3],
+            create_at: now.clone(),
+            expire_at: now.clone(),
+            key_state: KeyState::Disabled,
+            user_email: None,
+            request_delete_users: None,
+            request_revoke_users: None,
+            parent_key: Some(ParentKey{
+                name: "Test Parent Key".to_string(),
+                private_key: vec![7,8,9,10],
+                public_key: vec![4,5,6],
+                certificate: vec![1,2,3],
+                attributes: HashMap::new(),
+            }),
+        };
+        assert_eq!(
+            datakey_repository.create(datakey.clone()).await?, datakey
+        );
+        assert_eq!(
+            db.into_transaction_log(),
+            [
+                Transaction::from_sql_and_values(
+                    DatabaseBackend::MySql,
+                    r#"INSERT INTO `data_key` (`id`, `name`, `description`, `visibility`, `user`, `attributes`, `key_type`, `parent_id`, `fingerprint`, `serial_number`, `private_key`, `public_key`, `certificate`, `create_at`, `expire_at`, `key_state`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
+                    [1i32.into(), "Test Key".into(), "".into(), "public".into(), 0i32.into(), "{}".into(), "pgp".into(), 2i32.into(), "".into(), "123".into(), "0708090A".into(), "040506".into(), "010203".into(), now.clone().into(), now.clone().into(), "disabled".into()]
+                ),
+                Transaction::from_sql_and_values(
+                    DatabaseBackend::MySql,
+                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, `user_table`.`email` AS `user_email`, `request_delete_table`.`user_email` AS `request_delete_users`, `request_revoke_table`.`user_email` AS `request_revoke_users` FROM `data_key` INNER JOIN `user` AS `user_table` ON `user_table`.`id` = `data_key`.`user` LEFT JOIN `pending_operation` AS `request_delete_table` ON `request_delete_table`.`key_id` = `data_key`.`id` AND `request_delete_table`.`request_type` = ? LEFT JOIN `pending_operation` AS `request_revoke_table` ON `request_revoke_table`.`key_id` = `data_key`.`id` AND `request_revoke_table`.`request_type` = ? WHERE `data_key`.`id` = ? AND `data_key`.`key_state` <> ? GROUP BY `data_key`.`id` LIMIT ?"#,
+                    ["delete".into(), "revoke".into(), 1i32.into(), "deleted".into(), 1u64.into()]
+                ),
+                Transaction::from_sql_and_values(
+                    DatabaseBackend::MySql,
+                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, `user_table`.`email` AS `user_email`, `request_delete_table`.`user_email` AS `request_delete_users`, `request_revoke_table`.`user_email` AS `request_revoke_users` FROM `data_key` INNER JOIN `user` AS `user_table` ON `user_table`.`id` = `data_key`.`user` LEFT JOIN `pending_operation` AS `request_delete_table` ON `request_delete_table`.`key_id` = `data_key`.`id` AND `request_delete_table`.`request_type` = ? LEFT JOIN `pending_operation` AS `request_revoke_table` ON `request_revoke_table`.`key_id` = `data_key`.`id` AND `request_revoke_table`.`request_type` = ? WHERE `data_key`.`id` = ? AND `data_key`.`key_state` <> ? GROUP BY `data_key`.`id` LIMIT ?"#,
+                    ["delete".into(), "revoke".into(), 2i32.into(), "deleted".into(), 1u64.into()]
+                )
+            ]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_datakey_repository_get_keys_by_parent_id_sql_statement() -> Result<()> {
+        let now = chrono::Utc::now();
+        let db = MockDatabase::new(DatabaseBackend::MySql)
+            .append_query_results([
+                vec![dto::Model {
+                    id: 1,
+                    name: "Test Key".to_string(),
+                    description: "".to_string(),
+                    visibility: Visibility::Public.to_string(),
+                    user: 0,
+                    attributes: "{}".to_string(),
+                    key_type: "pgp".to_string(),
+                    parent_id: None,
+                    fingerprint: "".to_string(),
+                    serial_number: None,
+                    private_key: "0708090A".to_string(),
+                    public_key: "040506".to_string(),
+                    certificate: "010203".to_string(),
+                    create_at: now.clone(),
+                    expire_at: now.clone(),
+                    key_state: "disabled".to_string(),
+                    user_email: None,
+                    request_delete_users: None,
+                    request_revoke_users: None,
+                    x509_crl_update_at: None,
+                }, dto::Model {
+                    id: 2,
+                    name: "Test Key2".to_string(),
+                    description: "".to_string(),
+                    visibility: Visibility::Public.to_string(),
+                    user: 0,
+                    attributes: "{}".to_string(),
+                    key_type: "pgp".to_string(),
+                    parent_id: None,
+                    fingerprint: "".to_string(),
+                    serial_number: None,
+                    private_key: "0708090A".to_string(),
+                    public_key: "040506".to_string(),
+                    certificate: "010203".to_string(),
+                    create_at: now.clone(),
+                    expire_at: now.clone(),
+                    key_state: "disabled".to_string(),
+                    user_email: None,
+                    request_delete_users: None,
+                    request_revoke_users: None,
+                    x509_crl_update_at: None,
+                }],
+            ]).into_connection();
+
+        let datakey_repository = DataKeyRepository::new(&db);
+        let datakey1 = DataKey{
+            id: 1,
+            name: "Test Key".to_string(),
+            description: "".to_string(),
+            visibility: Visibility::Public,
+            user: 0,
+            attributes: HashMap::new(),
+            key_type: KeyType::OpenPGP,
+            parent_id: None,
+            fingerprint: "".to_string(),
+            serial_number: None,
+            private_key: vec![7,8,9,10],
+            public_key: vec![4,5,6],
+            certificate: vec![1,2,3],
+            create_at: now.clone(),
+            expire_at: now.clone(),
+            key_state: KeyState::Disabled,
+            user_email: None,
+            request_delete_users: None,
+            request_revoke_users: None,
+            parent_key: None,
+        };
+        let datakey2 = DataKey{
+            id: 2,
+            name: "Test Key2".to_string(),
+            description: "".to_string(),
+            visibility: Visibility::Public,
+            user: 0,
+            attributes: HashMap::new(),
+            key_type: KeyType::OpenPGP,
+            parent_id: None,
+            fingerprint: "".to_string(),
+            serial_number: None,
+            private_key: vec![7,8,9,10],
+            public_key: vec![4,5,6],
+            certificate: vec![1,2,3],
+            create_at: now.clone(),
+            expire_at: now.clone(),
+            key_state: KeyState::Disabled,
+            user_email: None,
+            request_delete_users: None,
+            request_revoke_users: None,
+            parent_key: None,
+        };
+        assert_eq!(
+            datakey_repository.get_by_parent_id(1).await?, vec![datakey1, datakey2]
+        );
+        assert_eq!(
+            db.into_transaction_log(),
+            [
+                Transaction::from_sql_and_values(
+                    DatabaseBackend::MySql,
+                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, `user_table`.`email` AS `user_email`, `request_delete_table`.`user_email` AS `request_delete_users`, `request_revoke_table`.`user_email` AS `request_revoke_users` FROM `data_key` INNER JOIN `user` AS `user_table` ON `user_table`.`id` = `data_key`.`user` LEFT JOIN `pending_operation` AS `request_delete_table` ON `request_delete_table`.`key_id` = `data_key`.`id` AND `request_delete_table`.`request_type` = ? LEFT JOIN `pending_operation` AS `request_revoke_table` ON `request_revoke_table`.`key_id` = `data_key`.`id` AND `request_revoke_table`.`request_type` = ? WHERE `data_key`.`parent_id` = ? AND `data_key`.`key_state` <> ? GROUP BY `data_key`.`id`"#,
+                    ["delete".into(), "revoke".into(), 1i32.into(), "deleted".into()]
+                ),
+            ]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_datakey_repository_create_delete_pending_operation_sql_statement() -> Result<()> {
+        let now = chrono::Utc::now();
+        let db = MockDatabase::new(DatabaseBackend::MySql)
+            .append_exec_results([
+                MockExecResult{
+                    last_insert_id: 1,
+                    rows_affected: 1,
+                }
+            ]).into_connection();
+
+        let datakey_repository = DataKeyRepository::new(&db);
+        let mut tx = db.begin().await?;
+        assert_eq!(
+            datakey_repository.create_pending_operation(request_dto::Model {
+                id: 0,
+                user_id: 1,
+                key_id: 1,
+                request_type: RequestType::Delete.to_string(),
+                user_email: "fake_email".to_string(),
+                create_at: now,
+            }, &mut tx).await?, ());
+        tx.commit().await?;
+        //TODO 1.Now mock database begin statement is configured with postgres backend, enabled this when fixed in upstream
+        // assert_eq!(
+        //     db.into_transaction_log(),
+        //     [
+        //         Transaction::many(
+        //             [
+        //                 Statement::from_sql_and_values(DatabaseBackend::Postgres,
+        //                                                r#"BEGIN"#,
+        //                                                []),
+        //                 Statement::from_sql_and_values(
+        //                     DatabaseBackend::MySql,
+        //                     r#"INSERT INTO `pending_operation` (`user_id`, `key_id`, `request_type`, `user_email`, `create_at`) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `id` = VALUES(`id`)"#,
+        //                     [1i32.into(), 1i32.into(), "delete".into(), "fake_email".into()]
+        //                 ),
+        //                 Statement::from_sql_and_values(
+        //                     DatabaseBackend::MySql,
+        //                     r#"COMMIT"#,
+        //                     []
+        //                 ),
+        //             ],
+        //         ),
+        //     ]
+        // );
+        Ok(())
+    }
+
+}
+

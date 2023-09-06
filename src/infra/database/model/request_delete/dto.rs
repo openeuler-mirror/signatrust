@@ -15,7 +15,6 @@
  */
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
-use sqlx::FromRow;
 use chrono::{DateTime, Utc};
 use crate::util::error::Error;
 
@@ -59,7 +58,7 @@ pub struct Model {
     pub id: i32,
     pub user_id: i32,
     pub key_id: i32,
-    pub request_type: RequestType,
+    pub request_type: String,
     pub user_email: String,
     pub create_at: DateTime<Utc>,
 }
@@ -78,7 +77,7 @@ impl Model {
             key_id,
             user_email,
             create_at: Utc::now(),
-            request_type: RequestType::Delete,
+            request_type: RequestType::Delete.to_string(),
         }
     }
 
@@ -89,7 +88,7 @@ impl Model {
             key_id,
             user_email,
             create_at: Utc::now(),
-            request_type: RequestType::Revoke,
+            request_type: RequestType::Revoke.to_string(),
         }
     }
 }
@@ -119,8 +118,8 @@ mod tests {
     #[test]
     fn test_pending_operation_dto() {
         let delete_dto = Model::new_for_delete(1, 2, "test@email.com".into());
-        assert_eq!(delete_dto.request_type, RequestType::Delete);
+        assert_eq!(delete_dto.request_type, RequestType::Delete.to_string());
         let revoke_dto = Model::new_for_revoke(3, 4, "test2@email.com".into());
-        assert_eq!(revoke_dto.request_type, RequestType::Revoke);
+        assert_eq!(revoke_dto.request_type, RequestType::Revoke.to_string());
     }
 }
