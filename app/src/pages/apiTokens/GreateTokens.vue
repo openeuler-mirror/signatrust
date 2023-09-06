@@ -3,7 +3,7 @@
     <div class="table">
       <el-form-item label="Expiration">
         <div class="test">
-          <el-input placeholder="180 days" disabled />
+          <el-input placeholder="365 days" disabled />
         </div>
       </el-form-item>
       <el-form-item label="Description">

@@ -19,7 +19,7 @@ use crate::util::error::Result;
 use chrono::{DateTime, Duration, Utc};
 use std::fmt::{Display, Formatter};
 
-const TOKEN_EXPIRE_IN_DAYS: i64 = 180;
+const TOKEN_EXPIRE_IN_DAYS: i64 = 365;
 
 #[derive(Debug, Clone)]
 pub struct Token {
