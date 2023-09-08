@@ -9,6 +9,8 @@ Get the kubeconfig and copy the whole directory by kubectl command
 ```shell
 mkdir local-store
 kubectl cp -c <container-name> <namespace>/<pod-name>:/var/lib/copr-keygen/gnupg ./local-store
+# for example
+# kubectl cp -c copr-keygen-signer fedora-copr/copr-keygen-64956467b4-pqknn:/var/lib/copr-keygen/gnupg ./local-store
 ```
 
 ## Using python docker image to run the script
@@ -16,18 +18,18 @@ we need to mount the pgp data folder as well as the python script folder
 ```shell
 docker pull python:3.11
 # mount local_store and migrate.py folder
-docker run -it --entrypoint bash  -v <path-to-migrate.py-directory>:/app/working-dir -v  <path-to-local-store>:/app/data python:3.11
+docker run -it --entrypoint bash  -v <path-to-migrate.py-directory>:/app/working-dir -v  ./local-store:/app/data python:3.11
 ```
 
 ## Install requirements(in Docker)
 ```shell
 cd /app/working-dir
-pip install -r requirments.txt
+pip install -r requirements.txt
 ``
 ```
 
 ## Migrate Keys(in Docker)
-Generate the signatrust API token, user email and use it in the following command
+Generate the signatrust API token, user email and use it in the following command, the email address and api token should be matched.
 ```shell
 python migrate.py https://signatrust.test.osinfra.cn/  <api-token> <email>  /app/data
 ====================== processing 1 key: mywaaagh_admin_copr ====================
