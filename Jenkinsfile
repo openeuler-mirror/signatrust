@@ -45,6 +45,7 @@ pipeline {
 					[http]
 					check-revoke = false
 EOF
+					cargo install cargo-audit
 				'''
 			}
 		}
@@ -88,6 +89,15 @@ EOF
 				'''
 			}
 		}       
+		stage('cargo audit') {
+			steps {
+				sh '''#!/bin/bash
+
+				source $HOME/.cargo/env && cd PR-$giteePullRequestIid
+				cargo audit -D warnings
+				'''
+			}
+		}  
 	}
 
 	// post
