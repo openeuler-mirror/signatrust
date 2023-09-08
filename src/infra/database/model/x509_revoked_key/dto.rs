@@ -29,7 +29,6 @@ pub struct Model {
     pub key_id: i32,
     pub ca_id: i32,
     pub reason: String,
-    #[sea_orm(ignore)]
     pub serial_number: Option<String>,
     pub create_at: DateTime<Utc>,
 }

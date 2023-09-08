@@ -26,9 +26,8 @@ use async_trait::async_trait;
 use chrono::Duration;
 use sea_query::Expr;
 use chrono::Utc;
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, ActiveValue::Set, TransactionTrait, DatabaseTransaction, QuerySelect, JoinType, sea_query, RelationTrait, RelationBuilder, ExecResult, ConnectionTrait, Statement, DatabaseBackend};
+use sea_orm::{Condition, Iterable, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, ActiveValue::Set, TransactionTrait, DatabaseTransaction, QuerySelect, JoinType, sea_query, RelationTrait, RelationBuilder, ExecResult, ConnectionTrait, Statement, DatabaseBackend, NotSet};
 use sea_orm::sea_query::{Alias, IntoCondition, OnConflict};
-use sea_orm::Condition;
 use crate::infra::database::model::request_delete::dto::RequestType;
 use crate::util::key::encode_u8_to_hex_string;
 
@@ -79,6 +78,7 @@ impl<'a> DataKeyRepository<'a> {
             ca_id: Set(ca_id),
             reason: Set(reason.to_string()),
             create_at: Set(Utc::now()),
+            serial_number: NotSet,
         };
         //TODO: https://github.com/SeaQL/sea-orm/issues/1790
         revoked_key_dto::Entity::insert(revoked).on_conflict(OnConflict::new()
@@ -158,19 +158,22 @@ impl<'a> Repository for DataKeyRepository<'a> {
         if visibility == Visibility::Private {
             conditions = conditions.add(datakey_dto::Column::User.eq(user_id))
         }
-        match datakey_dto::Entity::find().column_as(
-            Expr::col((Alias::new("user_table"), user_dto::Column::Email)),
-            "user_email").column_as(
-            Expr::col((Alias::new("request_delete_table"), request_dto::Column::UserEmail)),
-            "request_delete_users").column_as(
-            Expr::col((Alias::new("request_revoke_table"), request_dto::Column::UserEmail)),
-            "request_revoke_users").join_as_rev(
+        match datakey_dto::Entity::find().select_only().columns(
+            datakey_dto::Column::iter().filter(|col|
+                match col {
+                    datakey_dto::Column::UserEmail | datakey_dto::Column::RequestDeleteUsers | datakey_dto::Column::RequestRevokeUsers | datakey_dto::Column::X509CrlUpdateAt => false,
+                    _ => true,
+                })).exprs(
+            [Expr::cust("user_table.email as user_email"),
+            Expr::cust("GROUP_CONCAT(request_delete_table.user_email) as request_delete_users"),
+            Expr::cust("GROUP_CONCAT(request_revoke_table.user_email) as request_revoke_users")]).join_as_rev(
             JoinType::InnerJoin, user_dto::Relation::Datakey.def(), Alias::new("user_table")).join_as_rev(
             JoinType::LeftJoin, self.get_pending_operation_relation(RequestType::Delete).into(),
             Alias::new("request_delete_table")).join_as_rev(
             JoinType::LeftJoin, self.get_pending_operation_relation(RequestType::Revoke).into(),
             Alias::new("request_revoke_table")).group_by(datakey_dto::Column::Id).filter(conditions).all(self.db_connection).await {
-            Err(_) => {
+            Err(err) => {
+                warn!("failed to query database {:?}", err);
                 Err(Error::NotFoundError)
             }
             Ok(data_keys) => {
@@ -185,9 +188,13 @@ impl<'a> Repository for DataKeyRepository<'a> {
 
     async fn get_keys_for_crl_update(&self, duration: Duration) -> Result<Vec<DataKey>> {
         let now = Utc::now();
-        match datakey_dto::Entity::find().column_as(
-            Expr::col((Alias::new("crl_table"), crl_content_dto::Column::UpdateAt)),
-            "x509_crl_update_at").join_as_rev(
+        match datakey_dto::Entity::find().select_only().columns(
+            datakey_dto::Column::iter().filter(|col|
+                match col {
+                    datakey_dto::Column::UserEmail | datakey_dto::Column::RequestDeleteUsers | datakey_dto::Column::RequestRevokeUsers | datakey_dto::Column::X509CrlUpdateAt => false,
+                    _ => true,
+                })).column_as(
+            Expr::col((Alias::new("crl_table"), crl_content_dto::Column::UpdateAt)), "x509_crl_update_at").join_as_rev(
             JoinType::LeftJoin, crl_content_dto::Relation::Datakey.def(), Alias::new("crl_table")).filter(
             Condition::all().add(
                 Condition::any().add(datakey_dto::Column::KeyType.eq(KeyType::X509CA.to_string())
@@ -215,7 +222,12 @@ impl<'a> Repository for DataKeyRepository<'a> {
     }
 
     async fn get_revoked_serial_number_by_parent_id(&self, id: i32) -> Result<Vec<RevokedKey>> {
-        match revoked_key_dto::Entity::find().column_as(
+        match revoked_key_dto::Entity::find().select_only().columns(
+            revoked_key_dto::Column::iter().filter(|col|
+                match col {
+                    revoked_key_dto::Column::SerialNumber => false,
+                    _ => true,
+                })).column_as(
             Expr::col((Alias::new("datakey_table"), datakey_dto::Column::SerialNumber)),
             "serial_number").join_as_rev(
             JoinType::InnerJoin, datakey_dto::Entity::belongs_to(revoked_key_dto::Entity).from(
@@ -229,7 +241,8 @@ impl<'a> Repository for DataKeyRepository<'a> {
             }
             ).into(),
             Alias::new("datakey_table")).all(self.db_connection).await {
-            Err(_) => {
+            Err(err) => {
+                warn!("failed to query database {:?}", err);
                 Err(Error::NotFoundError)
             }
             Ok(revoked_keys) => {
@@ -243,13 +256,15 @@ impl<'a> Repository for DataKeyRepository<'a> {
     }
 
     async fn get_by_id(&self, id: i32) -> Result<DataKey> {
-        match datakey_dto::Entity::find().column_as(
-                Expr::col((Alias::new("user_table"), user_dto::Column::Email)),
-                "user_email").column_as(
-            Expr::col((Alias::new("request_delete_table"), request_dto::Column::UserEmail)),
-            "request_delete_users").column_as(
-            Expr::col((Alias::new("request_revoke_table"), request_dto::Column::UserEmail)),
-            "request_revoke_users").join_as_rev(
+        match datakey_dto::Entity::find().select_only().columns(
+            datakey_dto::Column::iter().filter(|col|
+                match col {
+                    datakey_dto::Column::UserEmail | datakey_dto::Column::RequestDeleteUsers | datakey_dto::Column::RequestRevokeUsers | datakey_dto::Column::X509CrlUpdateAt => false,
+                    _ => true,
+                })).exprs(
+            [Expr::cust("user_table.email as user_email"),
+            Expr::cust("GROUP_CONCAT(request_delete_table.user_email) as request_delete_users"),
+            Expr::cust("GROUP_CONCAT(request_revoke_table.user_email) as request_revoke_users")]).join_as_rev(
             JoinType::InnerJoin, user_dto::Relation::Datakey.def(), Alias::new("user_table")).join_as_rev(
             JoinType::LeftJoin, self.get_pending_operation_relation(RequestType::Delete).into(),
             Alias::new("request_delete_table")).join_as_rev(
@@ -269,13 +284,15 @@ impl<'a> Repository for DataKeyRepository<'a> {
     }
 
     async fn get_by_parent_id(&self, parent_id: i32) -> Result<Vec<DataKey>> {
-        match datakey_dto::Entity::find().column_as(
-            Expr::col((Alias::new("user_table"), user_dto::Column::Email)),
-            "user_email").column_as(
-            Expr::col((Alias::new("request_delete_table"), request_dto::Column::UserEmail)),
-            "request_delete_users").column_as(
-            Expr::col((Alias::new("request_revoke_table"), request_dto::Column::UserEmail)),
-            "request_revoke_users").join_as_rev(
+        match datakey_dto::Entity::find().select_only().columns(
+            datakey_dto::Column::iter().filter(|col|
+                match col {
+                    datakey_dto::Column::UserEmail | datakey_dto::Column::RequestDeleteUsers | datakey_dto::Column::RequestRevokeUsers | datakey_dto::Column::X509CrlUpdateAt => false,
+                    _ => true,
+                })).exprs(
+            [Expr::cust("user_table.email as user_email"),
+            Expr::cust("GROUP_CONCAT(request_delete_table.user_email) as request_delete_users"),
+            Expr::cust("GROUP_CONCAT(request_revoke_table.user_email) as request_revoke_users")]).join_as_rev(
             JoinType::InnerJoin, user_dto::Relation::Datakey.def(), Alias::new("user_table")).join_as_rev(
             JoinType::LeftJoin, self.get_pending_operation_relation(RequestType::Delete).into(),
             Alias::new("request_delete_table")).join_as_rev(
@@ -285,7 +302,8 @@ impl<'a> Repository for DataKeyRepository<'a> {
                 datakey_dto::Column::ParentId.eq(parent_id)).add(
                 datakey_dto::Column::KeyState.ne(KeyState::Deleted.to_string()))
         ).all(self.db_connection).await {
-            Err(_) => {
+            Err(err) => {
+                warn!("failed to query database {:?}", err);
                 Err(Error::NotFoundError)
             }
             Ok(datakeys) => {
@@ -299,13 +317,15 @@ impl<'a> Repository for DataKeyRepository<'a> {
     }
 
     async fn get_by_name(&self, name: &str) -> Result<DataKey> {
-        match datakey_dto::Entity::find().column_as(
-            Expr::col((Alias::new("user_table"), user_dto::Column::Email)),
-            "user_email").column_as(
-            Expr::col((Alias::new("request_delete_table"), request_dto::Column::UserEmail)),
-            "request_delete_users").column_as(
-            Expr::col((Alias::new("request_revoke_table"), request_dto::Column::UserEmail)),
-            "request_revoke_users").join_as_rev(
+        match datakey_dto::Entity::find().select_only().columns(
+            datakey_dto::Column::iter().filter(|col|
+                match col {
+                    datakey_dto::Column::UserEmail | datakey_dto::Column::RequestDeleteUsers | datakey_dto::Column::RequestRevokeUsers | datakey_dto::Column::X509CrlUpdateAt => false,
+                    _ => true,
+                })).exprs(
+            [Expr::cust("user_table.email as user_email"),
+            Expr::cust("GROUP_CONCAT(request_delete_table.user_email) as request_delete_users"),
+            Expr::cust("GROUP_CONCAT(request_revoke_table.user_email) as request_revoke_users")]).join_as_rev(
             JoinType::InnerJoin, user_dto::Relation::Datakey.def(), Alias::new("user_table")).join_as_rev(
             JoinType::LeftJoin, self.get_pending_operation_relation(RequestType::Delete).into(),
             Alias::new("request_delete_table")).join_as_rev(
@@ -355,13 +375,15 @@ impl<'a> Repository for DataKeyRepository<'a> {
     }
 
     async fn get_enabled_key_by_type_and_name(&self, key_type: String, name: String) -> Result<DataKey> {
-        match datakey_dto::Entity::find().column_as(
-            Expr::col((Alias::new("user_table"), user_dto::Column::Email)),
-            "user_email").column_as(
-            Expr::col((Alias::new("request_delete_table"), request_dto::Column::UserEmail)),
-            "request_delete_users").column_as(
-            Expr::col((Alias::new("request_revoke_table"), request_dto::Column::UserEmail)),
-            "request_revoke_users").join_as_rev(
+        match datakey_dto::Entity::find().select_only().columns(
+            datakey_dto::Column::iter().filter(|col|
+                match col {
+                    datakey_dto::Column::UserEmail | datakey_dto::Column::RequestDeleteUsers | datakey_dto::Column::RequestRevokeUsers | datakey_dto::Column::X509CrlUpdateAt => false,
+                    _ => true,
+                })).exprs(
+            [Expr::cust("user_table.email as user_email"),
+            Expr::cust("GROUP_CONCAT(request_delete_table.user_email) as request_delete_users"),
+            Expr::cust("GROUP_CONCAT(request_revoke_table.user_email) as request_revoke_users")]).join_as_rev(
             JoinType::InnerJoin, user_dto::Relation::Datakey.def(), Alias::new("user_table")).join_as_rev(
             JoinType::LeftJoin, self.get_pending_operation_relation(RequestType::Delete).into(),
             Alias::new("request_delete_table")).join_as_rev(
@@ -629,17 +651,17 @@ mod tests {
             [
                 Transaction::from_sql_and_values(
                     DatabaseBackend::MySql,
-                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, `user_table`.`email` AS `user_email`, `request_delete_table`.`user_email` AS `request_delete_users`, `request_revoke_table`.`user_email` AS `request_revoke_users` FROM `data_key` INNER JOIN `user` AS `user_table` ON `user_table`.`id` = `data_key`.`user` LEFT JOIN `pending_operation` AS `request_delete_table` ON `request_delete_table`.`key_id` = `data_key`.`id` AND `request_delete_table`.`request_type` = ? LEFT JOIN `pending_operation` AS `request_revoke_table` ON `request_revoke_table`.`key_id` = `data_key`.`id` AND `request_revoke_table`.`request_type` = ? WHERE `data_key`.`key_state` <> ? AND `data_key`.`visibility` = ? GROUP BY `data_key`.`id`"#,
+                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, user_table.email as user_email, GROUP_CONCAT(request_delete_table.user_email) as request_delete_users, GROUP_CONCAT(request_revoke_table.user_email) as request_revoke_users FROM `data_key` INNER JOIN `user` AS `user_table` ON `user_table`.`id` = `data_key`.`user` LEFT JOIN `pending_operation` AS `request_delete_table` ON `request_delete_table`.`key_id` = `data_key`.`id` AND `request_delete_table`.`request_type` = ? LEFT JOIN `pending_operation` AS `request_revoke_table` ON `request_revoke_table`.`key_id` = `data_key`.`id` AND `request_revoke_table`.`request_type` = ? WHERE `data_key`.`key_state` <> ? AND `data_key`.`visibility` = ? GROUP BY `data_key`.`id`"#,
                     ["delete".into(), "revoke".into(), "deleted".into(), "public".into()]
                 ),
                 Transaction::from_sql_and_values(
                     DatabaseBackend::MySql,
-                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, `user_table`.`email` AS `user_email`, `request_delete_table`.`user_email` AS `request_delete_users`, `request_revoke_table`.`user_email` AS `request_revoke_users` FROM `data_key` INNER JOIN `user` AS `user_table` ON `user_table`.`id` = `data_key`.`user` LEFT JOIN `pending_operation` AS `request_delete_table` ON `request_delete_table`.`key_id` = `data_key`.`id` AND `request_delete_table`.`request_type` = ? LEFT JOIN `pending_operation` AS `request_revoke_table` ON `request_revoke_table`.`key_id` = `data_key`.`id` AND `request_revoke_table`.`request_type` = ? WHERE `data_key`.`key_state` <> ? AND `data_key`.`visibility` = ? AND `data_key`.`user` = ? GROUP BY `data_key`.`id`"#,
+                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, user_table.email as user_email, GROUP_CONCAT(request_delete_table.user_email) as request_delete_users, GROUP_CONCAT(request_revoke_table.user_email) as request_revoke_users FROM `data_key` INNER JOIN `user` AS `user_table` ON `user_table`.`id` = `data_key`.`user` LEFT JOIN `pending_operation` AS `request_delete_table` ON `request_delete_table`.`key_id` = `data_key`.`id` AND `request_delete_table`.`request_type` = ? LEFT JOIN `pending_operation` AS `request_revoke_table` ON `request_revoke_table`.`key_id` = `data_key`.`id` AND `request_revoke_table`.`request_type` = ? WHERE `data_key`.`key_state` <> ? AND `data_key`.`visibility` = ? AND `data_key`.`user` = ? GROUP BY `data_key`.`id`"#,
                     ["delete".into(), "revoke".into(), "deleted".into(), "private".into(), 1i32.into()]
                 ),
                 Transaction::from_sql_and_values(
                     DatabaseBackend::MySql,
-                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, `user_table`.`email` AS `user_email`, `request_delete_table`.`user_email` AS `request_delete_users`, `request_revoke_table`.`user_email` AS `request_revoke_users` FROM `data_key` INNER JOIN `user` AS `user_table` ON `user_table`.`id` = `data_key`.`user` LEFT JOIN `pending_operation` AS `request_delete_table` ON `request_delete_table`.`key_id` = `data_key`.`id` AND `request_delete_table`.`request_type` = ? LEFT JOIN `pending_operation` AS `request_revoke_table` ON `request_revoke_table`.`key_id` = `data_key`.`id` AND `request_revoke_table`.`request_type` = ? WHERE `data_key`.`key_state` <> ? AND `data_key`.`visibility` = ? AND `data_key`.`key_type` = ? AND `data_key`.`user` = ? GROUP BY `data_key`.`id`"#,
+                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, user_table.email as user_email, GROUP_CONCAT(request_delete_table.user_email) as request_delete_users, GROUP_CONCAT(request_revoke_table.user_email) as request_revoke_users FROM `data_key` INNER JOIN `user` AS `user_table` ON `user_table`.`id` = `data_key`.`user` LEFT JOIN `pending_operation` AS `request_delete_table` ON `request_delete_table`.`key_id` = `data_key`.`id` AND `request_delete_table`.`request_type` = ? LEFT JOIN `pending_operation` AS `request_revoke_table` ON `request_revoke_table`.`key_id` = `data_key`.`id` AND `request_revoke_table`.`request_type` = ? WHERE `data_key`.`key_state` <> ? AND `data_key`.`visibility` = ? AND `data_key`.`key_type` = ? AND `data_key`.`user` = ? GROUP BY `data_key`.`id`"#,
                     ["delete".into(), "revoke".into(), "deleted".into(), "private".into(), "pgp".into(), 1i32.into()]
                 ),
             ]
@@ -707,7 +729,7 @@ mod tests {
             [
                 Transaction::from_sql_and_values(
                     DatabaseBackend::MySql,
-                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, `user_table`.`email` AS `user_email`, `request_delete_table`.`user_email` AS `request_delete_users`, `request_revoke_table`.`user_email` AS `request_revoke_users` FROM `data_key` INNER JOIN `user` AS `user_table` ON `user_table`.`id` = `data_key`.`user` LEFT JOIN `pending_operation` AS `request_delete_table` ON `request_delete_table`.`key_id` = `data_key`.`id` AND `request_delete_table`.`request_type` = ? LEFT JOIN `pending_operation` AS `request_revoke_table` ON `request_revoke_table`.`key_id` = `data_key`.`id` AND `request_revoke_table`.`request_type` = ? WHERE `data_key`.`id` = ? AND `data_key`.`key_state` <> ? GROUP BY `data_key`.`id` LIMIT ?"#,
+                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, user_table.email as user_email, GROUP_CONCAT(request_delete_table.user_email) as request_delete_users, GROUP_CONCAT(request_revoke_table.user_email) as request_revoke_users FROM `data_key` INNER JOIN `user` AS `user_table` ON `user_table`.`id` = `data_key`.`user` LEFT JOIN `pending_operation` AS `request_delete_table` ON `request_delete_table`.`key_id` = `data_key`.`id` AND `request_delete_table`.`request_type` = ? LEFT JOIN `pending_operation` AS `request_revoke_table` ON `request_revoke_table`.`key_id` = `data_key`.`id` AND `request_revoke_table`.`request_type` = ? WHERE `data_key`.`id` = ? AND `data_key`.`key_state` <> ? GROUP BY `data_key`.`id` LIMIT ?"#,
                     ["delete".into(), "revoke".into(), 1i32.into(), "deleted".into(), 1u64.into()]
                 ),
             ]
@@ -863,7 +885,7 @@ mod tests {
             id: 1,
             key_id: 1,
             ca_id: 1,
-            serial_number: None,
+            serial_number: Some("123".to_string()),
             create_at: now.clone(),
             reason: "unspecified".to_string(),
         };
@@ -942,7 +964,7 @@ mod tests {
             [
                 Transaction::from_sql_and_values(
                     DatabaseBackend::MySql,
-                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, `user_table`.`email` AS `user_email`, `request_delete_table`.`user_email` AS `request_delete_users`, `request_revoke_table`.`user_email` AS `request_revoke_users` FROM `data_key` INNER JOIN `user` AS `user_table` ON `user_table`.`id` = `data_key`.`user` LEFT JOIN `pending_operation` AS `request_delete_table` ON `request_delete_table`.`key_id` = `data_key`.`id` AND `request_delete_table`.`request_type` = ? LEFT JOIN `pending_operation` AS `request_revoke_table` ON `request_revoke_table`.`key_id` = `data_key`.`id` AND `request_revoke_table`.`request_type` = ? WHERE `data_key`.`name` = ? AND `data_key`.`key_state` <> ? GROUP BY `data_key`.`id` LIMIT ?"#,
+                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, user_table.email as user_email, GROUP_CONCAT(request_delete_table.user_email) as request_delete_users, GROUP_CONCAT(request_revoke_table.user_email) as request_revoke_users FROM `data_key` INNER JOIN `user` AS `user_table` ON `user_table`.`id` = `data_key`.`user` LEFT JOIN `pending_operation` AS `request_delete_table` ON `request_delete_table`.`key_id` = `data_key`.`id` AND `request_delete_table`.`request_type` = ? LEFT JOIN `pending_operation` AS `request_revoke_table` ON `request_revoke_table`.`key_id` = `data_key`.`id` AND `request_revoke_table`.`request_type` = ? WHERE `data_key`.`name` = ? AND `data_key`.`key_state` <> ? GROUP BY `data_key`.`id` LIMIT ?"#,
                     ["delete".into(), "revoke".into(), "Test Key".into(), "deleted".into(), 1u64.into()]
                 ),
             ]
@@ -1039,7 +1061,7 @@ mod tests {
             [
                 Transaction::from_sql_and_values(
                     DatabaseBackend::MySql,
-                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, `user_table`.`email` AS `user_email`, `request_delete_table`.`user_email` AS `request_delete_users`, `request_revoke_table`.`user_email` AS `request_revoke_users` FROM `data_key` INNER JOIN `user` AS `user_table` ON `user_table`.`id` = `data_key`.`user` LEFT JOIN `pending_operation` AS `request_delete_table` ON `request_delete_table`.`key_id` = `data_key`.`id` AND `request_delete_table`.`request_type` = ? LEFT JOIN `pending_operation` AS `request_revoke_table` ON `request_revoke_table`.`key_id` = `data_key`.`id` AND `request_revoke_table`.`request_type` = ? WHERE `data_key`.`name` = ? AND `data_key`.`key_type` = ? AND `data_key`.`key_state` = ? GROUP BY `data_key`.`id` LIMIT ?"#,
+                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, user_table.email as user_email, GROUP_CONCAT(request_delete_table.user_email) as request_delete_users, GROUP_CONCAT(request_revoke_table.user_email) as request_revoke_users FROM `data_key` INNER JOIN `user` AS `user_table` ON `user_table`.`id` = `data_key`.`user` LEFT JOIN `pending_operation` AS `request_delete_table` ON `request_delete_table`.`key_id` = `data_key`.`id` AND `request_delete_table`.`request_type` = ? LEFT JOIN `pending_operation` AS `request_revoke_table` ON `request_revoke_table`.`key_id` = `data_key`.`id` AND `request_revoke_table`.`request_type` = ? WHERE `data_key`.`name` = ? AND `data_key`.`key_type` = ? AND `data_key`.`key_state` = ? GROUP BY `data_key`.`id` LIMIT ?"#,
                     ["delete".into(), "revoke".into(), "fake_name".into(), "openpgp".into(), "enabled".into(), 1u64.into()]
                 ),
             ]
@@ -1146,12 +1168,12 @@ mod tests {
                 ),
                 Transaction::from_sql_and_values(
                     DatabaseBackend::MySql,
-                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, `user_table`.`email` AS `user_email`, `request_delete_table`.`user_email` AS `request_delete_users`, `request_revoke_table`.`user_email` AS `request_revoke_users` FROM `data_key` INNER JOIN `user` AS `user_table` ON `user_table`.`id` = `data_key`.`user` LEFT JOIN `pending_operation` AS `request_delete_table` ON `request_delete_table`.`key_id` = `data_key`.`id` AND `request_delete_table`.`request_type` = ? LEFT JOIN `pending_operation` AS `request_revoke_table` ON `request_revoke_table`.`key_id` = `data_key`.`id` AND `request_revoke_table`.`request_type` = ? WHERE `data_key`.`id` = ? AND `data_key`.`key_state` <> ? GROUP BY `data_key`.`id` LIMIT ?"#,
+                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, user_table.email as user_email, GROUP_CONCAT(request_delete_table.user_email) as request_delete_users, GROUP_CONCAT(request_revoke_table.user_email) as request_revoke_users FROM `data_key` INNER JOIN `user` AS `user_table` ON `user_table`.`id` = `data_key`.`user` LEFT JOIN `pending_operation` AS `request_delete_table` ON `request_delete_table`.`key_id` = `data_key`.`id` AND `request_delete_table`.`request_type` = ? LEFT JOIN `pending_operation` AS `request_revoke_table` ON `request_revoke_table`.`key_id` = `data_key`.`id` AND `request_revoke_table`.`request_type` = ? WHERE `data_key`.`id` = ? AND `data_key`.`key_state` <> ? GROUP BY `data_key`.`id` LIMIT ?"#,
                     ["delete".into(), "revoke".into(), 1i32.into(), "deleted".into(), 1u64.into()]
                 ),
                 Transaction::from_sql_and_values(
                     DatabaseBackend::MySql,
-                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, `user_table`.`email` AS `user_email`, `request_delete_table`.`user_email` AS `request_delete_users`, `request_revoke_table`.`user_email` AS `request_revoke_users` FROM `data_key` INNER JOIN `user` AS `user_table` ON `user_table`.`id` = `data_key`.`user` LEFT JOIN `pending_operation` AS `request_delete_table` ON `request_delete_table`.`key_id` = `data_key`.`id` AND `request_delete_table`.`request_type` = ? LEFT JOIN `pending_operation` AS `request_revoke_table` ON `request_revoke_table`.`key_id` = `data_key`.`id` AND `request_revoke_table`.`request_type` = ? WHERE `data_key`.`id` = ? AND `data_key`.`key_state` <> ? GROUP BY `data_key`.`id` LIMIT ?"#,
+                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, user_table.email as user_email, GROUP_CONCAT(request_delete_table.user_email) as request_delete_users, GROUP_CONCAT(request_revoke_table.user_email) as request_revoke_users FROM `data_key` INNER JOIN `user` AS `user_table` ON `user_table`.`id` = `data_key`.`user` LEFT JOIN `pending_operation` AS `request_delete_table` ON `request_delete_table`.`key_id` = `data_key`.`id` AND `request_delete_table`.`request_type` = ? LEFT JOIN `pending_operation` AS `request_revoke_table` ON `request_revoke_table`.`key_id` = `data_key`.`id` AND `request_revoke_table`.`request_type` = ? WHERE `data_key`.`id` = ? AND `data_key`.`key_state` <> ? GROUP BY `data_key`.`id` LIMIT ?"#,
                     ["delete".into(), "revoke".into(), 2i32.into(), "deleted".into(), 1u64.into()]
                 )
             ]
@@ -1262,7 +1284,7 @@ mod tests {
             [
                 Transaction::from_sql_and_values(
                     DatabaseBackend::MySql,
-                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, `user_table`.`email` AS `user_email`, `request_delete_table`.`user_email` AS `request_delete_users`, `request_revoke_table`.`user_email` AS `request_revoke_users` FROM `data_key` INNER JOIN `user` AS `user_table` ON `user_table`.`id` = `data_key`.`user` LEFT JOIN `pending_operation` AS `request_delete_table` ON `request_delete_table`.`key_id` = `data_key`.`id` AND `request_delete_table`.`request_type` = ? LEFT JOIN `pending_operation` AS `request_revoke_table` ON `request_revoke_table`.`key_id` = `data_key`.`id` AND `request_revoke_table`.`request_type` = ? WHERE `data_key`.`parent_id` = ? AND `data_key`.`key_state` <> ? GROUP BY `data_key`.`id`"#,
+                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, user_table.email as user_email, GROUP_CONCAT(request_delete_table.user_email) as request_delete_users, GROUP_CONCAT(request_revoke_table.user_email) as request_revoke_users FROM `data_key` INNER JOIN `user` AS `user_table` ON `user_table`.`id` = `data_key`.`user` LEFT JOIN `pending_operation` AS `request_delete_table` ON `request_delete_table`.`key_id` = `data_key`.`id` AND `request_delete_table`.`request_type` = ? LEFT JOIN `pending_operation` AS `request_revoke_table` ON `request_revoke_table`.`key_id` = `data_key`.`id` AND `request_revoke_table`.`request_type` = ? WHERE `data_key`.`parent_id` = ? AND `data_key`.`key_state` <> ? GROUP BY `data_key`.`id`"#,
                     ["delete".into(), "revoke".into(), 1i32.into(), "deleted".into()]
                 ),
             ]

@@ -25,6 +25,7 @@ use std::str::FromStr;
 use sea_orm::ActiveValue::Set;
 
 use sea_orm::entity::prelude::*;
+use sea_orm::{NotSet, Unset};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Deserialize, Serialize)]
@@ -47,13 +48,9 @@ pub struct Model {
     pub create_at: DateTime<Utc>,
     pub expire_at: DateTime<Utc>,
     pub key_state: String,
-    #[sea_orm(ignore)]
     pub user_email: Option<String>,
-    #[sea_orm(ignore)]
-    pub request_delete_users: Option<Vec<String>>,
-    #[sea_orm(ignore)]
-    pub request_revoke_users: Option<Vec<String>>,
-    #[sea_orm(ignore)]
+    pub request_delete_users: Option<String>,
+    pub request_revoke_users: Option<String>,
     pub x509_crl_update_at: Option<DateTime<Utc>>
 }
 
@@ -104,8 +101,8 @@ impl TryFrom<Model> for DataKey {
             expire_at: dto.expire_at,
             key_state: KeyState::from_str(&dto.key_state)?,
             user_email: dto.user_email,
-            request_delete_users: None,//dto.request_delete_users,
-            request_revoke_users: None,//dto.request_revoke_users
+            request_delete_users: dto.request_delete_users,
+            request_revoke_users: dto.request_revoke_users,
             parent_key: None,
         })
     }
@@ -138,6 +135,10 @@ impl TryFrom<DataKey> for ActiveModel {
             create_at: Set(data_key.create_at),
             expire_at: Set(data_key.expire_at),
             key_state: Set(data_key.key_state.to_string()),
+            user_email: NotSet,
+            request_delete_users: NotSet,
+            request_revoke_users: NotSet,
+            x509_crl_update_at: NotSet,
         })
     }
 }
@@ -146,40 +147,6 @@ impl TryFrom<DataKey> for ActiveModel {
 mod tests {
     use super::*;
     use crate::domain::datakey::entity::{Visibility};
-
-    // #[test]
-    // fn test_data_key_dto_from_entity() {
-    //     let key = DataKey{
-    //         id: 0,
-    //         name: "Test Key".to_string(),
-    //         visibility: Visibility::Public,
-    //         description: "test key description".to_string(),
-    //         user: 0,
-    //         attributes: HashMap::new(),
-    //         key_type: KeyType::OpenPGP,
-    //         parent_id: None,
-    //         fingerprint: "".to_string(),
-    //         serial_number: None,
-    //         private_key: vec![1,2,3],
-    //         public_key: vec![4,5,6],
-    //         certificate: vec![7,8,9,10],
-    //         create_at: Utc::now(),
-    //         expire_at: Utc::now(),
-    //         key_state: KeyState::Disabled,
-    //         user_email: None,
-    //         request_delete_users: None,
-    //         request_revoke_users: None,
-    //         parent_key: None,
-    //     };
-    //     let dto = Model::try_from(key).unwrap();
-    //     assert_eq!(dto.id, 0);
-    //     assert_eq!(dto.name, "Test Key");
-    //     assert_eq!(dto.visibility, Visibility::Public.to_string());
-    //     assert_eq!(dto.key_state, KeyState::Disabled.to_string());
-    //     assert_eq!(dto.private_key, "010203");
-    //     assert_eq!(dto.public_key, "040506");
-    //     assert_eq!(dto.certificate, "0708090A");
-    // }
 
     #[test]
     fn test_data_key_entity_from_dto() {
