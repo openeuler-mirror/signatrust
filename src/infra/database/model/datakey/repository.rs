@@ -316,6 +316,24 @@ impl<'a> Repository for DataKeyRepository<'a> {
         }
     }
 
+    async fn check_name_exists(&self, name: &str) -> Result<DataKey>{
+        match datakey_dto::Entity::find().select_only().columns(
+            datakey_dto::Column::iter().filter(|col|
+                match col {
+                    datakey_dto::Column::UserEmail | datakey_dto::Column::RequestDeleteUsers | datakey_dto::Column::RequestRevokeUsers | datakey_dto::Column::X509CrlUpdateAt => false,
+                    _ => true,
+                })).filter(Condition::all().add(
+            datakey_dto::Column::Name.eq(name)).add(
+            datakey_dto::Column::KeyState.ne(KeyState::Deleted.to_string()))).one(self.db_connection).await? {
+            None => {
+                Err(Error::NotFoundError)
+            }
+            Some(datakey) => {
+                Ok(DataKey::try_from(datakey)?)
+            }
+        }
+    }
+
     async fn get_by_name(&self, name: &str) -> Result<DataKey> {
         match datakey_dto::Entity::find().select_only().columns(
             datakey_dto::Column::iter().filter(|col|
@@ -901,6 +919,75 @@ mod tests {
                 )
             ]
         );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_datakey_repository_check_name_exists_sql_statement() -> Result<()> {
+        let now = chrono::Utc::now();
+        let db = MockDatabase::new(DatabaseBackend::MySql)
+            .append_query_results([
+                vec![dto::Model {
+                    id: 1,
+                    name: "Test Key".to_string(),
+                    description: "".to_string(),
+                    visibility: Visibility::Public.to_string(),
+                    user: 0,
+                    attributes: "{}".to_string(),
+                    key_type: "pgp".to_string(),
+                    parent_id: None,
+                    fingerprint: "".to_string(),
+                    serial_number: None,
+                    private_key: "0708090A".to_string(),
+                    public_key: "040506".to_string(),
+                    certificate: "010203".to_string(),
+                    create_at: now.clone(),
+                    expire_at: now.clone(),
+                    key_state: "disabled".to_string(),
+                    user_email: None,
+                    request_delete_users: None,
+                    request_revoke_users: None,
+                    x509_crl_update_at: None,
+                }],
+            ]).into_connection();
+
+        let datakey_repository = DataKeyRepository::new(&db);
+        let user = DataKey{
+            id: 1,
+            name: "Test Key".to_string(),
+            description: "".to_string(),
+            visibility: Visibility::Public,
+            user: 0,
+            attributes: HashMap::new(),
+            key_type: KeyType::OpenPGP,
+            parent_id: None,
+            fingerprint: "".to_string(),
+            serial_number: None,
+            private_key: vec![7,8,9,10],
+            public_key: vec![4,5,6],
+            certificate: vec![1,2,3],
+            create_at: now.clone(),
+            expire_at: now.clone(),
+            key_state: KeyState::Disabled,
+            user_email: None,
+            request_delete_users: None,
+            request_revoke_users: None,
+            parent_key: None,
+        };
+        assert_eq!(
+            datakey_repository.check_name_exists("Test Key").await?, user
+        );
+        assert_eq!(
+            db.into_transaction_log(),
+            [
+                Transaction::from_sql_and_values(
+                    DatabaseBackend::MySql,
+                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state` FROM `data_key` WHERE `data_key`.`name` = ? AND `data_key`.`key_state` <> ? LIMIT ?"#,
+                    ["Test Key".into(), "deleted".into(), 1u64.into()]
+                ),
+            ]
+        );
+
         Ok(())
     }
 

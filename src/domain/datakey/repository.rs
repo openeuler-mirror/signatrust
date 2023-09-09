@@ -27,6 +27,7 @@ pub trait Repository: Send + Sync {
     async fn get_all_keys(&self, key_type: Option<KeyType>, visibility: Visibility, user_id: i32) -> Result<Vec<DataKey>>;
     async fn get_by_id(&self, id: i32) -> Result<DataKey>;
     async fn get_by_name(&self, name: &str) -> Result<DataKey>;
+    async fn check_name_exists(&self, name: &str) -> Result<DataKey>;
     async fn update_state(&self, id: i32, state: KeyState) -> Result<()>;
     async fn update_key_data(&self, data_key: DataKey) -> Result<()>;
     async fn get_enabled_key_by_type_and_name(&self, key_type: String, name: String) -> Result<DataKey>;

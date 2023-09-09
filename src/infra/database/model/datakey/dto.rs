@@ -25,7 +25,7 @@ use std::str::FromStr;
 use sea_orm::ActiveValue::Set;
 
 use sea_orm::entity::prelude::*;
-use sea_orm::{NotSet, Unset};
+use sea_orm::{NotSet};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Deserialize, Serialize)]

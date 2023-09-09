@@ -35,6 +35,8 @@ pub trait KeyService: Send + Sync{
     async fn create(&self, user: UserIdentity, data: &mut DataKey) -> Result<DataKey>;
     async fn import(&self, data: &mut DataKey) -> Result<DataKey>;
     async fn get_by_name(&self, name: &str) -> Result<DataKey>;
+
+    async fn check_name_exists(&self, name: &str) -> Result<DataKey>;
     async fn get_all(&self, key_type: Option<KeyType>, visibility: Visibility, user_id: i32) -> Result<Vec<DataKey>>;
     async fn get_one(&self, user: Option<UserIdentity>, id_or_name: String) -> Result<DataKey>;
     //get keys content
@@ -210,6 +212,10 @@ where
 
     async fn get_by_name(&self, name: &str) -> Result<DataKey> {
         self.repository.get_by_name(name).await
+    }
+
+    async fn check_name_exists(&self, name: &str) -> Result<DataKey> {
+        self.repository.check_name_exists(name).await
     }
 
     async fn get_all(&self, key_type: Option<KeyType>, visibility: Visibility, user_id: i32) -> Result<Vec<DataKey>> {
