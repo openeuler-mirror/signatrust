@@ -45,6 +45,7 @@ use anyhow::Error as AnyhowError;
 use csrf::CsrfError;
 use utoipa::{ToSchema};
 use efi_signer::error::Error as EFIError;
+use sea_orm::DbErr;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -401,5 +402,10 @@ impl From<TryFromSliceError> for Error {
 impl From<Vec<u8>> for Error {
     fn from(error: Vec<u8>) -> Self { Error::KeyParseError(format!("original vec {:?}", error)) }
 }
+
+impl From<DbErr> for Error {
+    fn from(error: DbErr) -> Self { Error::DatabaseError(error.to_string()) }
+}
+
 
 

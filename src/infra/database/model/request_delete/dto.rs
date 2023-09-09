@@ -15,10 +15,12 @@
  */
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
-use sqlx::FromRow;
 use chrono::{DateTime, Utc};
-use crate::domain::datakey::entity::{RevokedKey, X509RevokeReason};
 use crate::util::error::Error;
+
+use sqlx::types::chrono;
+use sea_orm::entity::prelude::*;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, sqlx::Type)]
 pub enum RequestType {
@@ -49,57 +51,25 @@ impl FromStr for RequestType {
     }
 }
 
-#[derive(Debug, FromRow)]
-pub struct RevokedKeyDTO {
-    pub id: i32,
-    pub key_id: i32,
-    pub ca_id: i32,
-    pub reason: String,
-    pub serial_number: Option<String>,
-    pub create_at: DateTime<Utc>,
-}
-
-impl RevokedKeyDTO {
-    pub fn new(key_id: i32, ca_id: i32, reason: X509RevokeReason) -> Self {
-        Self {
-            id: 0,
-            key_id,
-            ca_id,
-            create_at: Utc::now(),
-            reason: reason.to_string(),
-            serial_number: None,
-        }
-    }
-}
-
-impl TryFrom<RevokedKeyDTO> for RevokedKey {
-    type Error = Error;
-
-    fn try_from(dto: RevokedKeyDTO) -> Result<Self, Self::Error> {
-        Ok(RevokedKey {
-            id: dto.id,
-            key_id: dto.key_id,
-            ca_id: dto.ca_id,
-            reason: X509RevokeReason::from_str(&dto.reason)?,
-            create_at: dto.create_at,
-            serial_number: dto.serial_number,
-        })
-    }
-}
-
-
-
-#[derive(Debug, FromRow)]
-pub struct PendingOperationDTO {
+#[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Deserialize, Serialize)]
+#[sea_orm(table_name = "pending_operation")]
+pub struct Model {
+    #[sea_orm(primary_key)]
     pub id: i32,
     pub user_id: i32,
     pub key_id: i32,
-    pub request_type: RequestType,
+    pub request_type: String,
     pub user_email: String,
     pub create_at: DateTime<Utc>,
 }
 
-impl PendingOperationDTO {
+#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+pub enum Relation {}
+
+impl ActiveModelBehavior for ActiveModel {}
+
+
+impl Model {
     pub fn new_for_delete(key_id: i32, user_id: i32, user_email: String) -> Self {
         Self {
             id: 0,
@@ -107,7 +77,7 @@ impl PendingOperationDTO {
             key_id,
             user_email,
             create_at: Utc::now(),
-            request_type: RequestType::Delete,
+            request_type: RequestType::Delete.to_string(),
         }
     }
 
@@ -118,7 +88,7 @@ impl PendingOperationDTO {
             key_id,
             user_email,
             create_at: Utc::now(),
-            request_type: RequestType::Revoke,
+            request_type: RequestType::Revoke.to_string(),
         }
     }
 }
@@ -126,7 +96,6 @@ impl PendingOperationDTO {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono::Utc;
 
     #[test]
     fn test_request_type_display() {
@@ -147,21 +116,10 @@ mod tests {
     }
 
     #[test]
-    fn test_revoked_key_dto_conversion() {
-        let now = Utc::now();
-        let dto = RevokedKeyDTO::new(1, 2, X509RevokeReason::KeyCompromise);
-        let revoked_key = RevokedKey::try_from(dto).unwrap();
-        assert_eq!(revoked_key.key_id, 1);
-        assert_eq!(revoked_key.ca_id, 2);
-        assert_eq!(revoked_key.reason, X509RevokeReason::KeyCompromise);
-        assert!(revoked_key.create_at > now);
-    }
-
-    #[test]
     fn test_pending_operation_dto() {
-        let delete_dto = PendingOperationDTO::new_for_delete(1, 2, "test@email.com".into());
-        assert_eq!(delete_dto.request_type, RequestType::Delete);
-        let revoke_dto = PendingOperationDTO::new_for_revoke(3, 4, "test2@email.com".into());
-        assert_eq!(revoke_dto.request_type, RequestType::Revoke);
+        let delete_dto = Model::new_for_delete(1, 2, "test@email.com".into());
+        assert_eq!(delete_dto.request_type, RequestType::Delete.to_string());
+        let revoke_dto = Model::new_for_revoke(3, 4, "test2@email.com".into());
+        assert_eq!(revoke_dto.request_type, RequestType::Revoke.to_string());
     }
 }

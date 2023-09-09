@@ -24,7 +24,6 @@ use config::Config;
 use std::sync::RwLock;
 
 use crate::infra::database::model::clusterkey::repository;
-use crate::infra::database::pool::{DbPool};
 use crate::infra::kms::factory;
 use crate::infra::encryption::engine::{EncryptionEngineWithClusterKey};
 use crate::domain::encryption_engine::EncryptionEngine;
@@ -34,6 +33,7 @@ use crate::domain::datakey::entity::DataKey;
 use crate::util::error::{Error, Result};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
+use sea_orm::DatabaseConnection;
 use crate::infra::encryption::algorithm::factory::AlgorithmFactory;
 
 
@@ -50,13 +50,13 @@ impl MemorySignBackend {
     /// 2. initialize the cluster repo
     /// 2. initialize the encryption engine including the cluster key
     /// 3. initialize the signing plugins
-    pub async fn new(server_config: Arc<RwLock<Config>>, db_pool: DbPool) -> Result<MemorySignBackend> {
+    pub async fn new(server_config: Arc<RwLock<Config>>, db_connection: &'static DatabaseConnection) -> Result<MemorySignBackend> {
         //initialize the kms backend
         let kms_provider = factory::KMSProviderFactory::new_provider(
             &server_config.read()?.get_table("memory.kms-provider")?
         )?;
         let repository =
-            repository::ClusterKeyRepository::new(db_pool);
+            repository::ClusterKeyRepository::new(db_connection);
         let engine_config = server_config.read()?.get_table("memory.encryption-engine")?;
         let encryptor = AlgorithmFactory::new_algorithm(
             &engine_config

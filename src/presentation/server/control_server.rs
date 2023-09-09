@@ -31,7 +31,7 @@ use time::Duration as timeDuration;
 use std::time::Duration;
 
 use crate::infra::database::model::datakey::repository as datakeyRepository;
-use crate::infra::database::pool::{create_pool, get_db_pool};
+use crate::infra::database::pool::{create_pool, get_db_connection};
 use crate::presentation::handler::control::*;
 use actix_web::{dev::ServiceRequest};
 use actix_web::cookie::SameSite;
@@ -44,7 +44,7 @@ use crate::infra::database::model::token::repository::TokenRepository;
 use crate::infra::database::model::user::repository::UserRepository;
 use crate::infra::sign_backend::factory::SignBackendFactory;
 use crate::application::user::{DBUserService, UserService};
-use crate::domain::datakey::entity::{DataKey};
+use crate::domain::datakey::entity::{DataKey, KeyState};
 use crate::domain::token::entity::Token;
 use crate::domain::user::entity::User;
 use crate::presentation::handler::control::model::token::dto::{CreateTokenDTO};
@@ -120,13 +120,13 @@ impl ControlServer {
         let database = server_config.read()?.get_table("database")?;
         create_pool(&database).await?;
         let data_repository = datakeyRepository::DataKeyRepository::new(
-            get_db_pool()?,
+            get_db_connection()?,
         );
         let sign_backend = SignBackendFactory::new_engine(
-            server_config.clone(), get_db_pool()?).await?;
+            server_config.clone(), get_db_connection()?).await?;
         //initialize repos
-        let user_repo = UserRepository::new(get_db_pool()?);
-        let token_repo = TokenRepository::new(get_db_pool()?);
+        let user_repo = UserRepository::new(get_db_connection()?);
+        let token_repo = TokenRepository::new(get_db_connection()?);
 
         //initialize the service
         let user_service = Arc::new(
@@ -260,7 +260,9 @@ impl ControlServer {
     //used for control admin cmd
     pub async fn create_keys(&self, data: &mut DataKey, user: UserIdentity) -> Result<DataKey> {
         let key = self.key_service.create(user.clone(), data).await?;
-        self.key_service.enable(Some(user), format!("{}", key.id)).await?;
+        if data.key_state == KeyState::Disabled {
+            self.key_service.enable(Some(user), format!("{}", key.id)).await?;
+        }
         Ok(key)
     }
 

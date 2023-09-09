@@ -18,10 +18,13 @@
 use crate::domain::clusterkey::entity::ClusterKey;
 
 use sqlx::types::chrono;
-use sqlx::FromRow;
+use sea_orm::entity::prelude::*;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, FromRow)]
-pub(super) struct ClusterKeyDTO {
+#[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Deserialize, Serialize)]
+#[sea_orm(table_name = "cluster_key")]
+pub struct Model {
+    #[sea_orm(primary_key)]
     pub id: i32,
     pub data: Vec<u8>,
     pub algorithm: String,
@@ -29,8 +32,13 @@ pub(super) struct ClusterKeyDTO {
     pub create_at: chrono::DateTime<chrono::Utc>,
 }
 
-impl From<ClusterKeyDTO> for ClusterKey {
-    fn from(dto: ClusterKeyDTO) -> Self {
+#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+pub enum Relation {}
+
+impl ActiveModelBehavior for ActiveModel {}
+
+impl From<Model> for ClusterKey {
+    fn from(dto: Model) -> Self {
         ClusterKey {
             id: dto.id,
             data: dto.data,
@@ -41,44 +49,14 @@ impl From<ClusterKeyDTO> for ClusterKey {
     }
 }
 
-impl From<ClusterKey> for ClusterKeyDTO {
-    fn from(cluster_key: ClusterKey) -> Self {
-        Self {
-            id: cluster_key.id,
-            data: cluster_key.data,
-            algorithm: cluster_key.algorithm,
-            identity: cluster_key.identity,
-            create_at: cluster_key.create_at,
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use chrono::Utc;
-    use super::{ClusterKey,ClusterKeyDTO};
-
-    #[test]
-    fn test_cluster_key_dto_from_entity() {
-        let key = ClusterKey {
-            id: 1,
-            data: vec![1, 2, 3],
-            algorithm: "algo".to_string(),
-            identity: "id".to_string(),
-            create_at: Utc::now()
-        };
-        let create_at = key.create_at.clone();
-        let dto = ClusterKeyDTO::from(key);
-        assert_eq!(dto.id, 1);
-        assert_eq!(dto.data, vec![1, 2, 3]);
-        assert_eq!(dto.algorithm, "algo");
-        assert_eq!(dto.identity, "id");
-        assert_eq!(dto.create_at, create_at);
-    }
+    use super::{ClusterKey,Model};
 
     #[test]
     fn test_cluster_key_entity_from_dto() {
-        let dto = ClusterKeyDTO {
+        let dto = Model {
             id: 1,
             data: vec![1, 2, 3],
             algorithm: "algo".to_string(),

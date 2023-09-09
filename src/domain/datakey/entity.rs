@@ -223,7 +223,7 @@ impl Display for X509RevokeReason {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ParentKey {
     pub name: String,
     pub private_key: Vec<u8>,
@@ -232,7 +232,7 @@ pub struct ParentKey {
     pub attributes: HashMap<String, String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct RevokedKey {
     pub id: i32,
     pub key_id: i32,
@@ -242,7 +242,7 @@ pub struct RevokedKey {
     pub serial_number: Option<String>
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DataKey {
     pub id: i32,
     pub name: String,

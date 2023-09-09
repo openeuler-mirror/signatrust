@@ -14,30 +14,29 @@
  *
  */
 
-use super::dto::UserDTO;
-
-use crate::infra::database::pool::DbPool;
+use super::dto::Entity as UserDTO;
+use crate::infra::database::model::user;
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, ActiveValue::Set, ActiveModelTrait};
 use crate::domain::user::entity::User;
 use crate::domain::user::repository::Repository;
-use crate::util::error::Result;
+use crate::util::error::{Error, Result};
 use async_trait::async_trait;
-use std::boxed::Box;
 
 #[derive(Clone)]
-pub struct UserRepository {
-    db_pool: DbPool,
+pub struct UserRepository<'a> {
+    db_connection: &'a DatabaseConnection
 }
 
-impl UserRepository {
-    pub fn new(db_pool: DbPool) -> Self {
+impl<'a> UserRepository<'a> {
+    pub fn new(db_connection: &'a DatabaseConnection) -> Self {
         Self {
-            db_pool,
+            db_connection,
         }
     }
 }
 
 #[async_trait]
-impl Repository for UserRepository {
+impl<'a> Repository for UserRepository<'a> {
 
     async fn create(&self, user: User) -> Result<User> {
         return match self.get_by_email(&user.email).await {
@@ -45,37 +44,189 @@ impl Repository for UserRepository {
                 Ok(existed)
             }
             Err(_err) => {
-                let dto = UserDTO::from(user);
-                let record : u64 = sqlx::query("INSERT INTO user(email) VALUES (?)")
-                    .bind(&dto.email)
-                    .execute(&self.db_pool)
-                    .await?.last_insert_id();
-                self.get_by_id(record as i32).await
+                let user = user::dto::ActiveModel {
+                    email: Set(user.email),
+                    ..Default::default()
+                };
+                Ok(User::from(user.insert(self.db_connection).await?))
             }
         }
     }
 
     async fn get_by_id(&self, id: i32) -> Result<User> {
-        let selected: UserDTO = sqlx::query_as("SELECT * FROM user WHERE id = ?")
-            .bind(id)
-            .fetch_one(&self.db_pool)
-            .await?;
-        Ok(User::from(selected))
+        match UserDTO::find_by_id(id).one(
+            self.db_connection).await? {
+            None => {
+                Err(Error::NotFoundError)
+            }
+            Some(user) => {
+                Ok(User::from(user))
+            }
+        }
     }
 
     async fn get_by_email(&self, email: &str) -> Result<User> {
-        let selected: UserDTO = sqlx::query_as("SELECT * FROM user WHERE email = ?")
-            .bind(email)
-            .fetch_one(&self.db_pool)
-            .await?;
-        Ok(User::from(selected))
+        match UserDTO::find().filter(
+            user::dto::Column::Email.eq(email)).one(
+            self.db_connection).await? {
+            None => {
+                Err(Error::NotFoundError)
+            }
+            Some(user) => {
+                Ok(User::from(user))
+            }
+        }
     }
 
     async fn delete_by_id(&self, id: i32) -> Result<()> {
-        let _: Option<UserDTO> = sqlx::query_as("DELETE FROM user where id = ?")
-            .bind(id)
-            .fetch_optional(&self.db_pool)
+        let _ = UserDTO::delete_by_id(id).exec(self.db_connection)
             .await?;
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use sea_orm::{DatabaseBackend, MockDatabase, MockExecResult, Transaction};
+    use crate::domain::user::entity::User;
+    use crate::domain::user::repository::Repository;
+    use crate::infra::database::model::user::dto;
+    use crate::util::error::Result;
+    use crate::infra::database::model::user::repository::UserRepository;
+
+    #[tokio::test]
+    async fn test_user_repository_query_sql_statement() -> Result<()> {
+        let db = MockDatabase::new(DatabaseBackend::MySql)
+            .append_query_results([
+                vec![dto::Model {
+                    id: 1,
+                    email: "fake_email".to_string(),
+                }],
+                vec![dto::Model {
+                    id: 2,
+                    email: "fake_email".to_string(),
+                }],
+            ]).into_connection();
+
+        let user_repository = UserRepository::new(&db);
+        assert_eq!(
+            user_repository.get_by_email("fake_email").await?,
+            User::from(dto::Model {
+                id: 1,
+                email: "fake_email".to_string(),
+            })
+        );
+
+        assert_eq!(
+            user_repository.get_by_id(1).await?,
+            User::from(dto::Model {
+                id: 2,
+                email: "fake_email".to_string(),
+            })
+        );
+
+        assert_eq!(
+            db.into_transaction_log(),
+            [
+                //get_by_email
+                Transaction::from_sql_and_values(
+                    DatabaseBackend::MySql,
+                    r#"SELECT `user`.`id`, `user`.`email` FROM `user` WHERE `user`.`email` = ? LIMIT ?"#,
+                    ["fake_email".into(), 1u64.into()]
+                ),
+                //get_by_id
+                Transaction::from_sql_and_values(
+                    DatabaseBackend::MySql,
+                    r#"SELECT `user`.`id`, `user`.`email` FROM `user` WHERE `user`.`id` = ? LIMIT ?"#,
+                    [1i32.into(), 1u64.into()]
+                ),
+            ]
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_user_repository_create_sql_statement() -> Result<()> {
+        let db = MockDatabase::new(DatabaseBackend::MySql)
+            .append_query_results([
+                vec![],
+                vec![dto::Model {
+                    id: 3,
+                    email: "fake_email".to_string(),
+                }],
+            ]).append_exec_results([
+            MockExecResult{
+                last_insert_id: 3,
+                rows_affected: 1,
+            }
+        ]).into_connection();
+
+        let user_repository = UserRepository::new(&db);
+        let user = User{
+            id: 0,
+            email: "fake_string".to_string(),
+        };
+        assert_eq!(
+            user_repository.create(user).await?,
+            User::from(dto::Model {
+                id: 3,
+                email: "fake_email".to_string(),
+            })
+        );
+        assert_eq!(
+            db.into_transaction_log(),
+            [
+                //create
+                Transaction::from_sql_and_values(
+                    DatabaseBackend::MySql,
+                    r#"SELECT `user`.`id`, `user`.`email` FROM `user` WHERE `user`.`email` = ? LIMIT ?"#,
+                    ["fake_string".into(), 1u64.into()]
+                ),
+                Transaction::from_sql_and_values(
+                    DatabaseBackend::MySql,
+                    r#"INSERT INTO `user` (`email`) VALUES (?)"#,
+                    ["fake_string".into()]
+                ),
+                Transaction::from_sql_and_values(
+                    DatabaseBackend::MySql,
+                    r#"SELECT `user`.`id`, `user`.`email` FROM `user` WHERE `user`.`id` = ? LIMIT ?"#,
+                    [3i32.into(), 1u64.into()]
+                ),
+            ]
+        );
+
+        Ok(())
+    }
+    #[tokio::test]
+    async fn test_user_repository_delete_sql_statement() -> Result<()> {
+        let db = MockDatabase::new(DatabaseBackend::MySql)
+            .append_query_results([
+                vec![dto::Model {
+                    id: 1,
+                    email: "fake_email".to_string(),
+                }],
+            ]).append_exec_results([
+            MockExecResult{
+                last_insert_id: 1,
+                rows_affected: 1,
+            }
+        ]).into_connection();
+
+        let user_repository = UserRepository::new(&db);
+        assert_eq!(user_repository.delete_by_id(1).await?, ());
+        assert_eq!(
+            db.into_transaction_log(),
+            [
+                //delete
+                Transaction::from_sql_and_values(
+                    DatabaseBackend::MySql,
+                    r#"DELETE FROM `user` WHERE `user`.`id` = ?"#,
+                    [1i32.into()]
+                ),
+            ]
+        );
+
         Ok(())
     }
 }

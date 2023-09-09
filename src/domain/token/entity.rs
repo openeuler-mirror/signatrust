@@ -21,7 +21,7 @@ use std::fmt::{Display, Formatter};
 
 const TOKEN_EXPIRE_IN_DAYS: i64 = 365;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Token {
     pub id: i32,
     pub user_id: i32,

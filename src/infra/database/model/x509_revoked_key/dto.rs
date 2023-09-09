@@ -13,39 +13,42 @@
  *  * // See the Mulan PSL v2 for more details.
  *
  */
+use std::str::FromStr;
 use chrono::{DateTime, Utc};
-
-use crate::domain::token::entity::Token;
+use crate::domain::datakey::entity::{RevokedKey, X509RevokeReason};
+use crate::util::error::Error;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
+
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Deserialize, Serialize)]
-#[sea_orm(table_name = "token")]
+#[sea_orm(table_name = "x509_keys_revoked")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
-    pub user_id: i32,
-    pub description: String,
-    pub token: String,
+    pub key_id: i32,
+    pub ca_id: i32,
+    pub reason: String,
+    pub serial_number: Option<String>,
     pub create_at: DateTime<Utc>,
-    pub expire_at: DateTime<Utc>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {}
 
 impl ActiveModelBehavior for ActiveModel {}
+impl TryFrom<Model> for RevokedKey {
+    type Error = Error;
 
-impl From<Model> for Token {
-    fn from(dto: Model) -> Self {
-        Self {
+    fn try_from(dto: Model) -> Result<Self, Self::Error> {
+        Ok(RevokedKey {
             id: dto.id,
-            user_id: dto.user_id,
-            description: dto.description.clone(),
-            token: dto.token.clone(),
+            key_id: dto.key_id,
+            ca_id: dto.ca_id,
+            reason: X509RevokeReason::from_str(&dto.reason)?,
             create_at: dto.create_at,
-            expire_at:dto.expire_at,
-        }
+            serial_number: dto.serial_number,
+        })
     }
 }
 
@@ -54,23 +57,20 @@ mod tests {
     use super::*;
     use chrono::Utc;
     #[test]
-    fn test_token_entity_from_dto() {
+    fn test_revoked_key_dto_conversion() {
         let now = Utc::now();
-        let dto = Model {
-            id: 1,
-            user_id: 2,
-            description: "Test token".to_string(),
-            token: "hashedtoken".to_string(),
+        let dto = Model{
+            id: 0,
+            key_id: 1,
+            ca_id: 2,
+            reason: X509RevokeReason::KeyCompromise.to_string(),
+            serial_number: None,
             create_at: now,
-            expire_at: now + chrono::Duration::days(1)
         };
-        let token = Token::from(dto.clone());
-        assert_eq!(token.id, dto.id);
-        assert_eq!(token.user_id, dto.user_id);
-        assert_eq!(token.description, dto.description);
-        assert_eq!(token.token, dto.token);
-        assert_eq!(token.create_at, dto.create_at);
-        assert_eq!(token.expire_at, dto.expire_at);
+        let revoked_key = RevokedKey::try_from(dto).unwrap();
+        assert_eq!(revoked_key.key_id, 1);
+        assert_eq!(revoked_key.ca_id, 2);
+        assert_eq!(revoked_key.reason, X509RevokeReason::KeyCompromise);
+        assert_eq!(revoked_key.create_at, now);
     }
 }
-

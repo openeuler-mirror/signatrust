@@ -31,7 +31,7 @@ use crate::application::user::{DBUserService, UserService};
 use crate::infra::database::model::datakey::repository;
 use crate::infra::database::model::token::repository::TokenRepository;
 use crate::infra::database::model::user::repository::UserRepository;
-use crate::infra::database::pool::{create_pool, get_db_pool};
+use crate::infra::database::pool::{create_pool, get_db_connection};
 use crate::infra::sign_backend::factory::SignBackendFactory;
 
 
@@ -107,12 +107,12 @@ impl DataServer {
         let mut server = Server::builder();
         info!("data server starts");
         let sign_backend = SignBackendFactory::new_engine(
-            self.server_config.clone(), get_db_pool()?).await?;
+            self.server_config.clone(), get_db_connection()?).await?;
         let data_repository = repository::DataKeyRepository::new(
-            get_db_pool()?);
+            get_db_connection()?);
         let key_service = DBKeyService::new(data_repository, sign_backend);
-        let user_repo = UserRepository::new(get_db_pool()?);
-        let token_repo = TokenRepository::new(get_db_pool()?);
+        let user_repo = UserRepository::new(get_db_connection()?);
+        let token_repo = TokenRepository::new(get_db_connection()?);
         let user_service = DBUserService::new(user_repo, token_repo, self.server_config.clone())?;
 
         key_service.start_cache_cleanup_loop(self.cancel_token.clone())?;
