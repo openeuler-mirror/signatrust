@@ -314,6 +314,7 @@ async fn cancel_revoke_data_key(user: UserIdentity, key_service: web::Data<dyn K
 }
 
 /// Get public key content of specific key by id or name from database
+/// Note: Please add authentication token when requesting a private key
 ///
 /// ## Example
 /// Call the api endpoint with following curl.
@@ -344,6 +345,7 @@ async fn export_public_key(user: Option<UserIdentity>, key_service: web::Data<dy
 }
 
 /// Get certificate content of specific key by id or name from database
+/// Note: Please add authentication token when requesting a private key
 ///
 /// ## Example
 /// Call the api endpoint with following curl.
@@ -374,6 +376,7 @@ async fn export_certificate(user: Option<UserIdentity>, key_service: web::Data<d
 }
 
 /// Get Client Revoke List content of specific key(cert) by id or name from database
+/// Note: Please add authentication token when requesting a private key
 ///
 /// ## Example
 /// Call the api endpoint with following curl.

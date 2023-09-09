@@ -48,6 +48,11 @@ function create_default_openpgp_eddsa {
   RUST_LOG=info ./target/debug/control-admin --config ./config/server.toml generate-keys --name default-pgp-eddsa --description "used for test purpose only" --key-type pgp --email tommylikehu@gmail.com --param-key-type eddsa --param-pgp-email infra@openeuler.org --param-pgp-passphrase husheng1234 --digest-algorithm sha2_256 --visibility public
 }
 
+function create_default_private_openpgp_rsa {
+  echo "start to create default openpgp keys identified with default-pgp"
+  RUST_LOG=info ./target/debug/control-admin --config ./config/server.toml generate-keys --name default-pgp-rsa --description "used for test purpose only" --key-type pgp --email tommylikehu@gmail.com --param-key-type rsa --param-key-size 2048 --param-pgp-email infra@openeuler.org --param-pgp-passphrase husheng1234 --digest-algorithm sha2_256 --visibility private
+}
+
 
 echo "Preparing basic keys for signatrust......"
 
@@ -67,3 +72,4 @@ create_default_openpgp_rsa
 
 create_default_openpgp_eddsa
 
+create_default_private_openpgp_rsa
