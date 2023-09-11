@@ -60,7 +60,7 @@ impl TryFrom<X509CRL> for CRLContent {
 #[derive(Deserialize, IntoParams, Validate, ToSchema)]
 pub struct NameIdenticalQuery {
     /// Key Name, should be identical, length between 4 and 256, not contains any colon symbol.
-    #[validate(length(min = 4, max = 256), custom = "validate_invalid_character")]
+    #[validate(length(min = 4, max = 256))]
     pub name: String,
     /// Key Name, should be identical, length between 4 and 20, not contains any colon symbol.
     #[validate(custom = "validate_key_visibility")]
@@ -213,7 +213,7 @@ impl DataKey {
         combined_attributes.insert("name".to_string(), dto.name.clone());
         combined_attributes.insert("create_at".to_string(), now.clone().to_string());
         let visibility = Visibility::from_parameter(dto.visibility)?;
-        let key_name = get_datakey_full_name(&dto.name, &identity.email, &visibility);
+        let key_name = get_datakey_full_name(&dto.name, &identity.email, &visibility)?;
         let mut key_state = KeyState::Disabled;
         if visibility == Visibility::Private {
             key_state = KeyState::Enabled;
@@ -249,7 +249,7 @@ impl DataKey {
         combined_attributes.insert("create_at".to_string(), now.clone().to_string());
         combined_attributes.insert("expire_at".to_string(), dto.expire_at.clone());
         let visibility = Visibility::from_parameter(dto.visibility)?;
-        let key_name = get_datakey_full_name(&dto.name, &identity.email, &visibility);
+        let key_name = get_datakey_full_name(&dto.name, &identity.email, &visibility)?;
         let mut key_state = KeyState::Disabled;
         if visibility == Visibility::Private {
             key_state = KeyState::Enabled;

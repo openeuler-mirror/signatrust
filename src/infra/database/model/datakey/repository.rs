@@ -31,8 +31,8 @@ use sea_orm::sea_query::{Alias, IntoCondition, OnConflict};
 use crate::infra::database::model::request_delete::dto::RequestType;
 use crate::util::key::encode_u8_to_hex_string;
 
-const PUBLICKEY_PENDING_THRESHOLD: i32 = 3;
-const PRIVATEKEY_PENDING_THRESHOLD: i32 = 1;
+const PUBLIC_KEY_PENDING_THRESHOLD: i32 = 3;
+const PRIVATE_KEY_PENDING_THRESHOLD: i32 = 1;
 
 #[derive(Clone)]
 pub struct DataKeyRepository<'a> {
@@ -62,7 +62,7 @@ impl<'a> DataKeyRepository<'a> {
         Ok(())
     }
 
-    async fn delete_pending_operation(&self, user_id: i32, id: i32, request_type: request_dto::RequestType, tx: &mut DatabaseTransaction) -> Result<()> {
+    async fn delete_pending_operation(&self, user_id: i32, id: i32, request_type: RequestType, tx: &mut DatabaseTransaction) -> Result<()> {
         let _ = request_dto::Entity::delete_many().filter(Condition::all()
             .add(request_dto::Column::UserId.eq(user_id))
             .add(request_dto::Column::RequestType.eq(request_type.to_string()))
@@ -306,9 +306,9 @@ impl<'a> Repository for DataKeyRepository<'a> {
                 warn!("failed to query database {:?}", err);
                 Err(Error::NotFoundError)
             }
-            Ok(datakeys) => {
+            Ok(data_keys) => {
                 let mut results = vec![];
-                for dto in datakeys.into_iter() {
+                for dto in data_keys.into_iter() {
                     results.push(DataKey::try_from(dto)?);
                 }
                 Ok(results)
@@ -423,7 +423,7 @@ impl<'a> Repository for DataKeyRepository<'a> {
 
     async fn request_delete_key(&self, user_id: i32, user_email: String, id: i32, public_key: bool) -> Result<()> {
         let mut txn = self.db_connection.begin().await?;
-        let threshold = if public_key { PUBLICKEY_PENDING_THRESHOLD } else { PRIVATEKEY_PENDING_THRESHOLD };
+        let threshold = if public_key { PUBLIC_KEY_PENDING_THRESHOLD } else { PRIVATE_KEY_PENDING_THRESHOLD };
         //1. update key state to pending delete if needed.
         let _ = datakey_dto::Entity::update_many().col_expr(
             datakey_dto::Column::KeyState, Expr::value(KeyState::PendingDelete.to_string())
@@ -445,7 +445,7 @@ impl<'a> Repository for DataKeyRepository<'a> {
 
     async fn request_revoke_key(&self, user_id: i32, user_email: String, id: i32, parent_id: i32, reason: X509RevokeReason, public_key: bool) -> Result<()> {
         let mut txn = self.db_connection.begin().await?;
-        let threshold = if public_key { PUBLICKEY_PENDING_THRESHOLD } else { PRIVATEKEY_PENDING_THRESHOLD };
+        let threshold = if public_key { PUBLIC_KEY_PENDING_THRESHOLD } else { PRIVATE_KEY_PENDING_THRESHOLD };
         //1. update key state to pending delete if needed.
         let _ = datakey_dto::Entity::update_many().col_expr(
             datakey_dto::Column::KeyState, Expr::value(KeyState::PendingDelete.to_string())

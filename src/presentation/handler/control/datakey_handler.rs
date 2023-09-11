@@ -467,7 +467,7 @@ async fn disable_data_key(user: UserIdentity, key_service: web::Data<dyn KeyServ
 
 /// Check whether a key name already exists
 ///
-/// Use this API to check whether the key name exists in database.
+/// Use this API to check whether the key name exists in database, for private key, either {email}:{key_name} or {key_name} format is acceptable.
 /// `name` are required
 /// ## Example
 /// Call the api endpoint with following curl.
@@ -492,7 +492,7 @@ async fn disable_data_key(user: UserIdentity, key_service: web::Data<dyn KeyServ
 async fn key_name_identical(user: UserIdentity, key_service: web::Data<dyn KeyService>, name_exist: web::Query<NameIdenticalQuery>,) -> Result<impl Responder, Error> {
     name_exist.validate()?;
     let visibility = Visibility::from_parameter(name_exist.visibility.clone())?;
-    let key_name = get_datakey_full_name(&name_exist.name, &user.email, &visibility);
+    let key_name = get_datakey_full_name(&name_exist.name, &user.email, &visibility)?;
     match key_service.into_inner().get_by_name(&key_name).await {
         Ok(_) => Ok(HttpResponse::Conflict()),
         Err(_) => Ok(HttpResponse::Ok()),

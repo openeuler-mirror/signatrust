@@ -22,6 +22,7 @@ use std::collections::{HashMap, BTreeMap};
 use std::path::Path;
 use sha2::{Sha256, Digest};
 use crate::domain::datakey::entity::Visibility;
+use crate::util::error::{Error, Result as LibraryResult};
 
 pub fn encode_u8_to_hex_string(value: &[u8]) -> String {
     value
@@ -30,11 +31,24 @@ pub fn encode_u8_to_hex_string(value: &[u8]) -> String {
         .collect::<String>()
 }
 
-pub fn get_datakey_full_name(name: &str, email: &str, visibility: &Visibility) -> String {
-    if visibility.to_owned() == Visibility::Private {
-        return format!("{}:{}", email, name);
+pub fn get_datakey_full_name(name: &str, email: &str, visibility: &Visibility) -> LibraryResult<String> {
+    let names: Vec<_> = name.split(':').collect();
+    if visibility.to_owned() == Visibility::Public {
+        return if names.len() <= 1 {
+            Ok(name.to_owned())
+        } else {
+            Err(Error::ParameterError("public key name should not contains ':'".to_string()))
+        }
+    } else {
+        if names.len() <= 1 {
+            return Ok(format!("{}:{}", email, name));
+        } else if names.len() > 2 {
+            return Err(Error::ParameterError("private key should in the format of {email}:{key_name}".to_string()))
+        } else if names[0] != email {
+            return Err(Error::ParameterError("private key email prefix not matched':'".to_string()))
+        }
+        return Ok(name.to_owned())
     }
-    name.to_string()
 }
 
 pub fn decode_hex_string_to_u8(value: &String) -> Vec<u8> {
@@ -80,6 +94,23 @@ mod test {
     use std::fs::File;
     use uuid::Uuid;
     use super::*;
+
+    #[test]
+    fn test_get_datakey_full_name() {
+        let private = Visibility::Private;
+        let public = Visibility::Public;
+        let name_with_prefix = "fake_email@gmail.com:test_key";
+        let name_with_prefix2 = "fake_email2@gmail.com:test_key";
+        let name_with_prefix3 = "fake_email@gmail.com:fake3_email@gmail.com:test_key";
+        let name_without_prefix = "test_key";
+        //public key
+        assert_eq!(get_datakey_full_name(name_without_prefix, "fake_email@gmail.com", &public).unwrap(), name_without_prefix.to_string());
+        get_datakey_full_name(name_with_prefix, "fake_email@gmail.com", &public).expect_err("public key name should not contains ':'");
+        assert_eq!(get_datakey_full_name(name_without_prefix, "fake_email@gmail.com", &private).unwrap(), name_with_prefix.to_string());
+        assert_eq!(get_datakey_full_name(name_with_prefix, "fake_email@gmail.com", &private).unwrap(), name_with_prefix.to_string());
+        get_datakey_full_name(name_with_prefix2, "fake_email@gmail.com", &private).expect_err("private key email prefix not matched':'");
+        get_datakey_full_name(name_with_prefix3, "fake_email@gmail.com", &private).expect_err("private key should in the format of {email}:{key_name}");
+    }
 
     #[test]
     fn test_generate_random_tokens() {
