@@ -48,7 +48,7 @@ rand="0.8.5"
 generic-array = "0.14.6"
 chrono = { version = "0.4.23", features = ["clock"]}
 hex = "0.4.3"
-pgp = "0.9.0"
+pgp = "0.10.2"
 smallvec = "1.10.0"
 validator = { version = "0.16", features = ["derive"] }
 num_cpus = "1.15.0"
