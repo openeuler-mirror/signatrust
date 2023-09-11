@@ -23,6 +23,7 @@ use pgp::composed::signed_key::{SignedSecretKey, SignedPublicKey};
 use pgp::composed::{key::SecretKeyParamsBuilder};
 use pgp::crypto::{hash::HashAlgorithm, sym::SymmetricKeyAlgorithm};
 use pgp::packet::SignatureConfig;
+use pgp::packet::{Subpacket, SubpacketData};
 use pgp::packet::*;
 
 use pgp::types::KeyTrait;
@@ -225,8 +226,8 @@ impl SignPlugins for OpenPGPPlugin {
             created: Some(now),
             unhashed_subpackets: vec![],
             hashed_subpackets: vec![
-                Subpacket::SignatureCreationTime(now),
-                Subpacket::Issuer(secret_key_id),
+                Subpacket::regular(SubpacketData::SignatureCreationTime(now)),
+                Subpacket::regular(SubpacketData::Issuer(secret_key_id)),
             ],
         };
         let read_cursor = Cursor::new(content);
