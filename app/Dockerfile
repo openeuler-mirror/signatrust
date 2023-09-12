@@ -3,6 +3,7 @@ FROM gplane/pnpm as Builder
 RUN mkdir -p /home/signatrust/app
 WORKDIR /home/signatrust/app
 COPY . /home/signatrust/app
+RUN npm install pnpm -g
 RUN pnpm install
 RUN pnpm build
 
