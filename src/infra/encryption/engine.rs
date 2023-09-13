@@ -154,7 +154,7 @@ where
     }
 
     async fn rotate_key(&mut self) -> Result<bool> {
-        if Utc::now() < self.latest_cluster_key.read().await.create_at + Duration::days(1) {
+        if Utc::now() < self.latest_cluster_key.read().await.create_at + Duration::days(self.rotate_in_days) {
             return Ok(false);
         }
         self.generate_new_key().await?;

@@ -158,7 +158,8 @@ impl HuaweiCloudKMS {
             .json(json)
             .send()
             .await?;
-        if res.status() == StatusCode::UNAUTHORIZED {
+        //huaweicloud response with 403 when token expired.
+        if res.status() == StatusCode::FORBIDDEN {
             //re authentication again
             self.auth_token_cache.lock().await.clear();
             self.auth_request().await?;
@@ -406,7 +407,7 @@ mod test {
             "fake_attribute": "123",
         });
         let mock_request = server.mock("POST", "/kms/fake_endpoint")
-            .with_status(401)
+            .with_status(403)
             .match_header(SIGN_HEADER, "fake_auth_header")
             .match_body(mockito::Matcher::Json(fake_request.clone()))
             .with_body(r#"{"key_id": "123", "plain_text_base64": "456", "plain_text": "1234"}"#)
