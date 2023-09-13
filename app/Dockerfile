@@ -1,4 +1,4 @@
-FROM gplane/pnpm as Builder
+FROM node:18.12.1 as Builder
 
 RUN mkdir -p /home/signatrust/app
 WORKDIR /home/signatrust/app
