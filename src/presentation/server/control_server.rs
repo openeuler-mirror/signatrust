@@ -202,7 +202,8 @@ impl ControlServer {
                 //in the case of signed double submit cookie ,disable updating csrf token in middleware automatically
                 //now and open it if we have to.
                 //.wrap(from_fn(UserIdentity::append_csrf_cookie))
-                .wrap(middleware::Logger::default())
+                //NOTE: we skipped logging the api health endpoint.
+                .wrap(middleware::Logger::default().exclude("/api/health/"))
                 .wrap(IdentityMiddleware::default())
                 //rate limiter handler
                 .wrap(RateLimiter::default())
@@ -268,7 +269,7 @@ impl ControlServer {
 
     //used for control admin cmd
     pub async fn get_key_by_name(&self, name: &str) -> Result<DataKey> {
-        self.key_service.get_by_name(name).await
+        self.key_service.get_raw_key_by_name(name).await
     }
 
     pub async fn get_user_by_email(&self, email: &str) -> Result<User> {

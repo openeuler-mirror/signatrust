@@ -106,7 +106,7 @@ impl<'a> DataKeyRepository<'a> {
 
     async fn _obtain_datakey_parent(&self, datakey: &mut DataKey) -> Result<()> {
         if let Some(parent) = datakey.parent_id {
-            let result = self.get_by_id(parent).await;
+            let result = self.get_by_id_or_name(Some(parent), None, true).await;
             match result {
                 Ok(parent) => {
                     datakey.parent_key = Some(ParentKey {
@@ -132,7 +132,7 @@ impl<'a> Repository for DataKeyRepository<'a> {
         let dto = datakey_dto::ActiveModel::try_from(data_key)?;
         let insert_result =datakey_dto::Entity::insert(dto).exec(self.db_connection).await?;
 
-        let mut datakey = self.get_by_id(insert_result.last_insert_id).await?;
+        let mut datakey = self.get_by_id_or_name(Some(insert_result.last_insert_id), None, true).await?;
         //fetch parent key if 'parent_id' exists.
         if let Err(err) = self._obtain_datakey_parent(&mut datakey).await {
             warn!("failed to create datakey {} {}", datakey.name, err);
@@ -160,10 +160,7 @@ impl<'a> Repository for DataKeyRepository<'a> {
         }
         match datakey_dto::Entity::find().select_only().columns(
             datakey_dto::Column::iter().filter(|col|
-                match col {
-                    datakey_dto::Column::UserEmail | datakey_dto::Column::RequestDeleteUsers | datakey_dto::Column::RequestRevokeUsers | datakey_dto::Column::X509CrlUpdateAt => false,
-                    _ => true,
-                })).exprs(
+                !matches!(col, datakey_dto::Column::UserEmail | datakey_dto::Column::RequestDeleteUsers | datakey_dto::Column::RequestRevokeUsers | datakey_dto::Column::X509CrlUpdateAt))).exprs(
             [Expr::cust("user_table.email as user_email"),
             Expr::cust("GROUP_CONCAT(request_delete_table.user_email) as request_delete_users"),
             Expr::cust("GROUP_CONCAT(request_revoke_table.user_email) as request_revoke_users")]).join_as_rev(
@@ -190,10 +187,7 @@ impl<'a> Repository for DataKeyRepository<'a> {
         let now = Utc::now();
         match datakey_dto::Entity::find().select_only().columns(
             datakey_dto::Column::iter().filter(|col|
-                match col {
-                    datakey_dto::Column::UserEmail | datakey_dto::Column::RequestDeleteUsers | datakey_dto::Column::RequestRevokeUsers | datakey_dto::Column::X509CrlUpdateAt => false,
-                    _ => true,
-                })).column_as(
+                !matches!(col, datakey_dto::Column::UserEmail | datakey_dto::Column::RequestDeleteUsers | datakey_dto::Column::RequestRevokeUsers | datakey_dto::Column::X509CrlUpdateAt))).column_as(
             Expr::col((Alias::new("crl_table"), crl_content_dto::Column::UpdateAt)), "x509_crl_update_at").join_as_rev(
             JoinType::LeftJoin, crl_content_dto::Relation::Datakey.def(), Alias::new("crl_table")).filter(
             Condition::all().add(
@@ -255,41 +249,55 @@ impl<'a> Repository for DataKeyRepository<'a> {
         }
     }
 
-    async fn get_by_id(&self, id: i32) -> Result<DataKey> {
-        match datakey_dto::Entity::find().select_only().columns(
-            datakey_dto::Column::iter().filter(|col|
-                match col {
-                    datakey_dto::Column::UserEmail | datakey_dto::Column::RequestDeleteUsers | datakey_dto::Column::RequestRevokeUsers | datakey_dto::Column::X509CrlUpdateAt => false,
-                    _ => true,
-                })).exprs(
-            [Expr::cust("user_table.email as user_email"),
-            Expr::cust("GROUP_CONCAT(request_delete_table.user_email) as request_delete_users"),
-            Expr::cust("GROUP_CONCAT(request_revoke_table.user_email) as request_revoke_users")]).join_as_rev(
-            JoinType::InnerJoin, user_dto::Relation::Datakey.def(), Alias::new("user_table")).join_as_rev(
-            JoinType::LeftJoin, self.get_pending_operation_relation(RequestType::Delete).into(),
-            Alias::new("request_delete_table")).join_as_rev(
-            JoinType::LeftJoin, self.get_pending_operation_relation(RequestType::Revoke).into(),
-            Alias::new("request_revoke_table")).group_by(datakey_dto::Column::Id).filter(
-            Condition::all().add(
-                datakey_dto::Column::Id.eq(id)).add(
-                datakey_dto::Column::KeyState.ne(KeyState::Deleted.to_string()))
-        ).one(self.db_connection).await? {
-            None => {
-                Err(Error::NotFoundError)
+    async fn get_by_id_or_name(&self, id: Option<i32>, name: Option<String>, raw_datakey: bool) -> Result<DataKey> {
+        let mut conditions = Condition::all();
+        if let Some(key_id) = id {
+            conditions = conditions.add(datakey_dto::Column::Id.eq(key_id))
+        } else if let Some(key_name) = name {
+            conditions = conditions.add(datakey_dto::Column::Name.eq(key_name))
+        } else {
+            return Err(Error::ParameterError("both datakey name and id are empty".to_string()))
+        }
+        conditions = conditions.add(datakey_dto::Column::KeyState.ne(KeyState::Deleted.to_string()));
+        if !raw_datakey {
+            match datakey_dto::Entity::find().select_only().columns(
+                datakey_dto::Column::iter().filter(|col|
+                    !matches!(col, datakey_dto::Column::UserEmail | datakey_dto::Column::RequestDeleteUsers | datakey_dto::Column::RequestRevokeUsers | datakey_dto::Column::X509CrlUpdateAt))).exprs(
+                [Expr::cust("user_table.email as user_email"),
+                    Expr::cust("GROUP_CONCAT(request_delete_table.user_email) as request_delete_users"),
+                    Expr::cust("GROUP_CONCAT(request_revoke_table.user_email) as request_revoke_users")]).join_as_rev(
+                JoinType::InnerJoin, user_dto::Relation::Datakey.def(), Alias::new("user_table")).join_as_rev(
+                JoinType::LeftJoin, self.get_pending_operation_relation(RequestType::Delete).into(),
+                Alias::new("request_delete_table")).join_as_rev(
+                JoinType::LeftJoin, self.get_pending_operation_relation(RequestType::Revoke).into(),
+                Alias::new("request_revoke_table")).group_by(datakey_dto::Column::Id).filter(
+                conditions).one(self.db_connection).await? {
+                None => {
+                    Err(Error::NotFoundError)
+                }
+                Some(datakey) => {
+                    Ok(DataKey::try_from(datakey)?)
+                }
             }
-            Some(datakey) => {
-                Ok(DataKey::try_from(datakey)?)
+        } else {
+            match datakey_dto::Entity::find().select_only().columns(
+                datakey_dto::Column::iter().filter(|col|
+                    !matches!(col, datakey_dto::Column::UserEmail | datakey_dto::Column::RequestDeleteUsers | datakey_dto::Column::RequestRevokeUsers | datakey_dto::Column::X509CrlUpdateAt))).filter(conditions).one(self.db_connection).await? {
+                None => {
+                    Err(Error::NotFoundError)
+                }
+                Some(datakey) => {
+                    Ok(DataKey::try_from(datakey)?)
+                }
             }
         }
+
     }
 
     async fn get_by_parent_id(&self, parent_id: i32) -> Result<Vec<DataKey>> {
         match datakey_dto::Entity::find().select_only().columns(
             datakey_dto::Column::iter().filter(|col|
-                match col {
-                    datakey_dto::Column::UserEmail | datakey_dto::Column::RequestDeleteUsers | datakey_dto::Column::RequestRevokeUsers | datakey_dto::Column::X509CrlUpdateAt => false,
-                    _ => true,
-                })).exprs(
+                !matches!(col, datakey_dto::Column::UserEmail | datakey_dto::Column::RequestDeleteUsers | datakey_dto::Column::RequestRevokeUsers | datakey_dto::Column::X509CrlUpdateAt))).exprs(
             [Expr::cust("user_table.email as user_email"),
             Expr::cust("GROUP_CONCAT(request_delete_table.user_email) as request_delete_users"),
             Expr::cust("GROUP_CONCAT(request_revoke_table.user_email) as request_revoke_users")]).join_as_rev(
@@ -312,52 +320,6 @@ impl<'a> Repository for DataKeyRepository<'a> {
                     results.push(DataKey::try_from(dto)?);
                 }
                 Ok(results)
-            }
-        }
-    }
-
-    async fn check_name_exists(&self, name: &str) -> Result<DataKey>{
-        match datakey_dto::Entity::find().select_only().columns(
-            datakey_dto::Column::iter().filter(|col|
-                match col {
-                    datakey_dto::Column::UserEmail | datakey_dto::Column::RequestDeleteUsers | datakey_dto::Column::RequestRevokeUsers | datakey_dto::Column::X509CrlUpdateAt => false,
-                    _ => true,
-                })).filter(Condition::all().add(
-            datakey_dto::Column::Name.eq(name)).add(
-            datakey_dto::Column::KeyState.ne(KeyState::Deleted.to_string()))).one(self.db_connection).await? {
-            None => {
-                Err(Error::NotFoundError)
-            }
-            Some(datakey) => {
-                Ok(DataKey::try_from(datakey)?)
-            }
-        }
-    }
-
-    async fn get_by_name(&self, name: &str) -> Result<DataKey> {
-        match datakey_dto::Entity::find().select_only().columns(
-            datakey_dto::Column::iter().filter(|col|
-                match col {
-                    datakey_dto::Column::UserEmail | datakey_dto::Column::RequestDeleteUsers | datakey_dto::Column::RequestRevokeUsers | datakey_dto::Column::X509CrlUpdateAt => false,
-                    _ => true,
-                })).exprs(
-            [Expr::cust("user_table.email as user_email"),
-            Expr::cust("GROUP_CONCAT(request_delete_table.user_email) as request_delete_users"),
-            Expr::cust("GROUP_CONCAT(request_revoke_table.user_email) as request_revoke_users")]).join_as_rev(
-            JoinType::InnerJoin, user_dto::Relation::Datakey.def(), Alias::new("user_table")).join_as_rev(
-            JoinType::LeftJoin, self.get_pending_operation_relation(RequestType::Delete).into(),
-            Alias::new("request_delete_table")).join_as_rev(
-            JoinType::LeftJoin, self.get_pending_operation_relation(RequestType::Revoke).into(),
-            Alias::new("request_revoke_table")).group_by(datakey_dto::Column::Id).filter(
-            Condition::all().add(
-                datakey_dto::Column::Name.eq(name)).add(
-                datakey_dto::Column::KeyState.ne(KeyState::Deleted.to_string()))
-        ).one(self.db_connection).await? {
-            None => {
-                Err(Error::NotFoundError)
-            }
-            Some(datakey) => {
-                Ok(DataKey::try_from(datakey)?)
             }
         }
     }
@@ -392,21 +354,10 @@ impl<'a> Repository for DataKeyRepository<'a> {
         Ok(())
     }
 
-    async fn get_enabled_key_by_type_and_name(&self, key_type: String, name: String) -> Result<DataKey> {
+    async fn get_enabled_key_by_type_and_name_with_parent_key(&self, key_type: String, name: String) -> Result<DataKey> {
         match datakey_dto::Entity::find().select_only().columns(
             datakey_dto::Column::iter().filter(|col|
-                match col {
-                    datakey_dto::Column::UserEmail | datakey_dto::Column::RequestDeleteUsers | datakey_dto::Column::RequestRevokeUsers | datakey_dto::Column::X509CrlUpdateAt => false,
-                    _ => true,
-                })).exprs(
-            [Expr::cust("user_table.email as user_email"),
-            Expr::cust("GROUP_CONCAT(request_delete_table.user_email) as request_delete_users"),
-            Expr::cust("GROUP_CONCAT(request_revoke_table.user_email) as request_revoke_users")]).join_as_rev(
-            JoinType::InnerJoin, user_dto::Relation::Datakey.def(), Alias::new("user_table")).join_as_rev(
-            JoinType::LeftJoin, self.get_pending_operation_relation(RequestType::Delete).into(),
-            Alias::new("request_delete_table")).join_as_rev(
-            JoinType::LeftJoin, self.get_pending_operation_relation(RequestType::Revoke).into(),
-            Alias::new("request_revoke_table")).group_by(datakey_dto::Column::Id).filter(
+                !matches!(col, datakey_dto::Column::UserEmail | datakey_dto::Column::RequestDeleteUsers | datakey_dto::Column::RequestRevokeUsers | datakey_dto::Column::X509CrlUpdateAt))).filter(
             Condition::all().add(
                 datakey_dto::Column::Name.eq(name)).add(
                 datakey_dto::Column::KeyType.eq(key_type)).add(
@@ -416,7 +367,9 @@ impl<'a> Repository for DataKeyRepository<'a> {
                 Err(Error::NotFoundError)
             }
             Some(datakey) => {
-                Ok(DataKey::try_from(datakey)?)
+                let mut result = DataKey::try_from(datakey)?;
+                self._obtain_datakey_parent(&mut result).await?;
+                Ok(result)
             }
         }
     }
@@ -519,7 +472,7 @@ impl<'a> Repository for DataKeyRepository<'a> {
     }
 
     async fn upsert_x509_crl(&self, crl: X509CRL) -> Result<()> {
-        let ca_id = crl.ca_id.clone();
+        let ca_id = crl.ca_id;
         let crl_model = crl_content_dto::ActiveModel {
             id: Set(crl.id),
             ca_id: Set(crl.ca_id),
@@ -740,7 +693,7 @@ mod tests {
             parent_key: None,
         };
         assert_eq!(
-            datakey_repository.get_by_id(1).await?, user
+            datakey_repository.get_by_id_or_name(Some(1), None, false).await?, user
         );
         assert_eq!(
             db.into_transaction_log(),
@@ -923,7 +876,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_datakey_repository_check_name_exists_sql_statement() -> Result<()> {
+    async fn test_datakey_get_raw_key_sql_statement() -> Result<()> {
         let now = chrono::Utc::now();
         let db = MockDatabase::new(DatabaseBackend::MySql)
             .append_query_results([
@@ -975,7 +928,7 @@ mod tests {
             parent_key: None,
         };
         assert_eq!(
-            datakey_repository.check_name_exists("Test Key").await?, user
+            datakey_repository.get_by_id_or_name(None, Some("Test Key".to_string()), true).await?, user
         );
         assert_eq!(
             db.into_transaction_log(),
@@ -1044,7 +997,7 @@ mod tests {
             parent_key: None,
         };
         assert_eq!(
-            datakey_repository.get_by_name("Test Key").await?, user
+            datakey_repository.get_by_id_or_name(None, Some("Test Key".to_string()), false).await?, user
         );
         assert_eq!(
             db.into_transaction_log(),
@@ -1101,6 +1054,28 @@ mod tests {
                     user: 0,
                     attributes: "{}".to_string(),
                     key_type: "pgp".to_string(),
+                    parent_id: Some(2),
+                    fingerprint: "".to_string(),
+                    serial_number: None,
+                    private_key: "0708090A".to_string(),
+                    public_key: "040506".to_string(),
+                    certificate: "010203".to_string(),
+                    create_at: now.clone(),
+                    expire_at: now.clone(),
+                    key_state: "disabled".to_string(),
+                    user_email: None,
+                    request_delete_users: None,
+                    request_revoke_users: None,
+                    x509_crl_update_at: None,
+                }],
+                vec![dto::Model {
+                    id: 2,
+                    name: "Parent Key".to_string(),
+                    description: "".to_string(),
+                    visibility: Visibility::Public.to_string(),
+                    user: 0,
+                    attributes: "{}".to_string(),
+                    key_type: "pgp".to_string(),
                     parent_id: None,
                     fingerprint: "".to_string(),
                     serial_number: None,
@@ -1126,7 +1101,7 @@ mod tests {
             user: 0,
             attributes: HashMap::new(),
             key_type: KeyType::OpenPGP,
-            parent_id: None,
+            parent_id: Some(2),
             fingerprint: "".to_string(),
             serial_number: None,
             private_key: vec![7,8,9,10],
@@ -1138,18 +1113,29 @@ mod tests {
             user_email: None,
             request_delete_users: None,
             request_revoke_users: None,
-            parent_key: None,
+            parent_key: Some(ParentKey{
+                name: "Parent Key".to_string(),
+                attributes: HashMap::new(),
+                private_key: vec![7,8,9,10],
+                public_key: vec![4,5,6],
+                certificate: vec![1,2,3],
+            }),
         };
         assert_eq!(
-            datakey_repository.get_enabled_key_by_type_and_name("openpgp".to_string(), "fake_name".to_string()).await?, user
+            datakey_repository.get_enabled_key_by_type_and_name_with_parent_key("openpgp".to_string(), "fake_name".to_string()).await?, user
         );
         assert_eq!(
             db.into_transaction_log(),
             [
                 Transaction::from_sql_and_values(
                     DatabaseBackend::MySql,
-                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, user_table.email as user_email, GROUP_CONCAT(request_delete_table.user_email) as request_delete_users, GROUP_CONCAT(request_revoke_table.user_email) as request_revoke_users FROM `data_key` INNER JOIN `user` AS `user_table` ON `user_table`.`id` = `data_key`.`user` LEFT JOIN `pending_operation` AS `request_delete_table` ON `request_delete_table`.`key_id` = `data_key`.`id` AND `request_delete_table`.`request_type` = ? LEFT JOIN `pending_operation` AS `request_revoke_table` ON `request_revoke_table`.`key_id` = `data_key`.`id` AND `request_revoke_table`.`request_type` = ? WHERE `data_key`.`name` = ? AND `data_key`.`key_type` = ? AND `data_key`.`key_state` = ? GROUP BY `data_key`.`id` LIMIT ?"#,
-                    ["delete".into(), "revoke".into(), "fake_name".into(), "openpgp".into(), "enabled".into(), 1u64.into()]
+                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state` FROM `data_key` WHERE `data_key`.`name` = ? AND `data_key`.`key_type` = ? AND `data_key`.`key_state` = ? LIMIT ?"#,
+                    ["fake_name".into(), "openpgp".into(), "enabled".into(), 1u64.into()]
+                ),
+                Transaction::from_sql_and_values(
+                    DatabaseBackend::MySql,
+                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state` FROM `data_key` WHERE `data_key`.`id` = ? AND `data_key`.`key_state` <> ? LIMIT ?"#,
+                    [2i32.into(), "deleted".into(), 1u64.into()]
                 ),
             ]
         );
@@ -1255,13 +1241,13 @@ mod tests {
                 ),
                 Transaction::from_sql_and_values(
                     DatabaseBackend::MySql,
-                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, user_table.email as user_email, GROUP_CONCAT(request_delete_table.user_email) as request_delete_users, GROUP_CONCAT(request_revoke_table.user_email) as request_revoke_users FROM `data_key` INNER JOIN `user` AS `user_table` ON `user_table`.`id` = `data_key`.`user` LEFT JOIN `pending_operation` AS `request_delete_table` ON `request_delete_table`.`key_id` = `data_key`.`id` AND `request_delete_table`.`request_type` = ? LEFT JOIN `pending_operation` AS `request_revoke_table` ON `request_revoke_table`.`key_id` = `data_key`.`id` AND `request_revoke_table`.`request_type` = ? WHERE `data_key`.`id` = ? AND `data_key`.`key_state` <> ? GROUP BY `data_key`.`id` LIMIT ?"#,
-                    ["delete".into(), "revoke".into(), 1i32.into(), "deleted".into(), 1u64.into()]
+                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state` FROM `data_key` WHERE `data_key`.`id` = ? AND `data_key`.`key_state` <> ? LIMIT ?"#,
+                    [1i32.into(), "deleted".into(), 1u64.into()]
                 ),
                 Transaction::from_sql_and_values(
                     DatabaseBackend::MySql,
-                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state`, user_table.email as user_email, GROUP_CONCAT(request_delete_table.user_email) as request_delete_users, GROUP_CONCAT(request_revoke_table.user_email) as request_revoke_users FROM `data_key` INNER JOIN `user` AS `user_table` ON `user_table`.`id` = `data_key`.`user` LEFT JOIN `pending_operation` AS `request_delete_table` ON `request_delete_table`.`key_id` = `data_key`.`id` AND `request_delete_table`.`request_type` = ? LEFT JOIN `pending_operation` AS `request_revoke_table` ON `request_revoke_table`.`key_id` = `data_key`.`id` AND `request_revoke_table`.`request_type` = ? WHERE `data_key`.`id` = ? AND `data_key`.`key_state` <> ? GROUP BY `data_key`.`id` LIMIT ?"#,
-                    ["delete".into(), "revoke".into(), 2i32.into(), "deleted".into(), 1u64.into()]
+                    r#"SELECT `data_key`.`id`, `data_key`.`name`, `data_key`.`description`, `data_key`.`visibility`, `data_key`.`user`, `data_key`.`attributes`, `data_key`.`key_type`, `data_key`.`parent_id`, `data_key`.`fingerprint`, `data_key`.`serial_number`, `data_key`.`private_key`, `data_key`.`public_key`, `data_key`.`certificate`, `data_key`.`create_at`, `data_key`.`expire_at`, `data_key`.`key_state` FROM `data_key` WHERE `data_key`.`id` = ? AND `data_key`.`key_state` <> ? LIMIT ?"#,
+                    [2i32.into(), "deleted".into(), 1u64.into()]
                 )
             ]
         );
