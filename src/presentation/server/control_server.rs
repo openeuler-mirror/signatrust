@@ -202,7 +202,8 @@ impl ControlServer {
                 //in the case of signed double submit cookie ,disable updating csrf token in middleware automatically
                 //now and open it if we have to.
                 //.wrap(from_fn(UserIdentity::append_csrf_cookie))
-                .wrap(middleware::Logger::default())
+                //NOTE: we skipped logging the api health endpoint.
+                .wrap(middleware::Logger::default().exclude("/api/health/"))
                 .wrap(IdentityMiddleware::default())
                 //rate limiter handler
                 .wrap(RateLimiter::default())
