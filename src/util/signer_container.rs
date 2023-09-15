@@ -46,7 +46,7 @@ where
         if let Some(dk) = self.containers.read().await.get(&identity) {
             return Ok((*dk).clone())
         }
-        let data_key = self.repository.get_enabled_key_by_type_and_name(key_type, key_name).await?;
+        let data_key = self.repository.get_enabled_key_by_type_and_name_with_parent_key(key_type, key_name).await?;
         self.containers.write().await.insert(identity, data_key.clone());
         Ok(data_key)
     }

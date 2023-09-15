@@ -493,7 +493,7 @@ async fn key_name_identical(user: UserIdentity, key_service: web::Data<dyn KeySe
     name_exist.validate()?;
     let visibility = Visibility::from_parameter(name_exist.visibility.clone())?;
     let key_name = get_datakey_full_name(&name_exist.name, &user.email, &visibility)?;
-    match key_service.into_inner().get_by_name(&key_name).await {
+    match key_service.into_inner().get_raw_key_by_name(&key_name).await {
         Ok(_) => Ok(HttpResponse::Conflict()),
         Err(_) => Ok(HttpResponse::Ok()),
     }

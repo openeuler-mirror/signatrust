@@ -34,9 +34,8 @@ use crate::presentation::handler::control::model::user::dto::UserIdentity;
 pub trait KeyService: Send + Sync{
     async fn create(&self, user: UserIdentity, data: &mut DataKey) -> Result<DataKey>;
     async fn import(&self, data: &mut DataKey) -> Result<DataKey>;
-    async fn get_by_name(&self, name: &str) -> Result<DataKey>;
+    async fn get_raw_key_by_name(&self, name: &str) -> Result<DataKey>;
 
-    async fn check_name_exists(&self, name: &str) -> Result<DataKey>;
     async fn get_all(&self, key_type: Option<KeyType>, visibility: Visibility, user_id: i32) -> Result<Vec<DataKey>>;
     async fn get_one(&self, user: Option<UserIdentity>, id_or_name: String) -> Result<DataKey>;
     //get keys content
@@ -86,14 +85,14 @@ impl<R, S> DBKeyService<R, S>
         }
     }
 
-    async fn get_and_check_permission(&self, user: Option<UserIdentity>, id_or_name: String, action: KeyAction) -> Result<DataKey> {
+    async fn get_and_check_permission(&self, user: Option<UserIdentity>, id_or_name: String, action: KeyAction, raw_key: bool) -> Result<DataKey> {
         let id = id_or_name.parse::<i32>();
         let data_key: DataKey = match id {
             Ok(id) => {
-                self.repository.get_by_id(id).await?
+                self.repository.get_by_id_or_name(Some(id), None, raw_key).await?
             }
             Err(_) => {
-                self.repository.get_by_name(&id_or_name).await?
+                self.repository.get_by_id_or_name(None, Some(id_or_name), raw_key).await?
             }
         };
         //check permission for private keys
@@ -149,7 +148,7 @@ impl<R, S> DBKeyService<R, S>
         Ok(())
     }
     async fn check_key_hierarchy(&self, user: UserIdentity, data: &DataKey, parent_id: i32) -> Result<()> {
-        let parent_key = self.repository.get_by_id(parent_id).await?;
+        let parent_key = self.repository.get_by_id_or_name(Some(parent_id), None, true).await?;
         //check permission for private keys
         if parent_key.visibility == Visibility::Private && parent_key.user != user.id {
             return Err(Error::UnprivilegedError);
@@ -188,7 +187,7 @@ where
             self.check_key_hierarchy(user, data, parent_id).await?;
         }
         //check datakey existence
-        if self.repository.get_by_name(&data.name).await.is_ok() {
+        if self.repository.get_by_id_or_name(None, Some(data.name.clone()), true).await.is_ok() {
             return Err(Error::ParameterError(format!("datakey '{}' already exists", data.name)));
         }
         //we need to create a key in database first, then generate sensitive data
@@ -210,12 +209,8 @@ where
         self.repository.create(data.clone()).await
     }
 
-    async fn get_by_name(&self, name: &str) -> Result<DataKey> {
-        self.repository.get_by_name(name).await
-    }
-
-    async fn check_name_exists(&self, name: &str) -> Result<DataKey> {
-        self.repository.check_name_exists(name).await
+    async fn get_raw_key_by_name(&self, name: &str) -> Result<DataKey> {
+        self.repository.get_by_id_or_name(None, Some(name.to_owned()), true).await
     }
 
     async fn get_all(&self, key_type: Option<KeyType>, visibility: Visibility, user_id: i32) -> Result<Vec<DataKey>> {
@@ -223,19 +218,19 @@ where
     }
 
     async fn get_one(&self, user: Option<UserIdentity>,  id_or_name: String) -> Result<DataKey> {
-        let datakey = self.get_and_check_permission(user, id_or_name, KeyAction::Read).await?;
+        let datakey = self.get_and_check_permission(user, id_or_name, KeyAction::Read, false).await?;
         Ok(datakey)
 
     }
 
     async fn export_one(&self, user: Option<UserIdentity>, id_or_name: String) -> Result<DataKey> {
-        let mut key = self.get_and_check_permission(user, id_or_name, KeyAction::Read).await?;
+        let mut key = self.get_and_check_permission(user, id_or_name, KeyAction::Read, true).await?;
         self.sign_service.read().await.decode_public_keys(&mut key).await?;
         Ok(key)
     }
 
     async fn export_cert_crl(&self, user: Option<UserIdentity>, id_or_name: String) -> Result<X509CRL> {
-        let key = self.get_and_check_permission(user, id_or_name, KeyAction::Read).await?;
+        let key = self.get_and_check_permission(user, id_or_name, KeyAction::Read, true).await?;
         let crl = self.repository.get_x509_crl_by_ca_id(key.id).await?;
         Ok(crl)
     }
@@ -243,7 +238,7 @@ where
     async fn request_delete(&self, user: UserIdentity, id_or_name: String) -> Result<()> {
         let user_id = user.id;
         let user_email = user.email.clone();
-        let key = self.get_and_check_permission(Some(user), id_or_name, KeyAction::Delete).await?;
+        let key = self.get_and_check_permission(Some(user), id_or_name, KeyAction::Delete, true).await?;
         //check if the ca/ica key is used by other keys
         if key.key_type == KeyType::X509ICA || key.key_type == KeyType::X509CA {
             let children = self.repository.get_by_parent_id(key.id).await?;
@@ -256,32 +251,32 @@ where
 
     async fn cancel_delete(&self, user: UserIdentity, id_or_name: String) -> Result<()> {
         let user_id = user.id;
-        let key = self.get_and_check_permission(Some(user), id_or_name, KeyAction::CancelDelete).await?;
+        let key = self.get_and_check_permission(Some(user), id_or_name, KeyAction::CancelDelete, true).await?;
         self.repository.cancel_delete_key(user_id, key.id).await
     }
 
     async fn request_revoke(&self, user: UserIdentity, id_or_name: String,  reason: X509RevokeReason) -> Result<()> {
         let user_id = user.id;
         let user_email = user.email.clone();
-        let key = self.get_and_check_permission(Some(user), id_or_name, KeyAction::Revoke).await?;
+        let key = self.get_and_check_permission(Some(user), id_or_name, KeyAction::Revoke, true).await?;
         self.repository.request_revoke_key(user_id, user_email, key.id, key.parent_id.unwrap(), reason, key.visibility == Visibility::Public).await?;
         Ok(())
     }
 
     async fn cancel_revoke(&self, user: UserIdentity, id_or_name: String) -> Result<()> {
         let user_id = user.id;
-        let key = self.get_and_check_permission(Some(user), id_or_name, KeyAction::CancelRevoke).await?;
+        let key = self.get_and_check_permission(Some(user), id_or_name, KeyAction::CancelRevoke, true).await?;
         self.repository.cancel_revoke_key(user_id, key.id, key.parent_id.unwrap()).await?;
         Ok(())
     }
 
     async fn enable(&self, user: Option<UserIdentity>, id_or_name: String) -> Result<()> {
-        let key = self.get_and_check_permission(user, id_or_name, KeyAction::Enable).await?;
+        let key = self.get_and_check_permission(user, id_or_name, KeyAction::Enable, true).await?;
         self.repository.update_state(key.id, KeyState::Enabled).await
     }
 
     async fn disable(&self, user: Option<UserIdentity>, id_or_name: String) -> Result<()> {
-        let key = self.get_and_check_permission(user, id_or_name, KeyAction::Disable).await?;
+        let key = self.get_and_check_permission(user, id_or_name, KeyAction::Disable, true).await?;
         self.repository.update_state(key.id, KeyState::Disabled).await
     }
 
