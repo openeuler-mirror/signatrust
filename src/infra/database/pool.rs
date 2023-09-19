@@ -76,7 +76,6 @@ pub fn get_db_connection() -> Result<&'static DatabaseConnection> {
 
 #[cfg(test)]
 mod tests {
-    use rstest::*;
     use testcontainers::clients;
     use crate::util::error::Result;
     use testcontainers::core::WaitFor;
@@ -94,7 +93,7 @@ mod tests {
         let database = docker.run(image.clone());
         let port = database.get_host_port_ipv4(3306);
 
-        let sqlx_image = GenericImage::new("tommylike/sqlx-cli", "0.7.1")
+        let sqlx_image = GenericImage::new("tommylike/sqlx-cli", "0.7.1.1")
             .with_env_var("DATABASE_HOST", database.get_bridge_ip_address().to_string())
             .with_env_var("DATABASE_PORT", "3306")
             .with_env_var("DATABASE_USER", "test")

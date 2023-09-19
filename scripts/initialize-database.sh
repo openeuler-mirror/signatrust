@@ -48,7 +48,7 @@ function mysql-cluster-up {
 function prepare-database {
   echo "running database migrations"
   export DATABASE_URL=mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@127.0.0.1/${MYSQL_DATABASE}
-  docker run --name signatrust-database-migration --rm -v ./migrations/:/app/migrations/ -e DATABASE_HOST="$DATABASE_NETWORK_IP" -e DATABASE_PORT=3306 -e DATABASE_USER=$MYSQL_USER -e DATABASE_PASSWORD=$MYSQL_PASSWORD -e DATABASE_NAME=$MYSQL_DATABASE -it --entrypoint /app/run_migrations.sh tommylike/sqlx-cli:0.7.1
+  docker run --name signatrust-database-migration --rm -v ./migrations/:/app/migrations/ -e DATABASE_HOST="$DATABASE_NETWORK_IP" -e DATABASE_PORT=3306 -e DATABASE_USER=$MYSQL_USER -e DATABASE_PASSWORD=$MYSQL_PASSWORD -e DATABASE_NAME=$MYSQL_DATABASE -it --entrypoint /app/run_migrations.sh tommylike/sqlx-cli:0.7.1.1
 }
 
 echo "Preparing mysql environment for signatrust developing......"
