@@ -85,6 +85,7 @@ tonic-build = "0.8.4"
 [dev-dependencies]
 mockito = "1.1.0"
 sea-orm = { version = "0.12.2", features = [ "mock"] }
+testcontainers = "0.14.0"
 
 [[bin]]
 name = "client"
