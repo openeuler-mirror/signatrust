@@ -25,8 +25,8 @@ use tonic::{
         Identity, Server, ServerTlsConfig,
     },
 };
-use crate::application::datakey::{DBKeyService, KeyService};
-use crate::application::user::{DBUserService, UserService};
+use crate::application::datakey::{DBKeyService};
+use crate::application::user::{DBUserService};
 
 use crate::infra::database::model::datakey::repository;
 use crate::infra::database::model::token::repository::TokenRepository;
@@ -115,8 +115,6 @@ impl DataServer {
         let token_repo = TokenRepository::new(get_db_connection()?);
         let user_service = DBUserService::new(user_repo, token_repo, self.server_config.clone())?;
 
-        key_service.start_cache_cleanup_loop(self.cancel_token.clone())?;
-        user_service.start_cache_cleanup_loop(self.cancel_token.clone())?;
         if let Some(identity) = self.server_identity.clone() {
             server
                 .tls_config(ServerTlsConfig::new().identity(identity).client_ca_root(self.ca_cert.clone().unwrap()))?

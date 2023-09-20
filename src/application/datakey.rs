@@ -21,7 +21,7 @@ use async_trait::async_trait;
 use crate::domain::datakey::entity::{DataKey, KeyAction, KeyState, KeyType, Visibility, X509CRL, X509RevokeReason};
 use tokio::time::{self};
 
-use crate::util::signer_container::DataKeyContainer;
+use crate::util::cache::TimedFixedSizeCache;
 use std::collections::HashMap;
 use std::sync::{Arc};
 use chrono::{Duration, Utc};
@@ -53,7 +53,6 @@ pub trait KeyService: Send + Sync{
     async fn get_by_type_and_name(&self, key_type: String, key_name: String) ->Result<DataKey>;
 
     //method below used for maintenance
-    fn start_cache_cleanup_loop(&self, cancel_token: CancellationToken) -> Result<()>;
     fn start_key_rotate_loop(&self, cancel_token: CancellationToken) -> Result<()>;
 
     //method below used for x509 crl
@@ -69,7 +68,7 @@ where
 {
     repository: R,
     sign_service: Arc<RwLock<Box<S>>>,
-    container: DataKeyContainer<R>
+    container: TimedFixedSizeCache
 }
 
 impl<R, S> DBKeyService<R, S>
@@ -79,9 +78,9 @@ impl<R, S> DBKeyService<R, S>
 {
     pub fn new(repository: R, sign_service: Box<S>) -> Self {
         Self {
-            repository: repository.clone(),
+            repository,
             sign_service: Arc::new(RwLock::new(sign_service)),
-            container: DataKeyContainer::new(repository)
+            container: TimedFixedSizeCache::new(Some(100), None, None, None)
         }
     }
 
@@ -224,8 +223,13 @@ where
     }
 
     async fn export_one(&self, user: Option<UserIdentity>, id_or_name: String) -> Result<DataKey> {
-        let mut key = self.get_and_check_permission(user, id_or_name, KeyAction::Read, true).await?;
+        //NOTE: since the public key or certificate basically will not change at all, we will cache the key here.
+        if let Some(datakey) = self.container.get_read_datakey(&id_or_name).await {
+            return Ok(datakey)
+        }
+        let mut key = self.get_and_check_permission(user, id_or_name.clone(), KeyAction::Read, true).await?;
         self.sign_service.read().await.decode_public_keys(&mut key).await?;
+        self.container.update_read_datakey(&id_or_name, key.clone()).await?;
         Ok(key)
     }
 
@@ -281,35 +285,18 @@ where
     }
 
     async fn sign(&self, key_type: String, key_name: String, options: &HashMap<String, String>, data: Vec<u8>) -> Result<Vec<u8>> {
-        let key = self.container.get_data_key(key_type, key_name).await?;
-        self.sign_service.read().await.sign(&key, data, options.clone()).await
+        let datakey = self.get_by_type_and_name(key_type, key_name).await?;
+        self.sign_service.read().await.sign(&datakey, data, options.clone()).await
     }
 
     async fn get_by_type_and_name(&self, key_type: String, key_name: String) -> Result<DataKey> {
-        self.container.get_data_key(key_type, key_name).await
+        if let Some(datakey) = self.container.get_sign_datakey(&key_name).await {
+            return Ok(datakey)
+        }
+        let key = self.repository.get_enabled_key_by_type_and_name_with_parent_key(key_type, key_name.clone()).await?;
+        self.container.update_sign_datakey(&key_name, key.clone()).await?;
+        Ok(key)
     }
-
-    fn start_cache_cleanup_loop(&self, cancel_token: CancellationToken) -> Result<()> {
-        let container = self.container.clone();
-        let mut interval = time::interval(Duration::seconds(120).to_std()?);
-        tokio::spawn(async move {
-            loop {
-                tokio::select! {
-                    _ = interval.tick() => {
-                        info!("start to clear the container keys");
-                        container.clear_keys().await;
-                    }
-                    _ = cancel_token.cancelled() => {
-                        info!("cancel token received, will quit datakey clean loop");
-                        break;
-                    }
-                }
-            }
-
-        });
-        Ok(())
-    }
-
     fn start_key_rotate_loop(&self, cancel_token: CancellationToken) -> Result<()> {
         let sign_service = self.sign_service.clone();
         let mut interval = time::interval(Duration::seconds(60 * 60 * 2).to_std()?);

@@ -14,7 +14,6 @@
  *
  */
 
-use std::collections::HashMap;
 use crate::domain::user::entity::User;
 use crate::domain::token::entity::Token;
 use crate::domain::user::repository::Repository as UserRepository;
@@ -23,7 +22,6 @@ use crate::util::error::{Result, Error};
 use async_trait::async_trait;
 use std::sync::Arc;
 use std::sync::RwLock;
-use tokio::sync::RwLock as AsyncRwLock;
 use chrono::Utc;
 use serde::{Deserialize};
 use config::Config;
@@ -36,10 +34,9 @@ use openidconnect::{
 };
 use openidconnect::{JsonWebKeySet, ClientId, AuthUrl, UserInfoUrl, TokenUrl, RedirectUrl, ClientSecret, IssuerUrl};
 use url::Url;
-use tokio::time::{Duration, self};
-use tokio_util::sync::CancellationToken;
 use crate::presentation::handler::control::model::token::dto::{CreateTokenDTO};
 use crate::util::key::{generate_api_token};
+use crate::util::cache::TimedFixedSizeCache;
 
 #[async_trait]
 pub trait UserService: Send + Sync{
@@ -53,8 +50,7 @@ pub trait UserService: Send + Sync{
     async fn get_login_url(&self) -> Result<Url>;
     async fn validate_user(&self, code: &str) -> Result<User>;
     async fn validate_token_and_email(&self, email: &str, token: &str) -> Result<bool>;
-    //method below used for maintenance
-    fn start_cache_cleanup_loop(&self, cancel_token: CancellationToken) -> Result<()>;
+    async fn validate_token(&self, token: &str) -> Result<User>;
 }
 
 #[derive(Deserialize, Debug)]
@@ -86,7 +82,7 @@ where
     token_repository: T,
     oidc_config: OIDCConfig,
     client: CoreClient,
-    tokens: Arc<AsyncRwLock<HashMap<String, String>>>,
+    tokens: TimedFixedSizeCache,
 }
 
 impl<R, T> DBUserService<R, T>
@@ -119,7 +115,7 @@ impl<R, T> DBUserService<R, T>
             token_repository,
             oidc_config,
             client,
-            tokens: Arc::new(AsyncRwLock::new(HashMap::new()))
+            tokens: TimedFixedSizeCache::new(None, Some(20), None, None)
         })
     }
 
@@ -189,6 +185,16 @@ where
         Err(Error::TokenExpiredError(token.to_string()))
     }
 
+    async fn validate_token(&self, token: &str) -> Result<User> {
+        if let Some(u) = self.tokens.get_user(token).await {
+            return Ok(u)
+        }
+        let tk = self.get_valid_token(token).await?;
+        let user = self.user_repository.get_by_id(tk.user_id).await?;
+        self.tokens.update_user(token, user.clone()).await?;
+        return Ok(user)
+    }
+
     async fn save(&self, u: User) -> Result<User> {
         return self.user_repository.create(u).await
     }
@@ -235,33 +241,7 @@ where
     }
 
     async fn validate_token_and_email(&self, email: &str, token: &str) -> Result<bool> {
-        if let Some(e) = self.tokens.read().await.get(token) {
-            return Ok(e == email)
-        }
-        let tk = self.get_valid_token(token).await?;
-        let user = self.user_repository.get_by_id(tk.user_id).await?;
-        self.tokens.write().await.insert(token.to_string(), user.email.clone());
+        let user = self.validate_token(token).await?;
         Ok(email == user.email)
-    }
-
-    fn start_cache_cleanup_loop(&self, cancel_token: CancellationToken) -> Result<()> {
-        let tokens = self.tokens.clone();
-        let mut interval = time::interval(Duration::from_secs(120));
-        tokio::spawn(async move {
-            loop {
-                tokio::select! {
-                    _ = interval.tick() => {
-                        info!("start to clear the container tokens");
-                        tokens.write().await.clear();
-                    }
-                    _ = cancel_token.cancelled() => {
-                        info!("cancel token received, will quit user token refresher");
-                        break;
-                    }
-                }
-            }
-
-        });
-        Ok(())
     }
 }
