@@ -20,11 +20,12 @@ use actix_web::{
 };
 
 
-use crate::presentation::handler::control::model::datakey::dto::{CertificateContent, CreateDataKeyDTO, CRLContent, DataKeyDTO, ImportDataKeyDTO, ListKeyQuery, NameIdenticalQuery, PublicKeyContent, RevokeCertificateDTO};
+use crate::presentation::handler::control::model::datakey::dto::{CertificateContent, CreateDataKeyDTO, CRLContent, DataKeyDTO, ImportDataKeyDTO, ListKeyQuery, NameIdenticalQuery, PagedDatakeyDTO, PublicKeyContent, RevokeCertificateDTO};
 use crate::util::error::Error;
 use validator::Validate;
 use crate::application::datakey::KeyService;
 use crate::domain::datakey::entity::{DataKey, KeyType, Visibility, X509RevokeReason};
+use crate::util::error::Error::ParameterError;
 use crate::util::key::get_datakey_full_name;
 use super::model::user::dto::UserIdentity;
 
@@ -139,7 +140,7 @@ async fn create_data_key(user: UserIdentity, key_service: web::Data<dyn KeyServi
     ("Authorization" = [])
     ),
     responses(
-        (status = 200, description = "List available keys", body = [DataKeyDTO]),
+        (status = 200, description = "List available keys", body = [PagedDatakeyDTO]),
         (status = 401, description = "Unauthorized", body = ErrorMessage),
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
@@ -149,13 +150,17 @@ async fn list_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService
         Some(ref k) => Some(KeyType::from_str(k)?),
         None => None,
     };
-    let visibility = Visibility::from_parameter(key.visibility.clone())?;
-    let keys = key_service.into_inner().get_all(key_type, visibility, user.id).await?;
-    let mut results = vec![];
-    for k in keys {
-        results.push(DataKeyDTO::try_from(k)?)
+    let page_size = key.page_size.unwrap_or(10);
+    if page_size < 10 || page_size > 100 {
+        return Err(ParameterError("page size range [10, 100]".to_string()));
     }
-    Ok(HttpResponse::Ok().json(results))
+    let page_number = key.page_number.unwrap_or(0);
+    if page_number > 1000 {
+        return Err(ParameterError("page number range [0, 1000]".to_string()));
+    }
+    let visibility = Visibility::from_parameter(key.visibility.clone())?;
+    let keys = key_service.into_inner().get_all(key_type, visibility, user.id, page_size, page_number).await?;
+    Ok(HttpResponse::Ok().json(PagedDatakeyDTO::try_from(keys)?))
 }
 
 /// Get detail of specific key by id or name from database

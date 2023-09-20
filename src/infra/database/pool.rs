@@ -91,7 +91,6 @@ mod tests {
             .with_env_var("MYSQL_ROOT_PASSWORD", "root")
             .with_wait_for(WaitFor::message_on_stderr("ready for connections"));
         let database = docker.run(image.clone());
-        let port = database.get_host_port_ipv4(3306);
 
         let sqlx_image = GenericImage::new("tommylike/sqlx-cli", "0.7.1.1")
             .with_env_var("DATABASE_HOST", database.get_bridge_ip_address().to_string())
@@ -101,7 +100,7 @@ mod tests {
             .with_env_var("DATABASE_NAME", "signatrust")
             .with_volume("./migrations/", "/app/migrations/").with_entrypoint("/app/run_migrations.sh")
             .with_wait_for(WaitFor::message_on_stdout("Applied 20230727020628/migrate extend-datakey-name"));
-        let migration = docker.run(sqlx_image.clone());
+        let _migration = docker.run(sqlx_image.clone());
         Ok(())
     }
 }

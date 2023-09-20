@@ -109,6 +109,8 @@ impl Modify for SecurityAddon {
                 crate::presentation::handler::control::model::token::dto::CreateTokenDTO,
                 crate::presentation::handler::control::model::user::dto::UserIdentity,
                 crate::presentation::handler::control::model::user::dto::Code,
+                crate::presentation::handler::control::model::datakey::dto::PagedDatakeyDTO,
+                crate::presentation::handler::control::model::datakey::dto::PagedMetaDTO,
                 crate::util::error::ErrorMessage)
     ),
     modifiers(&SecurityAddon)

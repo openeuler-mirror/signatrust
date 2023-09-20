@@ -18,13 +18,13 @@ use super::entity::DataKey;
 use crate::util::error::Result;
 use async_trait::async_trait;
 use chrono::Duration;
-use crate::domain::datakey::entity::{KeyState, KeyType, RevokedKey, Visibility, X509CRL, X509RevokeReason};
+use crate::domain::datakey::entity::{KeyState, KeyType, PagedDatakey, RevokedKey, Visibility, X509CRL, X509RevokeReason};
 
 #[async_trait]
 pub trait Repository: Send + Sync {
     async fn create(&self, data_key: DataKey) -> Result<DataKey>;
     async fn delete(&self, id: i32) -> Result<()>;
-    async fn get_all_keys(&self, key_type: Option<KeyType>, visibility: Visibility, user_id: i32) -> Result<Vec<DataKey>>;
+    async fn get_all_keys(&self, key_type: Option<KeyType>, visibility: Visibility, user_id: i32,  page_size: u64, page_number: u64) -> Result<PagedDatakey>;
     async fn get_by_id_or_name(&self, id: Option<i32>, name: Option<String>, raw_datakey: bool) -> Result<DataKey>;
     async fn update_state(&self, id: i32, state: KeyState) -> Result<()>;
     async fn update_key_data(&self, data_key: DataKey) -> Result<()>;
