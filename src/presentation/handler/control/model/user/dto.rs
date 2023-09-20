@@ -142,10 +142,8 @@ impl FromRequest for UserIdentity {
                 None => {
                     if let Some(value) = req.headers().get(AUTH_HEADER_NAME) {
                         if let Some(user_service) = req.app_data::<web::Data<dyn UserService>>() {
-                            if let Ok(token) = user_service.get_ref().get_valid_token(value.to_str().unwrap()).await {
-                                if let Ok(user) = user_service.get_ref().get_user_by_id(token.user_id).await {
-                                    return Ok(UserIdentity::from_user(user));
-                                }
+                            if let Ok(user) = user_service.get_ref().validate_token(value.to_str().unwrap()).await {
+                                return Ok(UserIdentity::from_user(user));
                             } else {
                                 warn!("unable to find token record");
                             }
