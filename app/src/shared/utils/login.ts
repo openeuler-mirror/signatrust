@@ -49,7 +49,7 @@ export function getUserAuth() {
 
 // 退出登录
 export function logout() {
-  queryIDToken().then((res: any) =>window.location.href=`https://openeuler-usercenter.test.osinfra.cn/logout?redirect_uri=${window.location.origin}`
+  queryIDToken().then((res: any) =>window.location.href=`${import.meta.env.VITE_LOGIN_ORIGIN}/logout?redirect_uri=${window.location.origin}`
  
   );
 }
