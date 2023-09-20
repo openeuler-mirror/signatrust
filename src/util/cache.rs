@@ -223,8 +223,6 @@ mod test {
         };
         let identity1 = "datakey1";
         let identity2 = "1";
-        let identity3 = "datakey2";
-        let identity4 = "2";
         assert_eq!(key_cache.get_read_datakey(&identity1).await, None);
         assert_eq!(key_cache.update_read_datakey(&identity1, datakey1.clone()).await?, ());
         assert_eq!(key_cache.get_read_datakey(&identity1).await, Some(datakey1.clone()));
