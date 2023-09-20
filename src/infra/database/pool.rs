@@ -73,3 +73,35 @@ pub fn get_db_connection() -> Result<&'static DatabaseConnection> {
         Some(pool) => Ok(pool),
     };
 }
+
+#[cfg(test)]
+mod tests {
+    use testcontainers::clients;
+    use crate::util::error::Result;
+    use testcontainers::core::WaitFor;
+    use testcontainers::images::generic::GenericImage;
+
+    #[tokio::test]
+    async fn test_database_migration() -> Result<()> {
+        let docker = clients::Cli::default();
+        let image = GenericImage::new("mysql", "8.0")
+            .with_env_var("MYSQL_DATABASE", "signatrust")
+            .with_env_var("MYSQL_PASSWORD", "test")
+            .with_env_var("MYSQL_USER", "test")
+            .with_env_var("MYSQL_ROOT_PASSWORD", "root")
+            .with_wait_for(WaitFor::message_on_stderr("ready for connections"));
+        let database = docker.run(image.clone());
+        let port = database.get_host_port_ipv4(3306);
+
+        let sqlx_image = GenericImage::new("tommylike/sqlx-cli", "0.7.1.1")
+            .with_env_var("DATABASE_HOST", database.get_bridge_ip_address().to_string())
+            .with_env_var("DATABASE_PORT", "3306")
+            .with_env_var("DATABASE_USER", "test")
+            .with_env_var("DATABASE_PASSWORD", "test")
+            .with_env_var("DATABASE_NAME", "signatrust")
+            .with_volume("./migrations/", "/app/migrations/").with_entrypoint("/app/run_migrations.sh")
+            .with_wait_for(WaitFor::message_on_stdout("Applied 20230727020628/migrate extend-datakey-name"));
+        let migration = docker.run(sqlx_image.clone());
+        Ok(())
+    }
+}
