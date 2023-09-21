@@ -275,6 +275,16 @@ pub struct PagedDatakey {
     pub meta: PagedMeta
 }
 
+#[derive(Debug, Clone)]
+pub struct DatakeyPaginationQuery {
+    pub page_size: u64,
+    pub page_number: u64,
+    pub name: Option<String>,
+    pub description: Option<String>,
+    pub key_type: Option<String>,
+    pub visibility: Option<String>,
+}
+
 impl ExtendableAttributes for DataKey {
     type Item = HashMap<String, String>;
 

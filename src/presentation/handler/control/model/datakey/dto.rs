@@ -1,4 +1,4 @@
-use crate::domain::datakey::entity::{DataKey, KeyState, PagedDatakey, Visibility, X509CRL};
+use crate::domain::datakey::entity::{DataKey, DatakeyPaginationQuery, KeyState, PagedDatakey, Visibility, X509CRL};
 use crate::domain::datakey::entity::KeyType;
 use crate::util::error::Result;
 use chrono::{DateTime, Utc};
@@ -69,16 +69,34 @@ pub struct NameIdenticalQuery {
 
 #[derive(Deserialize, IntoParams, Validate, ToSchema)]
 pub struct ListKeyQuery {
-    /// Key type, optional, should be one of x509ca, x509ica, x509ee, or pgp
+    /// Filter by key type, optional, x509ca, x509ica, x509ee, or pgp, exact match
     pub key_type: Option<String>,
-    /// public or private
+    /// Filter by visibility, optional, public or private, exact match
     pub visibility: Option<String>,
+    /// Filter by key name, fuzzy match
+    pub name: Option<String>,
+    /// Filter by description, fuzzy match
+    pub description: Option<String>,
     /// the request page size, min 10, max 100
     #[validate(range(min = 10, max = 100))]
     pub page_size: u64,
-    /// the request page index, starts from 0, max 1000
-    #[validate(range(min = 0, max = 1000))]
+    /// the request page index, starts from 1, max 1000
+    #[validate(range(min = 1, max = 1000))]
     pub page_number: u64,
+
+}
+
+impl From<ListKeyQuery> for DatakeyPaginationQuery {
+    fn from(value: ListKeyQuery) -> Self {
+        Self {
+            page_size: value.page_size,
+            page_number: value.page_number,
+            name: value.name,
+            description: value.description,
+            key_type: value.key_type,
+            visibility: value.visibility
+        }
+    }
 }
 
 
