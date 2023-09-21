@@ -19,7 +19,7 @@ use super::super::user::dto as user_dto;
 use super::super::request_delete::dto as request_dto;
 use super::super::x509_crl_content::dto as crl_content_dto;
 use super::super::x509_revoked_key::dto as revoked_key_dto;
-use crate::domain::datakey::entity::{DataKey, KeyState, KeyType, PagedDatakey, PagedMeta, ParentKey, RevokedKey, Visibility, X509CRL, X509RevokeReason};
+use crate::domain::datakey::entity::{DataKey, DatakeyPaginationQuery, KeyState, KeyType, PagedDatakey, PagedMeta, ParentKey, RevokedKey, Visibility, X509CRL, X509RevokeReason};
 use crate::domain::datakey::repository::Repository;
 use crate::util::error::{Error, Result};
 use async_trait::async_trait;
@@ -147,16 +147,22 @@ impl<'a> Repository for DataKeyRepository<'a> {
         Ok(())
     }
 
-    async fn get_all_keys(&self, key_type: Option<KeyType>, visibility: Visibility, user_id: i32,  page_size: u64, page_number: u64) -> Result<PagedDatakey> {
-        let mut conditions = Condition::all().add(
-            datakey_dto::Column::KeyState.ne(KeyState::Deleted.to_string())).add(
-            datakey_dto::Column::Visibility.eq(visibility.to_string())
-        );
-        if let Some(k_type) = key_type {
-            conditions = conditions.add(datakey_dto::Column::KeyType.eq(k_type.to_string()))
+    async fn get_all_keys(&self, user_id: i32,  query: DatakeyPaginationQuery) -> Result<PagedDatakey> {
+        let mut conditions = Condition::all().add(datakey_dto::Column::KeyState.ne(KeyState::Deleted.to_string()));
+        if let Some(name) = query.name {
+            conditions = conditions.add(datakey_dto::Column::Name.like(format!("%{}%", name)))
         }
-        if visibility == Visibility::Private {
-            conditions = conditions.add(datakey_dto::Column::User.eq(user_id))
+        if let Some(desc) = query.description {
+            conditions = conditions.add(datakey_dto::Column::Description.like(format!("%{}%", desc)))
+        }
+        if let Some(k_type) = query.key_type {
+            conditions = conditions.add(datakey_dto::Column::KeyType.eq(k_type))
+        }
+        if let Some(visibility) = query.visibility {
+            conditions = conditions.add(datakey_dto::Column::Visibility.eq(visibility.clone()));
+            if visibility == Visibility::Private.to_string() {
+                conditions = conditions.add(datakey_dto::Column::User.eq(user_id))
+            }
         }
         let paginator = datakey_dto::Entity::find().select_only().columns(
             datakey_dto::Column::iter().filter(|col|
@@ -168,10 +174,10 @@ impl<'a> Repository for DataKeyRepository<'a> {
             JoinType::LeftJoin, self.get_pending_operation_relation(RequestType::Delete).into(),
             Alias::new("request_delete_table")).join_as_rev(
             JoinType::LeftJoin, self.get_pending_operation_relation(RequestType::Revoke).into(),
-            Alias::new("request_revoke_table")).group_by(datakey_dto::Column::Id).filter(conditions).paginate(self.db_connection, page_size);
+            Alias::new("request_revoke_table")).group_by(datakey_dto::Column::Id).filter(conditions).paginate(self.db_connection, query.page_size);
         let total_numbers = paginator.num_items().await?;
         let mut results = vec![];
-        for dto in paginator.fetch_page(page_number).await?.into_iter() {
+        for dto in paginator.fetch_page(query.page_number - 1).await?.into_iter() {
             results.push(DataKey::try_from(dto)?);
         }
         Ok(PagedDatakey{

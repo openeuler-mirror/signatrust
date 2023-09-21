@@ -39,16 +39,15 @@ pub fn get_datakey_full_name(name: &str, email: &str, visibility: &Visibility) -
         } else {
             Err(Error::ParameterError("public key name should not contains ':'".to_string()))
         }
-    } else {
-        if names.len() <= 1 {
-            return Ok(format!("{}:{}", email, name));
-        } else if names.len() > 2 {
-            return Err(Error::ParameterError("private key should in the format of {email}:{key_name}".to_string()))
-        } else if names[0] != email {
-            return Err(Error::ParameterError("private key email prefix not matched':'".to_string()))
-        }
-        return Ok(name.to_owned())
     }
+    if names.len() <= 1 {
+        return Ok(format!("{}:{}", email, name));
+    } else if names.len() > 2 {
+        return Err(Error::ParameterError("private key should in the format of {email}:{key_name}".to_string()))
+    } else if names[0] != email {
+        return Err(Error::ParameterError("private key email prefix not matched':'".to_string()))
+    }
+    Ok(name.to_owned())
 }
 
 pub fn decode_hex_string_to_u8(value: &String) -> Vec<u8> {

@@ -24,7 +24,7 @@ use crate::presentation::handler::control::model::datakey::dto::{CertificateCont
 use crate::util::error::Error;
 use validator::Validate;
 use crate::application::datakey::KeyService;
-use crate::domain::datakey::entity::{DataKey, KeyType, Visibility, X509RevokeReason};
+use crate::domain::datakey::entity::{DataKey, DatakeyPaginationQuery, KeyType, Visibility, X509RevokeReason};
 use crate::util::key::get_datakey_full_name;
 use super::model::user::dto::UserIdentity;
 
@@ -146,12 +146,9 @@ async fn create_data_key(user: UserIdentity, key_service: web::Data<dyn KeyServi
 )]
 async fn list_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, key: web::Query<ListKeyQuery>) -> Result<impl Responder, Error> {
     key.validate()?;
-    let key_type = match key.key_type {
-        Some(ref k) => Some(KeyType::from_str(k)?),
-        None => None,
-    };
-    let visibility = Visibility::from_parameter(key.visibility.clone())?;
-    let keys = key_service.into_inner().get_all(key_type, visibility, user.id, key.page_size, key.page_number).await?;
+    //test visibility matched.
+    Visibility::from_parameter(key.visibility.clone())?;
+    let keys = key_service.into_inner().get_all(user.id,  DatakeyPaginationQuery::from(key.into_inner())).await?;
     Ok(HttpResponse::Ok().json(PagedDatakeyDTO::try_from(keys)?))
 }
 
