@@ -219,18 +219,20 @@ const getParentKey = () => {
   const param = {
     visibility: formLabelAlign.visibility,
     key_type: '',
+    page_size: 100,
+    page_number: 1,
   };
   if (formLabelAlign.type === 'x509ica') {
     param.key_type = 'x509ca';
-    queryAllData(param).then((res:any) => {
-      parentKey.value = res;
-      formLabelAlign.parentKey = res?.length?parentKey.value[0].id:''
+    queryAllData(param).then((res: any) => {
+      parentKey.value = res.data;
+      formLabelAlign.parentKey = res?.length ? parentKey.value[0].id : '';
     });
   } else if (formLabelAlign.type === 'x509ee') {
     param.key_type = 'x509ica';
-    queryAllData(param).then((res:any) => {
-      parentKey.value = res;
-      formLabelAlign.parentKey = res?.length?parentKey.value[0].id:'';
+    queryAllData(param).then((res: any) => {
+      parentKey.value = res.data;
+      formLabelAlign.parentKey = res?.length ? parentKey.value[0].id : '';
     });
   }
 };

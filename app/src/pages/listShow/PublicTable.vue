@@ -1,19 +1,33 @@
 <template>
   <div class="title">Public Keys</div>
-  <div class="smalltitle">
-    ({{ useData.pgpData }} openPGP keys,{{ useData.x509Data }} X509 keys)
-  </div>
+  <div class="smalltitle">({{ useData.pgpData }} keys)</div>
   <div class="search">
     <el-input
       v-model="searchInput"
-      placeholder="Search by Name"
+      placeholder="Search"
       :prefix-icon="Search"
       @input="querySearch"
       @clear="clearSearchInput"
       :clearable="true"
-    />
+    >
+      <template #prepend>
+        <el-select
+          v-model="useData.pagination.select"
+          placeholder="Select"
+          style="width: 115px"
+        >
+          <el-option label="Name" value="name" />
+          <el-option label="Description" value="description" />
+        </el-select>
+      </template>
+    </el-input>
   </div>
-  <el-table ref="multipleTableRef" :data="useData.tableData" border style="width: 100%">
+  <el-table
+    ref="multipleTableRef"
+    :data="useData.tableData"
+    border
+    style="width: 100%"
+  >
     <el-table-column label="Name" show-overflow-tooltip prop="name">
     </el-table-column>
     <el-table-column prop="key_state" label="State" align="left">
@@ -48,7 +62,7 @@
     />
     <el-table-column
       prop="description"
-      label="Descirption"
+      label="Description"
       align="left"
       width="200"
       show-overflow-tooltip
@@ -69,21 +83,18 @@
       label="Create Time"
       align="left"
       show-overflow-tooltip
-     
     />
     <el-table-column
       prop="expire_at"
       label="Expire Time"
       align="left"
       show-overflow-tooltip
-     
     >
     </el-table-column>
     <el-table-column
       prop="attributes.key_type"
       label="Key Algorithm"
       align="left"
-     
       show-overflow-tooltip
     >
       <template #default="scope">
@@ -200,7 +211,7 @@
       </template>
     </el-table-column>
   </el-table>
-  <div class="demo-pagination-block">
+  <div class="demo-pagination-block" v-if="useData.pagination.totalCount > 10">
     <el-pagination
       class="o-pagination"
       :currentPage="useData.pagination.currentPage"
@@ -277,7 +288,7 @@
     center
     show-close
   >
-    <el-input v-model="copyValue"  type="textarea" :disabled="false" autosize/>
+    <el-input v-model="copyValue" type="textarea" :disabled="false" autosize />
     <div
       :data-clipboard-text="copyValue"
       class="tag"
@@ -298,8 +309,8 @@
   </el-dialog>
 </template>
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { Search,ArrowDown } from '@element-plus/icons-vue';
+import { ref, onMounted,watch } from 'vue';
+import { Search, ArrowDown } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import Clipboard from 'clipboard';
 import { useDataStore } from '@/store/data';
@@ -457,11 +468,13 @@ onMounted(() => getAllData());
 
 //搜索
 const querySearch = () => {
+  useData.pagination.currentPage = 1;
   useData.pagination.searchInput = searchInput.value;
   getAllData();
 };
 //清空搜索
 const clearSearchInput = () => {
+  useData.pagination.currentPage = 1;
   getAllData();
 };
 //再次确认
@@ -524,6 +537,10 @@ const getKeyType = (val: any) => {
       return 'X509 End Entity';
   }
 };
+watch(() => useData.pagination.select,()=>{
+  useData.pagination.currentPage = 1;
+  getAllData();
+})
 </script>
 <style scoped lang="scss">
 .comment {
