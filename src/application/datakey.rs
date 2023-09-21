@@ -18,7 +18,7 @@ use crate::domain::datakey::repository::Repository as DatakeyRepository;
 use crate::domain::sign_service::SignBackend;
 use crate::util::error::{Error, Result};
 use async_trait::async_trait;
-use crate::domain::datakey::entity::{DataKey, KeyAction, KeyState, KeyType, Visibility, X509CRL, X509RevokeReason};
+use crate::domain::datakey::entity::{DataKey, KeyAction, KeyState, KeyType, PagedDatakey, Visibility, X509CRL, X509RevokeReason};
 use tokio::time::{self};
 
 use crate::util::cache::TimedFixedSizeCache;
@@ -36,7 +36,7 @@ pub trait KeyService: Send + Sync{
     async fn import(&self, data: &mut DataKey) -> Result<DataKey>;
     async fn get_raw_key_by_name(&self, name: &str) -> Result<DataKey>;
 
-    async fn get_all(&self, key_type: Option<KeyType>, visibility: Visibility, user_id: i32) -> Result<Vec<DataKey>>;
+    async fn get_all(&self, key_type: Option<KeyType>, visibility: Visibility, user_id: i32, page_size: u64, page_number: u64) -> Result<PagedDatakey>;
     async fn get_one(&self, user: Option<UserIdentity>, id_or_name: String) -> Result<DataKey>;
     //get keys content
     async fn export_one(&self, user: Option<UserIdentity>, id_or_name: String) -> Result<DataKey>;
@@ -212,8 +212,8 @@ where
         self.repository.get_by_id_or_name(None, Some(name.to_owned()), true).await
     }
 
-    async fn get_all(&self, key_type: Option<KeyType>, visibility: Visibility, user_id: i32) -> Result<Vec<DataKey>> {
-        self.repository.get_all_keys(key_type, visibility, user_id).await
+    async fn get_all(&self, key_type: Option<KeyType>, visibility: Visibility, user_id: i32,  page_size: u64, page_number: u64) -> Result<PagedDatakey> {
+        self.repository.get_all_keys(key_type, visibility, user_id, page_size, page_number).await
     }
 
     async fn get_one(&self, user: Option<UserIdentity>,  id_or_name: String) -> Result<DataKey> {

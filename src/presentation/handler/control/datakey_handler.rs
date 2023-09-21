@@ -20,7 +20,7 @@ use actix_web::{
 };
 
 
-use crate::presentation::handler::control::model::datakey::dto::{CertificateContent, CreateDataKeyDTO, CRLContent, DataKeyDTO, ImportDataKeyDTO, ListKeyQuery, NameIdenticalQuery, PublicKeyContent, RevokeCertificateDTO};
+use crate::presentation::handler::control::model::datakey::dto::{CertificateContent, CreateDataKeyDTO, CRLContent, DataKeyDTO, ImportDataKeyDTO, ListKeyQuery, NameIdenticalQuery, PagedDatakeyDTO, PublicKeyContent, RevokeCertificateDTO};
 use crate::util::error::Error;
 use validator::Validate;
 use crate::application::datakey::KeyService;
@@ -139,23 +139,20 @@ async fn create_data_key(user: UserIdentity, key_service: web::Data<dyn KeyServi
     ("Authorization" = [])
     ),
     responses(
-        (status = 200, description = "List available keys", body = [DataKeyDTO]),
+        (status = 200, description = "List available keys", body = [PagedDatakeyDTO]),
         (status = 401, description = "Unauthorized", body = ErrorMessage),
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
 async fn list_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, key: web::Query<ListKeyQuery>) -> Result<impl Responder, Error> {
+    key.validate()?;
     let key_type = match key.key_type {
         Some(ref k) => Some(KeyType::from_str(k)?),
         None => None,
     };
     let visibility = Visibility::from_parameter(key.visibility.clone())?;
-    let keys = key_service.into_inner().get_all(key_type, visibility, user.id).await?;
-    let mut results = vec![];
-    for k in keys {
-        results.push(DataKeyDTO::try_from(k)?)
-    }
-    Ok(HttpResponse::Ok().json(results))
+    let keys = key_service.into_inner().get_all(key_type, visibility, user.id, key.page_size, key.page_number).await?;
+    Ok(HttpResponse::Ok().json(PagedDatakeyDTO::try_from(keys)?))
 }
 
 /// Get detail of specific key by id or name from database

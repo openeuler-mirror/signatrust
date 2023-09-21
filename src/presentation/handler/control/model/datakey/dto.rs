@@ -1,4 +1,4 @@
-use crate::domain::datakey::entity::{DataKey, KeyState, Visibility, X509CRL};
+use crate::domain::datakey::entity::{DataKey, KeyState, PagedDatakey, Visibility, X509CRL};
 use crate::domain::datakey::entity::KeyType;
 use crate::util::error::Result;
 use chrono::{DateTime, Utc};
@@ -70,10 +70,15 @@ pub struct NameIdenticalQuery {
 #[derive(Deserialize, IntoParams, Validate, ToSchema)]
 pub struct ListKeyQuery {
     /// Key type, optional, should be one of x509ca, x509ica, x509ee, or pgp
-    #[validate(custom = "validate_key_type")]
     pub key_type: Option<String>,
-    #[validate(custom = "validate_key_visibility")]
+    /// public or private
     pub visibility: Option<String>,
+    /// the request page size, min 10, max 100
+    #[validate(range(min = 10, max = 100))]
+    pub page_size: u64,
+    /// the request page index, starts from 0, max 1000
+    #[validate(range(min = 0, max = 1000))]
+    pub page_number: u64,
 }
 
 
@@ -168,6 +173,34 @@ pub struct DataKeyDTO {
     /// Request revoke user email list, only for public key
     pub request_revoke_users: Option<String>,
 }
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct PagedMetaDTO {
+    pub total_count: u64,
+}
+#[derive(Debug, Serialize, ToSchema)]
+pub struct PagedDatakeyDTO {
+    pub data: Vec<DataKeyDTO>,
+    pub meta: PagedMetaDTO
+}
+
+impl TryFrom<PagedDatakey> for PagedDatakeyDTO {
+    type Error = Error;
+
+    fn try_from(dto: PagedDatakey) -> Result<Self> {
+        let mut keys = vec![];
+        for k in dto.data {
+            keys.push(DataKeyDTO::try_from(k)?)
+        }
+        Ok(Self {
+            data: keys,
+            meta: PagedMetaDTO {
+                total_count: dto.meta.total_count,
+            },
+        })
+    }
+}
+
 
 fn validate_utc_time(expire: &str) -> std::result::Result<(), ValidationError> {
     if expire.parse::<DateTime<Utc>>().is_err() {

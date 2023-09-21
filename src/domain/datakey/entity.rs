@@ -265,6 +265,15 @@ pub struct DataKey {
     pub request_revoke_users: Option<String>,
     pub parent_key: Option<ParentKey>
 }
+#[derive(Debug, Clone)]
+pub struct PagedMeta {
+    pub total_count: u64,
+}
+#[derive(Debug, Clone)]
+pub struct PagedDatakey {
+    pub data: Vec<DataKey>,
+    pub meta: PagedMeta
+}
 
 impl ExtendableAttributes for DataKey {
     type Item = HashMap<String, String>;
