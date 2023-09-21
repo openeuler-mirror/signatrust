@@ -1,17 +1,26 @@
 <template>
   <div class="title">Personal Keys</div>
-  <div class="smalltitle">
-    ({{ useData.pgpPriData }} openPGP keys,{{ useData.x509PriData }} X509 keys)
-  </div>
+  <div class="smalltitle">({{ useData.pgpPriData }} keys)</div>
   <div class="search">
     <el-input
       v-model="searchInput"
-      placeholder="Search by Name"
+      placeholder="Search"
       :prefix-icon="Search"
       @input="querySearch"
       @clear="clearSearchInput"
       :clearable="true"
-    />
+    >
+      <template #prepend>
+        <el-select
+          v-model="useData.paginationPri.select"
+          placeholder="Select"
+          style="width: 115px"
+        >
+          <el-option label="Name" value="name" />
+          <el-option label="Description" value="description" />
+        </el-select>
+      </template>
+    </el-input>
   </div>
   <el-table
     ref="multipleTableRef"
@@ -42,7 +51,7 @@
     </el-table-column>
     <el-table-column
       prop="description"
-      label="Descirption"
+      label="Description"
       align="left"
       show-overflow-tooltip
     />
@@ -196,7 +205,10 @@
       </template>
     </el-table-column>
   </el-table>
-  <div class="demo-pagination-block">
+  <div
+    class="demo-pagination-block"
+    v-if="useData.paginationPri.totalCount > 10"
+  >
     <el-pagination
       class="o-pagination"
       :currentPage="useData.paginationPri.currentPage"
@@ -296,7 +308,7 @@
   </el-dialog>
 </template>
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted,watch } from 'vue';
 import { Search, ArrowDown } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import Clipboard from 'clipboard';
@@ -469,11 +481,13 @@ const requestData = (val: any, value: any) => {
 onMounted(() => getAllData());
 //搜索
 const querySearch = () => {
+  useData.paginationPri.currentPage = 1;
   useData.paginationPri.searchInput = searchInput.value;
   getAllData();
 };
 //清空搜索
 const clearSearchInput = () => {
+  useData.paginationPri.currentPage = 1;
   getAllData();
 };
 //再次确认
@@ -542,6 +556,11 @@ const getKeyType = (val: any) => {
       return 'X509 End Entity';
   }
 };
+
+watch(() => useData.paginationPri.select,()=>{
+  useData.paginationPri.currentPage = 1;
+  getAllData();
+})
 </script>
 <style scoped lang="scss">
 .search {

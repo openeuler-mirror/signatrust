@@ -19,71 +19,85 @@ export const useDataStore = defineStore('data', {
       currentPage: 1,
       pageSize: 10,
       searchInput: '',
+      select: 'name',
     },
-    realPriData:[] as any,
+    realPriData: [] as any,
     paginationPri: {
       totalCount: 0,
       currentPage: 1,
       pageSize: 10,
       searchInput: '',
+      select: 'name',
     },
-    email:''
+    email: '',
+    param: {},
+    paramPri: {},
   }),
   actions: {
     async getTableData() {
-      const param = {
-        visibility: this.visibility,
-      };
-      const res = await queryAllData(param);
-      this.realData = res;
-      this.tableData = this.realData.slice(
-        (this.pagination.currentPage - 1) * this.pagination.pageSize,
-        this.pagination.currentPage * this.pagination.pageSize
-      );
-      if (this.pagination.searchInput) {
-        this.tableData = this.realData.filter((item: any) =>
-        item.name.toLowerCase().includes(this.pagination.searchInput)
-      );
-        this.pagination.totalCount = this.tableData.length;
+      if (this.pagination.searchInput && this.pagination.select === 'name') {
+        this.param = {
+          visibility: this.visibility,
+          page_size: this.pagination.pageSize,
+          page_number: this.pagination.currentPage,
+          name: this.pagination.searchInput,
+        };
+      } else if (
+        this.pagination.searchInput &&
+        this.pagination.select === 'description'
+      ) {
+        this.param = {
+          visibility: this.visibility,
+          page_size: this.pagination.pageSize,
+          page_number: this.pagination.currentPage,
+          description: this.pagination.searchInput,
+        };
       } else {
-        this.pagination.totalCount = this.realData.length;
+        this.param = {
+          visibility: this.visibility,
+          page_size: this.pagination.pageSize,
+          page_number: this.pagination.currentPage,
+        };
       }
-
-      this.pgpData = this.realData.filter(
-        (item: any) => item.key_type === 'pgp'
-      ).length;
-      this.x509Data = this.realData.filter(
-        (item: any) => item.key_type.includes('x509')
-      ).length;
+      const res = await queryAllData(this.param);
+      this.realData = res;
+      this.tableData = this.realData.data;
+      this.pagination.totalCount = this.realData.meta.total_count;
+      this.pgpData = this.realData.meta.total_count;
+    
     },
     async getPriTableData() {
-      const param = {
-        visibility: this.visib,
-      };
-      const res = await queryAllData(param);
-      this.realPriData = res;
-      this.tablePriData = this.realPriData.slice(
-        (this.paginationPri.currentPage - 1) * this.paginationPri.pageSize,
-        this.paginationPri.currentPage * this.paginationPri.pageSize
-      );
-      if (this.paginationPri.searchInput) {
-        this.tablePriData = this.realPriData.filter(
-          (item: any) => item.name.toLowerCase().includes(this.paginationPri.searchInput)
-        );
-        this.paginationPri.totalCount = this.tablePriData.length;
+      if (this.paginationPri.searchInput && this.paginationPri.select === 'name') {
+        this.paramPri = {
+          visibility: this.visib,
+          page_size: this.paginationPri.pageSize,
+          page_number: this.paginationPri.currentPage,
+          name: this.paginationPri.searchInput,
+        };
+      } else if (
+        this.paginationPri.searchInput &&
+        this.paginationPri.select === 'description'
+      ) {
+        this.paramPri = {
+          visibility: this.visib,
+          page_size: this.paginationPri.pageSize,
+          page_number: this.paginationPri.currentPage,
+          description: this.paginationPri.searchInput,
+        };
       } else {
-        this.paginationPri.totalCount = this.realPriData.length;
+        this.paramPri = {
+          visibility: this.visib,
+          page_size: this.paginationPri.pageSize,
+          page_number: this.paginationPri.currentPage,
+        };
       }
-
-      this.pgpPriData = this.realPriData.filter(
-        (item: any) => item.key_type === 'pgp'
-      ).length;
-      this.x509PriData = this.realPriData.filter(
-        (item: any) => item.key_type.includes('x509')
-      ).length;
+      const res = await queryAllData(this.paramPri);
+      this.realPriData = res;
+      this.tablePriData = this.realPriData.data
+      this.paginationPri.totalCount = this.realPriData.meta.total_count;
+      this.pgpPriData = this.realPriData.meta.total_count;
     },
   },
 
-  getters: {
-  },
+  getters: {},
 });
