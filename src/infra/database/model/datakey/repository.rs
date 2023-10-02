@@ -46,7 +46,7 @@ impl<'a> DataKeyRepository<'a> {
         }
     }
 
-    async fn create_pending_operation(&self, pending_operation: request_dto::Model, tx: &mut DatabaseTransaction) -> Result<()> {
+    async fn create_pending_operation(&self, pending_operation: request_dto::Model, tx: &DatabaseTransaction) -> Result<()> {
         let operation = request_dto::ActiveModel {
             user_id: Set(pending_operation.user_id),
             key_id: Set(pending_operation.key_id),
@@ -62,7 +62,7 @@ impl<'a> DataKeyRepository<'a> {
         Ok(())
     }
 
-    async fn delete_pending_operation(&self, user_id: i32, id: i32, request_type: RequestType, tx: &mut DatabaseTransaction) -> Result<()> {
+    async fn delete_pending_operation(&self, user_id: i32, id: i32, request_type: RequestType, tx: &DatabaseTransaction) -> Result<()> {
         let _ = request_dto::Entity::delete_many().filter(Condition::all()
             .add(request_dto::Column::UserId.eq(user_id))
             .add(request_dto::Column::RequestType.eq(request_type.to_string()))
@@ -71,7 +71,7 @@ impl<'a> DataKeyRepository<'a> {
         Ok(())
     }
 
-    async fn create_revoke_record(&self, key_id: i32, ca_id: i32, reason: X509RevokeReason, tx: &mut DatabaseTransaction) -> Result<()> {
+    async fn create_revoke_record(&self, key_id: i32, ca_id: i32, reason: X509RevokeReason, tx: &DatabaseTransaction) -> Result<()> {
         let revoked = revoked_key_dto::ActiveModel{
             id: Default::default(),
             key_id: Set(key_id),
@@ -87,7 +87,7 @@ impl<'a> DataKeyRepository<'a> {
         Ok(())
     }
 
-    async fn delete_revoke_record(&self, key_id: i32, ca_id: i32, tx: &mut DatabaseTransaction) -> Result<()> {
+    async fn delete_revoke_record(&self, key_id: i32, ca_id: i32, tx: &DatabaseTransaction) -> Result<()> {
         let _ = revoked_key_dto::Entity::delete_many().filter(Condition::all()
             .add(revoked_key_dto::Column::KeyId.eq(key_id))
             .add(revoked_key_dto::Column::CaId.eq(ca_id))).exec(tx)
@@ -380,7 +380,7 @@ impl<'a> Repository for DataKeyRepository<'a> {
     }
 
     async fn request_delete_key(&self, user_id: i32, user_email: String, id: i32, public_key: bool) -> Result<()> {
-        let mut txn = self.db_connection.begin().await?;
+        let txn = self.db_connection.begin().await?;
         let threshold = if public_key { PUBLIC_KEY_PENDING_THRESHOLD } else { PRIVATE_KEY_PENDING_THRESHOLD };
         //1. update key state to pending delete if needed.
         let _ = datakey_dto::Entity::update_many().col_expr(
@@ -388,7 +388,7 @@ impl<'a> Repository for DataKeyRepository<'a> {
         ).filter(datakey_dto::Column::Id.eq(id)).exec(&txn).await?;
         //2. add request delete record
         let pending_delete = request_dto::Model::new_for_delete(id, user_id, user_email);
-        self.create_pending_operation(pending_delete, &mut txn).await?;
+        self.create_pending_operation(pending_delete, &txn).await?;
         //3. delete datakey if pending delete count >= threshold
         let _: ExecResult = txn.execute(Statement::from_sql_and_values(
             DatabaseBackend::MySql,
@@ -402,7 +402,7 @@ impl<'a> Repository for DataKeyRepository<'a> {
     }
 
     async fn request_revoke_key(&self, user_id: i32, user_email: String, id: i32, parent_id: i32, reason: X509RevokeReason, public_key: bool) -> Result<()> {
-        let mut txn = self.db_connection.begin().await?;
+        let txn = self.db_connection.begin().await?;
         let threshold = if public_key { PUBLIC_KEY_PENDING_THRESHOLD } else { PRIVATE_KEY_PENDING_THRESHOLD };
         //1. update key state to pending delete if needed.
         let _ = datakey_dto::Entity::update_many().col_expr(
@@ -410,9 +410,9 @@ impl<'a> Repository for DataKeyRepository<'a> {
         ).filter(datakey_dto::Column::Id.eq(id)).exec(&txn).await?;
         //2. add request revoke pending record
         let pending_revoke = request_dto::Model::new_for_revoke(id, user_id, user_email);
-        self.create_pending_operation(pending_revoke, &mut txn).await?;
+        self.create_pending_operation(pending_revoke, &txn).await?;
         //3. add revoked record
-        self.create_revoke_record(id, parent_id, reason, &mut txn).await?;
+        self.create_revoke_record(id, parent_id, reason, &txn).await?;
         //4. mark datakey revoked if pending revoke count >= threshold
         let _: ExecResult = txn.execute(Statement::from_sql_and_values(
             DatabaseBackend::MySql,
@@ -426,10 +426,10 @@ impl<'a> Repository for DataKeyRepository<'a> {
     }
 
     async fn cancel_delete_key(&self, user_id: i32, id: i32) -> Result<()> {
-        let mut txn = self.db_connection.begin().await?;
+        let txn = self.db_connection.begin().await?;
         //1. delete pending delete record
         self.delete_pending_operation(
-            user_id, id, RequestType::Delete, &mut txn).await?;
+            user_id, id, RequestType::Delete, &txn).await?;
         //2. update status if there is not any pending delete record.
         let _: ExecResult = txn.execute(Statement::from_sql_and_values(
             DatabaseBackend::MySql,
@@ -444,11 +444,11 @@ impl<'a> Repository for DataKeyRepository<'a> {
     }
 
     async fn cancel_revoke_key(&self, user_id: i32, id: i32, parent_id: i32) -> Result<()> {
-        let mut txn = self.db_connection.begin().await?;
+        let txn = self.db_connection.begin().await?;
         //1. delete pending delete record
-        self.delete_pending_operation(user_id, id, RequestType::Revoke, &mut txn).await?;
+        self.delete_pending_operation(user_id, id, RequestType::Revoke, &txn).await?;
         //2. delete revoked record
-        self.delete_revoke_record(id, parent_id, &mut txn).await?;
+        self.delete_revoke_record(id, parent_id, &txn).await?;
         //3. update status if there is not any pending delete record.
         let _: ExecResult = txn.execute(Statement::from_sql_and_values(
                 DatabaseBackend::MySql,

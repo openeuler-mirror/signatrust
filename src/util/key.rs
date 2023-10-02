@@ -21,14 +21,17 @@ use serde::{Serialize, Serializer};
 use std::collections::{HashMap, BTreeMap};
 use std::path::Path;
 use sha2::{Sha256, Digest};
+use std::fmt::Write;
 use crate::domain::datakey::entity::Visibility;
 use crate::util::error::{Error, Result as LibraryResult};
 
 pub fn encode_u8_to_hex_string(value: &[u8]) -> String {
     value
         .iter()
-        .map(|n| format!("{:02X}", n))
-        .collect::<String>()
+        .fold(String::new(), |mut result, n| {
+            let _ = write!(result, "{n:02X}");
+            result
+        })
 }
 
 pub fn get_datakey_full_name(name: &str, email: &str, visibility: &Visibility) -> LibraryResult<String> {
