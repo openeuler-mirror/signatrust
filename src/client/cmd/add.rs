@@ -73,6 +73,9 @@ pub struct CommandAdd {
     #[arg(value_enum, default_value_t=SignType::Cms)]
     #[arg(help = "specify the signature type, meaningful when key type is x509, EFI file supports `authenticode` only and KO file supports `cms` and `pkcs7`")]
     sign_type: SignType,
+    #[arg(long)]
+    #[arg(help = "force create rpm v3 signature, default is false. only support when file type is rpm")]
+    rpm_v3: bool,
 }
 
 
@@ -91,6 +94,7 @@ pub struct CommandAddHandler {
     max_concurrency: usize,
     sign_type: SignType,
     token: Option<String>,
+    rpm_v3: bool,
 }
 
 impl CommandAddHandler {
@@ -99,7 +103,8 @@ impl CommandAddHandler {
         HashMap::from([
             (options::DETACHED.to_string(), self.detached.to_string()),
             (options::KEY_TYPE.to_string(), self.key_type.to_string()),
-            (options::SIGN_TYPE.to_string(), self.sign_type.to_string())])
+            (options::SIGN_TYPE.to_string(), self.sign_type.to_string()),
+            (options::RPM_V3_SIGNATURE.to_string(), self.rpm_v3.to_string())])
     }
     fn collect_file_candidates(&self) -> Result<Vec<sign_identity::SignIdentity>> {
         if self.path.is_dir() {
@@ -182,6 +187,7 @@ impl SignCommand for CommandAddHandler {
             max_concurrency: config.read()?.get_string("max_concurrency")?.parse()?,
             sign_type: command.sign_type,
             token,
+            rpm_v3: command.rpm_v3
         })
     }
 

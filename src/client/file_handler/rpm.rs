@@ -61,6 +61,17 @@ impl RpmFileHandler {
             }
         }
     }
+
+    fn force_v3_signature(&self, sign_options: &HashMap<String, String>) -> bool {
+        match sign_options.get(options::RPM_V3_SIGNATURE) {
+            Some(value) => {
+                value == "true"
+            }
+            None => {
+                false
+            }
+        }
+    }
 }
 
 //todo: figure our why is much slower when async read & write with tokio is enabled.
@@ -81,28 +92,36 @@ impl FileHandler for RpmFileHandler {
         Ok(())
     }
 
-    //rpm has two sections need to be signed for rsa
+    //rpm has two sections need to be signed for rpm v3 signature
     //1. header
     //2. header and content
-    // while there is only section to be signed for dsa
+    //while there is only section to be signed for rpm v4, also for eddsa key only v4 is supported
     //1. header
     async fn split_data(
         &self,
         path: &PathBuf,
-        _sign_options: &mut HashMap<String, String>,
+        sign_options: &mut HashMap<String, String>,
         key_attributes: &HashMap<String, String>) -> Result<Vec<Vec<u8>>> {
         let file = File::open(path)?;
         let package = Package::parse(&mut BufReader::new(file))?;
         let mut header_bytes = Vec::<u8>::with_capacity(1024);
         //collect head and head&payload arrays
         package.metadata.header.write(&mut header_bytes)?;
-        return if self.get_key_type(key_attributes) == OpenPGPKeyType::Rsa {
-            let mut header_and_content = Vec::new();
-            header_and_content.extend(header_bytes.clone());
-            header_and_content.extend(package.content.clone());
-            Ok(vec![header_bytes, header_and_content])
+        return if self.get_key_type(key_attributes) == OpenPGPKeyType::Eddsa {
+            if self.force_v3_signature(sign_options) {
+                Err(Error::InvalidArgumentError("eddsa key does not support v3 signature".to_string()))
+            } else {
+                Ok(vec![header_bytes])
+            }
         } else {
-            Ok(vec![header_bytes])
+            if self.force_v3_signature(sign_options) || !package.metadata.is_payload_digest_present() {
+                let mut header_and_content = Vec::new();
+                header_and_content.extend(header_bytes.clone());
+                header_and_content.extend(package.content.clone());
+                Ok(vec![header_bytes, header_and_content])
+            } else {
+                Ok(vec![header_bytes])
+            }
         }
     }
     async fn assemble_data(
@@ -110,7 +129,7 @@ impl FileHandler for RpmFileHandler {
         path: & PathBuf,
         data: Vec<Vec<u8>>,
         temp_dir: &PathBuf,
-        _sign_options: &HashMap<String, String>,
+        sign_options: &HashMap<String, String>,
         key_attributes: &HashMap<String, String>
     ) -> Result<(String, String)> {
         let temp_rpm = temp_dir.join(Uuid::new_v4().to_string());
@@ -127,14 +146,24 @@ impl FileHandler for RpmFileHandler {
         let key_type = self.get_key_type(key_attributes);
         let builder = match key_type {
             OpenPGPKeyType::Rsa => {
-                Header::<IndexSignatureTag>::builder().add_digest(
-                    &header_digest_sha1,
-                    &header_digest_sha256,
-                    &header_and_content_digest,
-                ).add_rsa_signature(
-                    data[0].as_slice(),
-                    data[1].as_slice(),
-                )
+                if self.force_v3_signature(sign_options) || !package.metadata.is_payload_digest_present() {
+                    Header::<IndexSignatureTag>::builder().add_digest(
+                        &header_digest_sha1,
+                        &header_digest_sha256,
+                        &header_and_content_digest,
+                    ).add_rsa_signature_legacy(
+                        data[0].as_slice(),
+                        data[1].as_slice()
+                    )
+                } else {
+                    Header::<IndexSignatureTag>::builder().add_digest(
+                        &header_digest_sha1,
+                        &header_digest_sha256,
+                        &header_and_content_digest,
+                    ).add_rsa_signature(
+                        data[0].as_slice(),
+                    )
+                }
             }
             OpenPGPKeyType::Eddsa => {
                 Header::<IndexSignatureTag>::builder().add_digest(
@@ -164,6 +193,11 @@ mod test {
     fn get_signed_rpm() -> Result<PathBuf> {
         let current_dir = env::current_dir().expect("get current dir failed");
         Ok(PathBuf::from(current_dir.join("test_assets").join("Imath-3.1.4-1.oe2303.x86_64.rpm")))
+    }
+
+    fn get_signed_rpm_without_payload_digest() -> Result<PathBuf> {
+        let current_dir = env::current_dir().expect("get current dir failed");
+        Ok(PathBuf::from(current_dir.join("test_assets").join("at-3.1.10-43.el6.x86_64.rpm")))
     }
 
     fn generate_invalid_rpm() -> Result<PathBuf> {
@@ -212,14 +246,47 @@ mod test {
     }
 
     #[tokio::test]
-    async fn test_split_data_success() {
+    async fn test_split_rpm_with_payload_digest_success() {
         let mut sign_options = HashMap::new();
+        let file_handler = RpmFileHandler::new();
+        let path = get_signed_rpm().expect("get signed rpm failed");
+        let raw_content = file_handler.split_data(&path, &mut sign_options, &HashMap::new()).await.expect("get raw content failed");
+        assert_eq!(raw_content.len(), 1);
+        assert_eq!(raw_content[0].len(), 4325);
+    }
+
+    #[tokio::test]
+    async fn test_split_rpm_with_payload_digest_and_v3_force_success() {
+        let mut sign_options = HashMap::new();
+        sign_options.insert(options::RPM_V3_SIGNATURE.to_string(), true.to_string());
         let file_handler = RpmFileHandler::new();
         let path = get_signed_rpm().expect("get signed rpm failed");
         let raw_content = file_handler.split_data(&path, &mut sign_options, &HashMap::new()).await.expect("get raw content failed");
         assert_eq!(raw_content.len(), 2);
         assert_eq!(raw_content[0].len(), 4325);
         assert_eq!(raw_content[1].len(), 67757);
+    }
+
+    #[tokio::test]
+    async fn test_split_rpm_with_payload_digest_and_v3_force_eddsa_failed() {
+        let mut sign_options = HashMap::new();
+        sign_options.insert(options::RPM_V3_SIGNATURE.to_string(), true.to_string());
+        let mut key_attributes = HashMap::new();
+        key_attributes.insert(options::KEY_TYPE.to_string(), OpenPGPKeyType::Eddsa.to_string());
+        let file_handler = RpmFileHandler::new();
+        let path = get_signed_rpm().expect("get signed rpm failed");
+        file_handler.split_data(&path, &mut sign_options, &key_attributes).await.expect_err("eddsa key does not support v3 signature");
+    }
+
+    #[tokio::test]
+    async fn test_split_rpm_without_payload_digest_success() {
+        let mut sign_options = HashMap::new();
+        let file_handler = RpmFileHandler::new();
+        let path = get_signed_rpm_without_payload_digest().expect("get signed rpm failed");
+        let raw_content = file_handler.split_data(&path, &mut sign_options, &HashMap::new()).await.expect("get raw content failed");
+        assert_eq!(raw_content.len(), 2);
+        assert_eq!(raw_content[0].len(), 21484);
+        assert_eq!(raw_content[1].len(), 60304);
     }
 
     #[tokio::test]
