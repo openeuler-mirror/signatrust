@@ -17,3 +17,4 @@
 pub const DETACHED: &str = "detached";
 pub const KEY_TYPE: &str = "key_type";
 pub const SIGN_TYPE: &str = "sign_type";
+pub const RPM_V3_SIGNATURE: &str = "rpm_signature_type";
