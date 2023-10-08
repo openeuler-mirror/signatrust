@@ -14,33 +14,34 @@
  *
  */
 
-use tonic::transport::{Channel, ClientTlsConfig};
 use super::traits::DynamicLoadBalancer;
+use tonic::transport::{Channel, ClientTlsConfig};
 
 use crate::util::error::Result;
-use tonic::transport::Endpoint;
 use async_trait::async_trait;
+use tonic::transport::Endpoint;
 
-
-use dns_lookup::{lookup_host};
-use crate::util::error::Error::{DNSResolveError};
+use crate::util::error::Error::DNSResolveError;
+use dns_lookup::lookup_host;
 
 pub struct DNSLoadBalancer {
     hostname: String,
     port: String,
-    client_config: Option<ClientTlsConfig>
+    client_config: Option<ClientTlsConfig>,
 }
 
 impl DNSLoadBalancer {
-
-    pub fn new(hostname: String, port: String, client_config: Option<ClientTlsConfig>) -> Result<Self> {
+    pub fn new(
+        hostname: String,
+        port: String,
+        client_config: Option<ClientTlsConfig>,
+    ) -> Result<Self> {
         Ok(Self {
             hostname,
             port,
-            client_config
+            client_config,
         })
     }
-
 }
 
 #[async_trait]
@@ -50,8 +51,8 @@ impl DynamicLoadBalancer for DNSLoadBalancer {
         match lookup_host(&self.hostname) {
             Ok(hosts) => {
                 for ip in hosts.into_iter() {
-                    let mut endpoint = Endpoint::from_shared(
-                        format!("http://{}:{}", ip, self.port))?;
+                    let mut endpoint =
+                        Endpoint::from_shared(format!("http://{}:{}", ip, self.port))?;
                     if let Some(tls_config) = self.client_config.clone() {
                         endpoint = endpoint.tls_config(tls_config)?;
                     }
@@ -60,10 +61,7 @@ impl DynamicLoadBalancer for DNSLoadBalancer {
                 }
                 Ok(Channel::balance_list(endpoints.into_iter()))
             }
-            Err(_) => {
-                Err(DNSResolveError(self.hostname.clone()))
-            }
+            Err(_) => Err(DNSResolveError(self.hostname.clone())),
         }
-
     }
 }

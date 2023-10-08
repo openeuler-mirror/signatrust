@@ -1,2 +1,2 @@
-pub mod user;
 pub mod datakey;
+pub mod user;

@@ -14,11 +14,11 @@
  *
  */
 
-use actix_web::{HttpResponse, Responder, Result, web, Scope, HttpRequest, HttpMessage};
-use crate::util::error::Error;
 use super::model::user::dto::UserIdentity;
+use crate::util::error::Error;
 use actix_identity::Identity;
 use actix_web::cookie::Cookie;
+use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder, Result, Scope};
 use secstr::SecVec;
 use validator::Validate;
 
@@ -42,7 +42,12 @@ use crate::presentation::handler::control::model::user::dto::{Code, CSRF_HEADER_
     )
 )]
 async fn login(user_service: web::Data<dyn UserService>) -> Result<impl Responder, Error> {
-    Ok(HttpResponse::Found().insert_header(("Location", user_service.into_inner().get_login_url().await?.as_str())).finish())
+    Ok(HttpResponse::Found()
+        .insert_header((
+            "Location",
+            user_service.into_inner().get_login_url().await?.as_str(),
+        ))
+        .finish())
 }
 
 /// Get login user information
@@ -84,7 +89,7 @@ async fn info(id: UserIdentity) -> Result<impl Responder, Error> {
 )]
 async fn logout(id: Identity) -> Result<impl Responder, Error> {
     id.logout();
-    Ok( HttpResponse::NoContent().finish())
+    Ok(HttpResponse::NoContent().finish())
 }
 
 /// Callback API for OIDC provider
@@ -105,24 +110,39 @@ async fn logout(id: Identity) -> Result<impl Responder, Error> {
     (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn callback(req: HttpRequest, user_service: web::Data<dyn UserService>, code: web::Query<Code>, protect_key: web::Data<SecVec<u8>>) -> Result<impl Responder, Error> {
+async fn callback(
+    req: HttpRequest,
+    user_service: web::Data<dyn UserService>,
+    code: web::Query<Code>,
+    protect_key: web::Data<SecVec<u8>>,
+) -> Result<impl Responder, Error> {
     code.validate()?;
     //generate csrf token and cookie
-    let protect_key_array:[u8; 32] = protect_key.unsecure().try_into()?;
-    let user_entity = UserIdentity::from_user_with_csrf_token(user_service.validate_user(&code.code).await?, protect_key_array)?;
+    let protect_key_array: [u8; 32] = protect_key.unsecure().try_into()?;
+    let user_entity = UserIdentity::from_user_with_csrf_token(
+        user_service.validate_user(&code.code).await?,
+        protect_key_array,
+    )?;
     match Identity::login(&req.extensions(), serde_json::to_string(&user_entity)?) {
         Ok(_) => {
-            let cookie = Cookie::build(CSRF_HEADER_NAME, user_entity.generate_new_csrf_cookie(protect_key_array, 3600)?)
-                .path("/")
-                .secure(true)
-                .same_site(actix_web::cookie::SameSite::Strict)
-                .expires(time::OffsetDateTime::now_utc() + time::Duration::seconds(3600))
-                .finish();
-            Ok(HttpResponse::Found().cookie(cookie).insert_header(("Location", "/")).finish())
+            let cookie = Cookie::build(
+                CSRF_HEADER_NAME,
+                user_entity.generate_new_csrf_cookie(protect_key_array, 3600)?,
+            )
+            .path("/")
+            .secure(true)
+            .same_site(actix_web::cookie::SameSite::Strict)
+            .expires(time::OffsetDateTime::now_utc() + time::Duration::seconds(3600))
+            .finish();
+            Ok(HttpResponse::Found()
+                .cookie(cookie)
+                .insert_header(("Location", "/"))
+                .finish())
         }
-        Err(err) => {
-            Err(Error::AuthError(format!("failed to get oidc token {}", err)))
-        }
+        Err(err) => Err(Error::AuthError(format!(
+            "failed to get oidc token {}",
+            err
+        ))),
     }
 }
 
@@ -145,8 +165,15 @@ async fn callback(req: HttpRequest, user_service: web::Data<dyn UserService>, co
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn new_token(user: UserIdentity, user_service: web::Data<dyn UserService>, token: web::Json<CreateTokenDTO>) -> Result<impl Responder, Error> {
-    let token = user_service.into_inner().generate_token(&user, token.0).await?;
+async fn new_token(
+    user: UserIdentity,
+    user_service: web::Data<dyn UserService>,
+    token: web::Json<CreateTokenDTO>,
+) -> Result<impl Responder, Error> {
+    let token = user_service
+        .into_inner()
+        .generate_token(&user, token.0)
+        .await?;
     Ok(HttpResponse::Created().json(TokenDTO::from(token)))
 }
 
@@ -174,8 +201,15 @@ async fn new_token(user: UserIdentity, user_service: web::Data<dyn UserService>,
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn delete_token(user: UserIdentity, user_service: web::Data<dyn UserService>, id: web::Path<String>) -> Result<impl Responder, Error> {
-    user_service.into_inner().delete_token(&user, id.parse::<i32>()?).await?;
+async fn delete_token(
+    user: UserIdentity,
+    user_service: web::Data<dyn UserService>,
+    id: web::Path<String>,
+) -> Result<impl Responder, Error> {
+    user_service
+        .into_inner()
+        .delete_token(&user, id.parse::<i32>()?)
+        .await?;
     Ok(HttpResponse::Ok())
 }
 
@@ -198,7 +232,10 @@ async fn delete_token(user: UserIdentity, user_service: web::Data<dyn UserServic
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn list_token(user: UserIdentity, user_service: web::Data<dyn UserService>) -> Result<impl Responder, Error> {
+async fn list_token(
+    user: UserIdentity,
+    user_service: web::Data<dyn UserService>,
+) -> Result<impl Responder, Error> {
     let token = user_service.into_inner().get_token(&user).await?;
     let mut results = vec![];
     for t in token.into_iter() {
@@ -213,9 +250,10 @@ pub fn get_scope() -> Scope {
         .service(web::resource("/login").route(web::get().to(login)))
         .service(web::resource("/logout").route(web::post().to(logout)))
         .service(web::resource("/callback").route(web::get().to(callback)))
-        .service(web::resource("/api_keys")
-            .route(web::post().to(new_token))
-            .route(web::get().to(list_token)))
-        .service( web::resource("/api_keys/{id}")
-            .route(web::delete().to(delete_token)))
+        .service(
+            web::resource("/api_keys")
+                .route(web::post().to(new_token))
+                .route(web::get().to(list_token)),
+        )
+        .service(web::resource("/api_keys/{id}").route(web::delete().to(delete_token)))
 }

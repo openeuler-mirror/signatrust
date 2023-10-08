@@ -14,11 +14,10 @@
  *
  */
 
-use crate::infra::encryption::algorithm::aes::Aes256GcmEncryptor;
 use crate::domain::encryptor::{Algorithm, Encryptor};
-use crate::util::error::{Result};
+use crate::infra::encryption::algorithm::aes::Aes256GcmEncryptor;
+use crate::util::error::Result;
 use std::str::FromStr;
-
 
 pub struct AlgorithmFactory {}
 
@@ -39,7 +38,8 @@ mod test {
     #[test]
     fn test_algorithm_factory() {
         assert!(AlgorithmFactory::new_algorithm("aes-512-gcm").is_err());
-        let algo = AlgorithmFactory::new_algorithm("aes256gsm").expect("algorithm from valid string should succeed");
+        let algo = AlgorithmFactory::new_algorithm("aes256gsm")
+            .expect("algorithm from valid string should succeed");
         assert_eq!(algo.algorithm(), Algorithm::Aes256GSM);
     }
 }

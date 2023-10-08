@@ -28,8 +28,6 @@ use crate::domain::encryption_engine::EncryptionEngine;
 
 pub const INFRA_CONFIG_DOMAIN_NAME: &str = "domain_name";
 
-
-
 #[derive(Debug, Clone, Default, PartialEq)]
 pub enum KeyState {
     Enabled,
@@ -38,7 +36,7 @@ pub enum KeyState {
     PendingRevoke,
     Revoked,
     PendingDelete,
-    Deleted
+    Deleted,
 }
 
 impl FromStr for KeyState {
@@ -52,7 +50,10 @@ impl FromStr for KeyState {
             "revoked" => Ok(KeyState::Revoked),
             "pending_delete" => Ok(KeyState::PendingDelete),
             "deleted" => Ok(KeyState::Deleted),
-            _ => Err(Error::UnsupportedTypeError(format!("unsupported data key state {}", s))),
+            _ => Err(Error::UnsupportedTypeError(format!(
+                "unsupported data key state {}",
+                s
+            ))),
         }
     }
 }
@@ -97,7 +98,10 @@ impl FromStr for KeyAction {
             "issue_cert" => Ok(KeyAction::IssueCert),
             "sign" => Ok(KeyAction::Sign),
             "read" => Ok(KeyAction::Read),
-            _ => Err(Error::UnsupportedTypeError(format!("unsupported data key action {}", s))),
+            _ => Err(Error::UnsupportedTypeError(format!(
+                "unsupported data key action {}",
+                s
+            ))),
         }
     }
 }
@@ -138,7 +142,10 @@ impl FromStr for KeyType {
             "x509ca" => Ok(KeyType::X509CA),
             "x509ica" => Ok(KeyType::X509ICA),
             "x509ee" => Ok(KeyType::X509EE),
-            _ => Err(Error::UnsupportedTypeError(format!("unsupported data key type {}", s))),
+            _ => Err(Error::UnsupportedTypeError(format!(
+                "unsupported data key type {}",
+                s
+            ))),
         }
     }
 }
@@ -164,7 +171,12 @@ pub struct X509CRL {
 }
 
 impl X509CRL {
-    pub fn new(ca_id: i32, data: Vec<u8>, create_at: DateTime<Utc>, update_at: DateTime<Utc>) -> Self {
+    pub fn new(
+        ca_id: i32,
+        data: Vec<u8>,
+        create_at: DateTime<Utc>,
+        update_at: DateTime<Utc>,
+    ) -> Self {
         X509CRL {
             id: 0,
             ca_id,
@@ -202,7 +214,10 @@ impl FromStr for X509RevokeReason {
             "certificate_hold" => Ok(X509RevokeReason::CertificateHold),
             "privilege_withdrawn" => Ok(X509RevokeReason::PrivilegeWithdrawn),
             "aa_compromise" => Ok(X509RevokeReason::AACompromise),
-            _ => Err(Error::UnsupportedTypeError(format!("unsupported x509 revoke reason {}", s))),
+            _ => Err(Error::UnsupportedTypeError(format!(
+                "unsupported x509 revoke reason {}",
+                s
+            ))),
         }
     }
 }
@@ -239,7 +254,7 @@ pub struct RevokedKey {
     pub ca_id: i32,
     pub reason: X509RevokeReason,
     pub create_at: DateTime<Utc>,
-    pub serial_number: Option<String>
+    pub serial_number: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -263,7 +278,7 @@ pub struct DataKey {
     pub user_email: Option<String>,
     pub request_delete_users: Option<String>,
     pub request_revoke_users: Option<String>,
-    pub parent_key: Option<ParentKey>
+    pub parent_key: Option<ParentKey>,
 }
 #[derive(Debug, Clone)]
 pub struct PagedMeta {
@@ -272,7 +287,7 @@ pub struct PagedMeta {
 #[derive(Debug, Clone)]
 pub struct PagedDatakey {
     pub data: Vec<DataKey>,
-    pub meta: PagedMeta
+    pub meta: PagedMeta,
 }
 
 #[derive(Debug, Clone)]
@@ -301,11 +316,7 @@ impl Identity for DataKey {
     fn get_identity(&self) -> String {
         format!(
             "<ID:{},Name:{},User:{},Type:{},Fingerprint:{}>",
-            self.id,
-            self.name,
-            self.user,
-            self.key_type,
-            self.fingerprint
+            self.id, self.name, self.user, self.key_type, self.fingerprint
         )
     }
 }
@@ -316,7 +327,7 @@ pub struct SecParentDateKey {
     pub private_key: SecVec<u8>,
     pub public_key: SecVec<u8>,
     pub certificate: SecVec<u8>,
-    pub attributes: HashMap<String, String>
+    pub attributes: HashMap<String, String>,
 }
 
 pub struct SecDataKey {
@@ -326,11 +337,14 @@ pub struct SecDataKey {
     pub certificate: SecVec<u8>,
     pub identity: String,
     pub attributes: HashMap<String, String>,
-    pub parent: Option<SecParentDateKey>
+    pub parent: Option<SecParentDateKey>,
 }
 
 impl SecDataKey {
-    pub async fn load(data_key: &DataKey, engine: &Box<dyn EncryptionEngine>) -> Result<SecDataKey> {
+    pub async fn load(
+        data_key: &DataKey,
+        engine: &Box<dyn EncryptionEngine>,
+    ) -> Result<SecDataKey> {
         let mut sec_datakey = Self {
             name: data_key.name.clone(),
             private_key: SecVec::new(engine.decode(data_key.private_key.clone()).await?),
@@ -366,22 +380,23 @@ pub struct DataKeyContent {
 pub enum Visibility {
     #[default]
     Public,
-    Private
+    Private,
 }
 
 impl Visibility {
     pub fn from_parameter(s: Option<String>) -> Result<Self> {
         match s {
-            None => {
-                Ok(Visibility::Public)
-            }
+            None => Ok(Visibility::Public),
             Some(value) => {
                 if value == "public" {
                     return Ok(Visibility::Public);
                 } else if value == "private" {
                     return Ok(Visibility::Private);
                 }
-                Err(Error::UnsupportedTypeError(format!("unsupported data key visibility {}", value)))
+                Err(Error::UnsupportedTypeError(format!(
+                    "unsupported data key visibility {}",
+                    value
+                )))
             }
         }
     }
@@ -394,7 +409,10 @@ impl FromStr for Visibility {
         match s {
             "public" => Ok(Visibility::Public),
             "private" => Ok(Visibility::Private),
-            _ => Err(Error::UnsupportedTypeError(format!("unsupported data key visibility {}", s))),
+            _ => Err(Error::UnsupportedTypeError(format!(
+                "unsupported data key visibility {}",
+                s
+            ))),
         }
     }
 }

@@ -14,26 +14,21 @@
  *
  */
 
-use crate::client::{sign_identity::SignIdentity};
+use crate::client::sign_identity::SignIdentity;
 
-
-use crate::client::worker::traits::SignHandler;
 use crate::client::file_handler::traits::FileHandler;
+use crate::client::worker::traits::SignHandler;
+use crate::util::error;
 use async_trait::async_trait;
 use std::collections::HashMap;
-use crate::util::error;
 
 pub struct Splitter {
-    key_attributes: HashMap<String, String>
+    key_attributes: HashMap<String, String>,
 }
 
-
 impl Splitter {
-
     pub fn new(key_attributes: HashMap<String, String>) -> Self {
-        Self {
-            key_attributes
-        }
+        Self { key_attributes }
     }
 }
 
@@ -41,11 +36,17 @@ impl Splitter {
 impl SignHandler for Splitter {
     async fn process(&mut self, handler: Box<dyn FileHandler>, item: SignIdentity) -> SignIdentity {
         let mut sign_options = item.sign_options.borrow().clone();
-        match handler.split_data(&item.file_path, &mut sign_options, &self.key_attributes).await {
+        match handler
+            .split_data(&item.file_path, &mut sign_options, &self.key_attributes)
+            .await
+        {
             Ok(content) => {
                 *item.raw_content.borrow_mut() = content;
                 *item.sign_options.borrow_mut() = sign_options;
-                debug!("successfully split file {}", item.file_path.as_path().display());
+                debug!(
+                    "successfully split file {}",
+                    item.file_path.as_path().display()
+                );
             }
             Err(err) => {
                 *item.error.borrow_mut() = Err(error::Error::SplitFileError(format!("{:?}", err)))
@@ -54,4 +55,3 @@ impl SignHandler for Splitter {
         item
     }
 }
-

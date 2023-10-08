@@ -14,35 +14,30 @@
  *
  */
 
+use crate::client::sign_identity::SignIdentity;
 use std::collections::HashMap;
-use crate::client::{sign_identity::SignIdentity};
 
-
-use crate::client::worker::traits::SignHandler;
 use crate::client::file_handler::traits::FileHandler;
-use async_trait::async_trait;
-use std::path::{Path, PathBuf};
-use std::fs::copy;
+use crate::client::worker::traits::SignHandler;
 use crate::util::error::Error;
-
+use async_trait::async_trait;
+use std::fs::copy;
+use std::path::{Path, PathBuf};
 
 use std::fs;
 
 pub struct Assembler {
     temp_dir: PathBuf,
-    key_attributes: HashMap<String, String>
+    key_attributes: HashMap<String, String>,
 }
 
-
 impl Assembler {
-
-    pub fn new(temp_dir: String, key_attributes: HashMap<String,String>) -> Self {
+    pub fn new(temp_dir: String, key_attributes: HashMap<String, String>) -> Self {
         Self {
             temp_dir: PathBuf::from(temp_dir),
-            key_attributes
+            key_attributes,
         }
     }
-
 }
 
 #[async_trait]
@@ -51,16 +46,32 @@ impl SignHandler for Assembler {
     async fn process(&mut self, handler: Box<dyn FileHandler>, item: SignIdentity) -> SignIdentity {
         let signatures: Vec<Vec<u8>> = (*item.signature).borrow().clone();
         let sign_options = item.sign_options.borrow().clone();
-        match handler.assemble_data(&item.file_path,  signatures, &self.temp_dir, &sign_options, &self.key_attributes).await {
+        match handler
+            .assemble_data(
+                &item.file_path,
+                signatures,
+                &self.temp_dir,
+                &sign_options,
+                &self.key_attributes,
+            )
+            .await
+        {
             Ok(content) => {
-                debug!("successfully assemble file {}", item.file_path.as_path().display());
+                debug!(
+                    "successfully assemble file {}",
+                    item.file_path.as_path().display()
+                );
                 let temp_file = Path::new(&content.0);
                 match copy(temp_file, Path::new(&content.1)) {
                     Ok(_) => {
-                        debug!("successfully saved file {}", item.file_path.as_path().display());
+                        debug!(
+                            "successfully saved file {}",
+                            item.file_path.as_path().display()
+                        );
                     }
                     Err(err) => {
-                        *item.error.borrow_mut() = Err(Error::AssembleFileError(format!("{:?}", err)));
+                        *item.error.borrow_mut() =
+                            Err(Error::AssembleFileError(format!("{:?}", err)));
                     }
                 }
                 //remove temp file when finished

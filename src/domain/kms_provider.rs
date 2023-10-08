@@ -36,7 +36,6 @@ impl FromStr for KMSType {
     }
 }
 
-
 #[async_trait]
 pub trait KMSProvider: Send + Sync {
     async fn encode(&self, content: String) -> Result<String>;
@@ -49,7 +48,8 @@ mod test {
 
     #[test]
     fn test_kms_type_from_string_and_display() {
-        let _ = KMSType::from_str("invalid_type").expect_err("kms type from invalid string should fail");
+        let _ = KMSType::from_str("invalid_type")
+            .expect_err("kms type from invalid string should fail");
         let kms_type1 = KMSType::from_str("huaweicloud").expect("kms type from string failed");
         assert_eq!(kms_type1, KMSType::HuaweiCloud);
         let kms_type2 = KMSType::from_str("dummy").expect("kms type from string failed");

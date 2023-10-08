@@ -14,12 +14,11 @@
  *
  */
 
-
 use crate::domain::clusterkey::entity::ClusterKey;
 
-use sqlx::types::chrono;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
+use sqlx::types::chrono;
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Deserialize, Serialize)]
 #[sea_orm(table_name = "cluster_key")]
@@ -51,8 +50,8 @@ impl From<Model> for ClusterKey {
 
 #[cfg(test)]
 mod tests {
+    use super::{ClusterKey, Model};
     use chrono::Utc;
-    use super::{ClusterKey,Model};
 
     #[test]
     fn test_cluster_key_entity_from_dto() {
@@ -61,7 +60,7 @@ mod tests {
             data: vec![1, 2, 3],
             algorithm: "algo".to_string(),
             identity: "id".to_string(),
-            create_at: Utc::now()
+            create_at: Utc::now(),
         };
 
         let create_at = dto.create_at.clone();
@@ -72,6 +71,4 @@ mod tests {
         assert_eq!(key.identity, "id");
         assert_eq!(key.create_at, create_at);
     }
-
 }
-

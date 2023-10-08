@@ -16,28 +16,26 @@
 
 #![allow(dead_code)]
 
+use crate::domain::datakey::entity::DataKey;
+use crate::domain::datakey::entity::{KeyType as EntityKeyTpe, KeyType};
+use crate::domain::user::entity::User;
+use crate::presentation::handler::control::model::datakey::dto::CreateDataKeyDTO;
+use crate::presentation::handler::control::model::user::dto::UserIdentity;
+use crate::util::error::Result;
+use chrono::{Duration, Utc};
+use clap::Args;
+use clap::{Parser, Subcommand};
 use std::collections::HashMap;
 use std::env;
-use validator::Validate;
-use chrono::{Duration, Utc};
-use crate::util::error::{Result};
-use crate::domain::datakey::entity::{KeyType as EntityKeyTpe, KeyType};
-use clap::{Parser, Subcommand};
-use clap::{Args};
-use tokio_util::sync::CancellationToken;
-use crate::domain::datakey::entity::{DataKey};
-use crate::domain::user::entity::User;
-use crate::presentation::handler::control::model::datakey::dto::{CreateDataKeyDTO};
-use crate::presentation::handler::control::model::user::dto::UserIdentity;
 use std::str::FromStr;
+use tokio_util::sync::CancellationToken;
+use validator::Validate;
 
-
-mod util;
-mod infra;
-mod domain;
 mod application;
+mod domain;
+mod infra;
 mod presentation;
-
+mod util;
 
 #[macro_use]
 extern crate log;
@@ -50,7 +48,7 @@ extern crate log;
 pub struct App {
     #[arg(short, long)]
     #[arg(
-    help = "path of configuration file, './client.toml' relative to working directory be used in default"
+        help = "path of configuration file, './client.toml' relative to working directory be used in default"
     )]
     config: Option<String>,
     #[command(subcommand)]
@@ -133,20 +131,50 @@ fn generate_keys_parameters(command: &CommandGenerateKeys) -> HashMap<String, St
     let mut attributes = HashMap::new();
     attributes.insert("key_type".to_string(), command.param_key_type.clone());
     if command.param_key_size.is_some() {
-        attributes.insert("key_length".to_string(), command.param_key_size.clone().unwrap());
+        attributes.insert(
+            "key_length".to_string(),
+            command.param_key_size.clone().unwrap(),
+        );
     }
-    attributes.insert("digest_algorithm".to_string(), command.digest_algorithm.clone());
+    attributes.insert(
+        "digest_algorithm".to_string(),
+        command.digest_algorithm.clone(),
+    );
     let key_type = EntityKeyTpe::from_str(&command.key_type).unwrap();
     if key_type == EntityKeyTpe::OpenPGP {
-        attributes.insert("email".to_string(), command.param_pgp_email.clone().unwrap());
-        attributes.insert("passphrase".to_string(), command.param_pgp_passphrase.clone().unwrap());
+        attributes.insert(
+            "email".to_string(),
+            command.param_pgp_email.clone().unwrap(),
+        );
+        attributes.insert(
+            "passphrase".to_string(),
+            command.param_pgp_passphrase.clone().unwrap(),
+        );
     } else {
-        attributes.insert("common_name".to_string(), command.param_x509_common_name.clone().unwrap());
-        attributes.insert("country_name".to_string(), command.param_x509_country_name.clone().unwrap());
-        attributes.insert("locality".to_string(), command.param_x509_locality.clone().unwrap());
-        attributes.insert("province_name".to_string(), command.param_x509_province_name.clone().unwrap());
-        attributes.insert("organization".to_string(), command.param_x509_organization.clone().unwrap());
-        attributes.insert("organizational_unit".to_string(), command.param_x509_organizational_unit.clone().unwrap());
+        attributes.insert(
+            "common_name".to_string(),
+            command.param_x509_common_name.clone().unwrap(),
+        );
+        attributes.insert(
+            "country_name".to_string(),
+            command.param_x509_country_name.clone().unwrap(),
+        );
+        attributes.insert(
+            "locality".to_string(),
+            command.param_x509_locality.clone().unwrap(),
+        );
+        attributes.insert(
+            "province_name".to_string(),
+            command.param_x509_province_name.clone().unwrap(),
+        );
+        attributes.insert(
+            "organization".to_string(),
+            command.param_x509_organization.clone().unwrap(),
+        );
+        attributes.insert(
+            "organizational_unit".to_string(),
+            command.param_x509_organizational_unit.clone().unwrap(),
+        );
     }
     attributes
 }
@@ -156,19 +184,30 @@ async fn main() -> Result<()> {
     //prepare config and logger
     env_logger::init();
     let app = App::parse();
-    let path = app.config.unwrap_or(format!("{}/{}", env::current_dir().expect("current dir not found").display(),
-                                            "config/server.toml"));
+    let path = app.config.unwrap_or(format!(
+        "{}/{}",
+        env::current_dir().expect("current dir not found").display(),
+        "config/server.toml"
+    ));
     let server_config = util::config::ServerConfig::new(path);
     //cancel token will never been used/canceled here cause it's only used for background threads in control server instance.
-    let control_server = presentation::server::control_server::ControlServer::new(server_config.config, CancellationToken::new()).await?;
+    let control_server = presentation::server::control_server::ControlServer::new(
+        server_config.config,
+        CancellationToken::new(),
+    )
+    .await?;
     //handle commands
     match app.command {
         Some(Commands::CreateAdmin(create_admin)) => {
-            let token = control_server.create_user_token(User::new(create_admin.email.clone())?).await?;
+            let token = control_server
+                .create_user_token(User::new(create_admin.email.clone())?)
+                .await?;
             info!("[Result]: Administrator {} has been successfully created with token {} will expire {}", &create_admin.email, &token.token, &token.expire_at)
         }
         Some(Commands::GenerateKeys(generate_keys)) => {
-            let user = control_server.get_user_by_email(&generate_keys.email).await?;
+            let user = control_server
+                .get_user_by_email(&generate_keys.email)
+                .await?;
 
             let now = Utc::now();
             let mut key = CreateDataKeyDTO {
@@ -192,8 +231,16 @@ async fn main() -> Result<()> {
             }
             key.validate()?;
 
-            let keys = control_server.create_keys(&mut DataKey::create_from(key, UserIdentity::from_user(user.clone()))?, UserIdentity::from_user(user)).await?;
-            info!("[Result]: Keys {} type {} has been successfully generated", &keys.name, &generate_keys.key_type)
+            let keys = control_server
+                .create_keys(
+                    &mut DataKey::create_from(key, UserIdentity::from_user(user.clone()))?,
+                    UserIdentity::from_user(user),
+                )
+                .await?;
+            info!(
+                "[Result]: Keys {} type {} has been successfully generated",
+                &keys.name, &generate_keys.key_type
+            )
         }
         None => {}
     };

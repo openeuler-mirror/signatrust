@@ -14,41 +14,49 @@
  *
  */
 
-use hex;
-use rand::{thread_rng, Rng};
-use rand::distributions::Alphanumeric;
-use serde::{Serialize, Serializer};
-use std::collections::{HashMap, BTreeMap};
-use std::path::Path;
-use sha2::{Sha256, Digest};
-use std::fmt::Write;
 use crate::domain::datakey::entity::Visibility;
 use crate::util::error::{Error, Result as LibraryResult};
+use hex;
+use rand::distributions::Alphanumeric;
+use rand::{thread_rng, Rng};
+use serde::{Serialize, Serializer};
+use sha2::{Digest, Sha256};
+use std::collections::{BTreeMap, HashMap};
+use std::fmt::Write;
+use std::path::Path;
 
 pub fn encode_u8_to_hex_string(value: &[u8]) -> String {
-    value
-        .iter()
-        .fold(String::new(), |mut result, n| {
-            let _ = write!(result, "{n:02X}");
-            result
-        })
+    value.iter().fold(String::new(), |mut result, n| {
+        let _ = write!(result, "{n:02X}");
+        result
+    })
 }
 
-pub fn get_datakey_full_name(name: &str, email: &str, visibility: &Visibility) -> LibraryResult<String> {
+pub fn get_datakey_full_name(
+    name: &str,
+    email: &str,
+    visibility: &Visibility,
+) -> LibraryResult<String> {
     let names: Vec<_> = name.split(':').collect();
     if visibility.to_owned() == Visibility::Public {
         return if names.len() <= 1 {
             Ok(name.to_owned())
         } else {
-            Err(Error::ParameterError("public key name should not contains ':'".to_string()))
-        }
+            Err(Error::ParameterError(
+                "public key name should not contains ':'".to_string(),
+            ))
+        };
     }
     if names.len() <= 1 {
         return Ok(format!("{}:{}", email, name));
     } else if names.len() > 2 {
-        return Err(Error::ParameterError("private key should in the format of {email}:{key_name}".to_string()))
+        return Err(Error::ParameterError(
+            "private key should in the format of {email}:{key_name}".to_string(),
+        ));
     } else if names[0] != email {
-        return Err(Error::ParameterError("private key email prefix not matched':'".to_string()))
+        return Err(Error::ParameterError(
+            "private key email prefix not matched':'".to_string(),
+        ));
     }
     Ok(name.to_owned())
 }
@@ -58,7 +66,11 @@ pub fn decode_hex_string_to_u8(value: &String) -> Vec<u8> {
 }
 
 pub fn generate_api_token() -> String {
-    thread_rng().sample_iter(&Alphanumeric).take(40).map(char::from).collect()
+    thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(40)
+        .map(char::from)
+        .collect()
 }
 
 pub fn generate_csrf_parent_token() -> Vec<u8> {
@@ -84,7 +96,10 @@ pub fn get_token_hash(real_token: &str) -> String {
     hex::encode(digest)
 }
 
-pub fn sorted_map<S: Serializer, K: Serialize + Ord, V: Serialize>(value: &HashMap<K, V>, serializer: S) -> Result<S::Ok, S::Error> {
+pub fn sorted_map<S: Serializer, K: Serialize + Ord, V: Serialize>(
+    value: &HashMap<K, V>,
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
     let mut items: Vec<(_, _)> = value.iter().collect();
     items.sort_by(|a, b| a.0.cmp(b.0));
     BTreeMap::from_iter(items).serialize(serializer)
@@ -92,10 +107,10 @@ pub fn sorted_map<S: Serializer, K: Serialize + Ord, V: Serialize>(value: &HashM
 
 #[cfg(test)]
 mod test {
+    use super::*;
     use std::env;
     use std::fs::File;
     use uuid::Uuid;
-    use super::*;
 
     #[test]
     fn test_get_datakey_full_name() {
@@ -106,12 +121,24 @@ mod test {
         let name_with_prefix3 = "fake_email@gmail.com:fake3_email@gmail.com:test_key";
         let name_without_prefix = "test_key";
         //public key
-        assert_eq!(get_datakey_full_name(name_without_prefix, "fake_email@gmail.com", &public).unwrap(), name_without_prefix.to_string());
-        get_datakey_full_name(name_with_prefix, "fake_email@gmail.com", &public).expect_err("public key name should not contains ':'");
-        assert_eq!(get_datakey_full_name(name_without_prefix, "fake_email@gmail.com", &private).unwrap(), name_with_prefix.to_string());
-        assert_eq!(get_datakey_full_name(name_with_prefix, "fake_email@gmail.com", &private).unwrap(), name_with_prefix.to_string());
-        get_datakey_full_name(name_with_prefix2, "fake_email@gmail.com", &private).expect_err("private key email prefix not matched':'");
-        get_datakey_full_name(name_with_prefix3, "fake_email@gmail.com", &private).expect_err("private key should in the format of {email}:{key_name}");
+        assert_eq!(
+            get_datakey_full_name(name_without_prefix, "fake_email@gmail.com", &public).unwrap(),
+            name_without_prefix.to_string()
+        );
+        get_datakey_full_name(name_with_prefix, "fake_email@gmail.com", &public)
+            .expect_err("public key name should not contains ':'");
+        assert_eq!(
+            get_datakey_full_name(name_without_prefix, "fake_email@gmail.com", &private).unwrap(),
+            name_with_prefix.to_string()
+        );
+        assert_eq!(
+            get_datakey_full_name(name_with_prefix, "fake_email@gmail.com", &private).unwrap(),
+            name_with_prefix.to_string()
+        );
+        get_datakey_full_name(name_with_prefix2, "fake_email@gmail.com", &private)
+            .expect_err("private key email prefix not matched':'");
+        get_datakey_full_name(name_with_prefix3, "fake_email@gmail.com", &private)
+            .expect_err("private key should in the format of {email}:{key_name}");
     }
 
     #[test]
@@ -148,7 +175,8 @@ mod test {
     fn test_file_exists() {
         //generate temp file
         let valid_path = env::temp_dir().join(Uuid::new_v4().to_string());
-        let _valid_file = File::create(valid_path.clone()).expect("create temporary file should work");
+        let _valid_file =
+            File::create(valid_path.clone()).expect("create temporary file should work");
         let invalid_path = "./invalid/file/path/should/not/exists";
         assert!(file_exists(valid_path.to_str().unwrap()));
         assert!(!file_exists(invalid_path));

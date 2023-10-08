@@ -12,14 +12,14 @@
  * // See the Mulan PSL v2 for more details.
  */
 
-use std::str::FromStr;
 use crate::util::error::{Error, Result};
-use std::fmt::{Display, Formatter};
-use std::fmt;
-use pgp::composed::{KeyType};
-use pgp::crypto::{hash::HashAlgorithm};
-use enum_iterator::{Sequence};
+use enum_iterator::Sequence;
+use pgp::composed::KeyType;
+use pgp::crypto::hash::HashAlgorithm;
 use serde::Deserialize;
+use std::fmt;
+use std::fmt::{Display, Formatter};
+use std::str::FromStr;
 
 pub const PGP_VALID_KEY_SIZE: [&str; 3] = ["2048", "3072", "4096"];
 
@@ -38,7 +38,10 @@ impl FromStr for OpenPGPKeyType {
         match s {
             "rsa" => Ok(OpenPGPKeyType::Rsa),
             "eddsa" => Ok(OpenPGPKeyType::Eddsa),
-            _ => Err(Error::UnsupportedTypeError(format!("unsupported openpgp key state {}", s))),
+            _ => Err(Error::UnsupportedTypeError(format!(
+                "unsupported openpgp key state {}",
+                s
+            ))),
         }
     }
 }
@@ -56,14 +59,14 @@ impl OpenPGPKeyType {
     //key length defaults to 2048
     pub fn get_real_key_type(&self, key_length: Option<String>) -> KeyType {
         match self {
-           OpenPGPKeyType::Rsa => {
-               if let Some(length) = key_length {
-                   KeyType::Rsa(length.parse().unwrap())
-               } else {
-                   KeyType::Rsa(2048)
-               }
-           },
-           OpenPGPKeyType::Eddsa => KeyType::EdDSA
+            OpenPGPKeyType::Rsa => {
+                if let Some(length) = key_length {
+                    KeyType::Rsa(length.parse().unwrap())
+                } else {
+                    KeyType::Rsa(2048)
+                }
+            }
+            OpenPGPKeyType::Eddsa => KeyType::EdDSA,
         }
     }
 }
@@ -120,7 +123,10 @@ impl FromStr for OpenPGPDigestAlgorithm {
             "sha2_512" => Ok(OpenPGPDigestAlgorithm::SHA2_512),
             "sha3_256" => Ok(OpenPGPDigestAlgorithm::SHA3_256),
             "sha3_512" => Ok(OpenPGPDigestAlgorithm::SHA3_512),
-            _ => Err(Error::UnsupportedTypeError(format!("unsupported openpgp digest algorithm {}", s))),
+            _ => Err(Error::UnsupportedTypeError(format!(
+                "unsupported openpgp digest algorithm {}",
+                s
+            ))),
         }
     }
 }
@@ -130,7 +136,7 @@ impl OpenPGPDigestAlgorithm {
         match self {
             OpenPGPDigestAlgorithm::None => HashAlgorithm::None,
             OpenPGPDigestAlgorithm::MD5 => HashAlgorithm::MD5,
-            OpenPGPDigestAlgorithm::SHA1=> HashAlgorithm::SHA1,
+            OpenPGPDigestAlgorithm::SHA1 => HashAlgorithm::SHA1,
             OpenPGPDigestAlgorithm::SHA2_224 => HashAlgorithm::SHA2_224,
             OpenPGPDigestAlgorithm::SHA2_256 => HashAlgorithm::SHA2_256,
             OpenPGPDigestAlgorithm::SHA2_384 => HashAlgorithm::SHA2_384,

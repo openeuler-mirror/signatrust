@@ -20,19 +20,19 @@ use clap::Parser;
 use config::Config;
 use std::env;
 use std::sync::{Arc, RwLock};
-use tokio_util::sync::CancellationToken;
 use tokio::{
     select,
     signal::unix::{signal, SignalKind},
 };
+use tokio_util::sync::CancellationToken;
 
 use crate::presentation::server::data_server::DataServer;
 
-mod infra;
+mod application;
 mod domain;
+mod infra;
 mod presentation;
 mod util;
-mod application;
 
 #[macro_use]
 extern crate log;
@@ -87,7 +87,8 @@ async fn main() -> Result<()> {
     //prepare config and logger
     env_logger::init();
     //data server starts
-    let data_server: DataServer = DataServer::new(SERVERCONFIG.clone(), CANCEL_TOKEN.clone()).await?;
+    let data_server: DataServer =
+        DataServer::new(SERVERCONFIG.clone(), CANCEL_TOKEN.clone()).await?;
     data_server.run().await?;
     Ok(())
 }

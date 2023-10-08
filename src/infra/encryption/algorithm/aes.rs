@@ -16,13 +16,13 @@
 
 use crate::domain::encryptor::{Algorithm, Encryptor};
 use crate::util::error::Error;
+use crate::util::error::Result;
 use aes_gcm_siv::{
     aead::{Aead, KeyInit, OsRng},
     Aes256GcmSiv,
 };
 use generic_array::GenericArray;
 use rand::{thread_rng, Rng};
-use crate::util::error::Result;
 
 pub const NONCE_LENGTH: usize = 12;
 pub const KEY_LENGTH: usize = 32;
@@ -47,7 +47,7 @@ impl Encryptor for Aes256GcmEncryptor {
 
     fn encrypt(&self, key: Vec<u8>, content: Vec<u8>) -> Result<Vec<u8>> {
         if key.len() != KEY_LENGTH {
-            return Err(Error::EncodeError("key size not matched".to_string()))
+            return Err(Error::EncodeError("key size not matched".to_string()));
         }
         let cipher = Aes256GcmSiv::new(GenericArray::from_slice(&key));
         let random = self.generate_nonce_bytes();
@@ -68,7 +68,7 @@ impl Encryptor for Aes256GcmEncryptor {
             ));
         }
         if key.len() != KEY_LENGTH {
-            return Err(Error::EncodeError("key size not matched".to_string()))
+            return Err(Error::EncodeError("key size not matched".to_string()));
         }
         let cipher = Aes256GcmSiv::new(GenericArray::from_slice(&key));
         let nonce = GenericArray::from_slice(&content[..NONCE_LENGTH]);
@@ -108,14 +108,22 @@ mod test {
         let aes = Aes256GcmEncryptor::default();
         let key1 = aes.generate_key();
         let content = "fake_content".as_bytes();
-        let encoded_1 = aes.encrypt(key1.clone(), content.to_vec()).expect("encode should be successful");
-        let encoded_2 = aes.encrypt(key1.clone(), content.to_vec()).expect("encode should be successful");
+        let encoded_1 = aes
+            .encrypt(key1.clone(), content.to_vec())
+            .expect("encode should be successful");
+        let encoded_2 = aes
+            .encrypt(key1.clone(), content.to_vec())
+            .expect("encode should be successful");
         assert_ne!(encoded_1, encoded_2);
         assert_eq!(encoded_1.len(), encoded_1.len());
         assert_ne!(encoded_1, content);
         assert_ne!(encoded_2, content);
-        let decode_1 = aes.decrypt(key1.clone(), encoded_1).expect("decode should be successful");
-        let decode_2 = aes.decrypt(key1.clone(), encoded_2).expect("decode should be successful");
+        let decode_1 = aes
+            .decrypt(key1.clone(), encoded_1)
+            .expect("decode should be successful");
+        let decode_2 = aes
+            .decrypt(key1.clone(), encoded_2)
+            .expect("decode should be successful");
         assert_eq!(content, decode_1);
         assert_eq!(content, decode_2);
     }
@@ -126,14 +134,22 @@ mod test {
         let key1 = aes.generate_key();
         let key2 = aes.generate_key();
         let content = "fake_content".as_bytes();
-        let encoded_1 = aes.encrypt(key1.clone(), content.to_vec()).expect("encode should be successful");
-        let encoded_2 = aes.encrypt(key2.clone(), content.to_vec()).expect("encode should be successful");
+        let encoded_1 = aes
+            .encrypt(key1.clone(), content.to_vec())
+            .expect("encode should be successful");
+        let encoded_2 = aes
+            .encrypt(key2.clone(), content.to_vec())
+            .expect("encode should be successful");
         assert_ne!(encoded_1, encoded_2);
         assert_eq!(encoded_1.len(), encoded_1.len());
         assert_ne!(encoded_1, content);
         assert_ne!(encoded_2, content);
-        let decode_1 = aes.decrypt(key1.clone(), encoded_1).expect("decode should be successful");
-        let decode_2 = aes.decrypt(key2.clone(), encoded_2).expect("decode should be successful");
+        let decode_1 = aes
+            .decrypt(key1.clone(), encoded_1)
+            .expect("decode should be successful");
+        let decode_2 = aes
+            .decrypt(key2.clone(), encoded_2)
+            .expect("decode should be successful");
         assert_eq!(content, decode_1);
         assert_eq!(content, decode_2);
     }
@@ -144,13 +160,21 @@ mod test {
         let key1 = aes.generate_key();
         let content_1 = "fake_content1".as_bytes();
         let content_2 = "fake_content 2".as_bytes();
-        let encoded_1 = aes.encrypt(key1.clone(), content_1.to_vec()).expect("encode should be successful");
-        let encoded_2 = aes.encrypt(key1.clone(), content_2.to_vec()).expect("encode should be successful");
+        let encoded_1 = aes
+            .encrypt(key1.clone(), content_1.to_vec())
+            .expect("encode should be successful");
+        let encoded_2 = aes
+            .encrypt(key1.clone(), content_2.to_vec())
+            .expect("encode should be successful");
         assert_ne!(encoded_1, encoded_2);
         assert_ne!(encoded_1, content_1);
         assert_ne!(encoded_2, content_2);
-        let decode_1 = aes.decrypt(key1.clone(), encoded_1).expect("decode should be successful");
-        let decode_2 = aes.decrypt(key1.clone(), encoded_2).expect("decode should be successful");
+        let decode_1 = aes
+            .decrypt(key1.clone(), encoded_1)
+            .expect("decode should be successful");
+        let decode_2 = aes
+            .decrypt(key1.clone(), encoded_2)
+            .expect("decode should be successful");
         assert_eq!(content_1, decode_1);
         assert_eq!(content_2, decode_2);
     }
@@ -161,16 +185,26 @@ mod test {
         let key1 = aes.generate_key();
         let encoded = "123456789abc".as_bytes();
         let invalid = "invalid_encoded_content_although_long_enough".as_bytes();
-        let _ = aes.decrypt(key1.clone(), vec![]).expect_err("decode should fail due to content not long enough");
-        let _ = aes.decrypt(key1.clone(), encoded.to_vec()).expect_err("decode should fail due to content not long enough");
-        let _ = aes.decrypt(key1.clone(), invalid.to_vec()).expect_err("decode should fail due to content invalid");
+        let _ = aes
+            .decrypt(key1.clone(), vec![])
+            .expect_err("decode should fail due to content not long enough");
+        let _ = aes
+            .decrypt(key1.clone(), encoded.to_vec())
+            .expect_err("decode should fail due to content not long enough");
+        let _ = aes
+            .decrypt(key1.clone(), invalid.to_vec())
+            .expect_err("decode should fail due to content invalid");
     }
 
     #[test]
     fn test_encrypt_decrypt_with_invalid_key_size() {
         let aes = Aes256GcmEncryptor::default();
         let invalid_key = "invalid_key".as_bytes();
-        let _ = aes.encrypt(invalid_key.to_vec(), vec![]).expect_err("encode should fail due to key size invalid");
-        let _ = aes.decrypt(invalid_key.to_vec(), vec![]).expect_err("decode should fail due to key size invalid");
+        let _ = aes
+            .encrypt(invalid_key.to_vec(), vec![])
+            .expect_err("encode should fail due to key size invalid");
+        let _ = aes
+            .decrypt(invalid_key.to_vec(), vec![])
+            .expect_err("decode should fail due to key size invalid");
     }
 }

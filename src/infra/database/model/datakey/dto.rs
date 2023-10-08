@@ -14,18 +14,18 @@
  *
  */
 
-use crate::domain::datakey::entity::{DataKey, KeyState, Visibility};
 use crate::domain::datakey::entity::KeyType;
+use crate::domain::datakey::entity::{DataKey, KeyState, Visibility};
 use crate::domain::datakey::traits::ExtendableAttributes;
-use crate::util::error::{Error};
+use crate::util::error::Error;
 use crate::util::key;
 
 use chrono::{DateTime, Utc};
-use std::str::FromStr;
 use sea_orm::ActiveValue::Set;
+use std::str::FromStr;
 
 use sea_orm::entity::prelude::*;
-use sea_orm::{NotSet};
+use sea_orm::NotSet;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Deserialize, Serialize)]
@@ -51,9 +51,8 @@ pub struct Model {
     pub user_email: Option<String>,
     pub request_delete_users: Option<String>,
     pub request_revoke_users: Option<String>,
-    pub x509_crl_update_at: Option<DateTime<Utc>>
+    pub x509_crl_update_at: Option<DateTime<Utc>>,
 }
-
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
@@ -76,8 +75,6 @@ impl Related<super::super::x509_crl_content::dto::Entity> for Entity {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
-
-
 
 impl TryFrom<Model> for DataKey {
     type Error = Error;
@@ -123,15 +120,9 @@ impl TryFrom<DataKey> for ActiveModel {
             parent_id: Set(data_key.parent_id),
             fingerprint: Set(data_key.fingerprint.clone()),
             serial_number: Set(data_key.serial_number),
-            private_key: Set(key::encode_u8_to_hex_string(
-                &data_key.private_key)
-            ),
-            public_key: Set(key::encode_u8_to_hex_string(
-                &data_key.public_key)
-            ),
-            certificate: Set(key::encode_u8_to_hex_string(
-                &data_key.certificate
-            )),
+            private_key: Set(key::encode_u8_to_hex_string(&data_key.private_key)),
+            public_key: Set(key::encode_u8_to_hex_string(&data_key.public_key)),
+            certificate: Set(key::encode_u8_to_hex_string(&data_key.certificate)),
             create_at: Set(data_key.create_at),
             expire_at: Set(data_key.expire_at),
             key_state: Set(data_key.key_state.to_string()),
@@ -146,7 +137,7 @@ impl TryFrom<DataKey> for ActiveModel {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::datakey::entity::{Visibility};
+    use crate::domain::datakey::entity::Visibility;
 
     #[test]
     fn test_data_key_entity_from_dto() {
@@ -177,10 +168,8 @@ mod tests {
         assert_eq!(key.name, "Test Key");
         assert_eq!(key.visibility, Visibility::Public);
         assert_eq!(key.key_type, KeyType::OpenPGP);
-        assert_eq!(key.private_key, vec![7,8,9,10]);
-        assert_eq!(key.public_key, vec![4,5,6]);
-        assert_eq!(key.certificate, vec![1,2,3]);
+        assert_eq!(key.private_key, vec![7, 8, 9, 10]);
+        assert_eq!(key.public_key, vec![4, 5, 6]);
+        assert_eq!(key.certificate, vec![1, 2, 3]);
     }
-
 }
-

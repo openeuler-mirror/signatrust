@@ -18,13 +18,12 @@ use serde::{Deserialize, Serialize};
 use std::convert::From;
 
 use crate::domain::token::entity::Token;
-use utoipa::{ToSchema};
+use utoipa::ToSchema;
 
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct CreateTokenDTO {
     pub description: String,
 }
-
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct TokenDTO {
@@ -38,14 +37,12 @@ pub struct TokenDTO {
     #[serde(skip_deserializing)]
     pub create_at: String,
     #[serde(skip_deserializing)]
-    pub expire_at: String
+    pub expire_at: String,
 }
 
 impl CreateTokenDTO {
     pub fn new(description: String) -> CreateTokenDTO {
-        CreateTokenDTO {
-            description,
-        }
+        CreateTokenDTO { description }
     }
 }
 

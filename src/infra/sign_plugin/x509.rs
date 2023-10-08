@@ -16,74 +16,109 @@
 
 use std::collections::HashMap;
 use std::str::FromStr;
-use std::time::{SystemTime, Duration};
+use std::time::{Duration, SystemTime};
 
 use chrono::{DateTime, Utc};
+use foreign_types_shared::{ForeignType, ForeignTypeRef};
 use openssl::asn1::{Asn1Integer, Asn1Time};
 use openssl::bn::{BigNum, MsbOption};
-use openssl::cms::{CmsContentInfo, CMSOptions};
+use openssl::cms::{CMSOptions, CmsContentInfo};
 use openssl::hash::MessageDigest;
 use openssl::nid::Nid;
 use openssl::pkcs7::{Pkcs7, Pkcs7Flags};
-use openssl::pkey::{PKey};
-use openssl::stack::{Stack};
+use openssl::pkey::PKey;
+use openssl::stack::Stack;
 use openssl::x509;
-use openssl::x509::extension::{AuthorityKeyIdentifier, BasicConstraints, KeyUsage, SubjectKeyIdentifier};
+use openssl::x509::extension::{
+    AuthorityKeyIdentifier, BasicConstraints, KeyUsage, SubjectKeyIdentifier,
+};
 use openssl::x509::{X509Crl, X509Extension};
+use openssl_sys::{
+    X509_CRL_add0_revoked, X509_CRL_new, X509_CRL_set1_lastUpdate, X509_CRL_set1_nextUpdate,
+    X509_CRL_set_issuer_name, X509_CRL_sign, X509_REVOKED_new, X509_REVOKED_set_revocationDate,
+    X509_REVOKED_set_serialNumber,
+};
 use secstr::SecVec;
 use serde::Deserialize;
-use foreign_types_shared::{ForeignType, ForeignTypeRef};
-use openssl_sys::{X509_CRL_new, X509_CRL_set_issuer_name, X509_CRL_set1_lastUpdate, X509_CRL_add0_revoked, X509_CRL_sign, X509_CRL_set1_nextUpdate, X509_REVOKED_new, X509_REVOKED_set_serialNumber, X509_REVOKED_set_revocationDate};
 
-use validator::{Validate, ValidationError};
+use super::util::{attributes_validate, validate_utc_time, validate_utc_time_not_expire};
+use crate::domain::datakey::entity::{
+    DataKey, DataKeyContent, KeyType, RevokedKey, SecDataKey, SecParentDateKey,
+    INFRA_CONFIG_DOMAIN_NAME,
+};
+use crate::domain::datakey::plugins::x509::{
+    X509DigestAlgorithm, X509KeyType, X509_VALID_KEY_SIZE,
+};
+use crate::domain::sign_plugin::SignPlugins;
+use crate::util::error::{Error, Result};
+use crate::util::key::{decode_hex_string_to_u8, encode_u8_to_hex_string};
 use crate::util::options;
 use crate::util::sign::SignType;
-use crate::domain::datakey::entity::{DataKey, DataKeyContent, INFRA_CONFIG_DOMAIN_NAME, KeyType, RevokedKey, SecDataKey, SecParentDateKey};
-use crate::domain::datakey::plugins::x509::{X509KeyType, X509_VALID_KEY_SIZE, X509DigestAlgorithm};
-use crate::util::error::{Error, Result};
-use crate::domain::sign_plugin::SignPlugins;
-use crate::util::key::{decode_hex_string_to_u8, encode_u8_to_hex_string};
-use super::util::{validate_utc_time_not_expire, validate_utc_time, attributes_validate};
 #[allow(unused_imports)]
-use enum_iterator::{all};
+use enum_iterator::all;
+use validator::{Validate, ValidationError};
 
 #[derive(Debug, Validate, Deserialize)]
 pub struct X509KeyGenerationParameter {
-    #[validate(length(min = 1, max = 30, message="invalid x509 subject 'CommonName'"))]
+    #[validate(length(min = 1, max = 30, message = "invalid x509 subject 'CommonName'"))]
     common_name: String,
-    #[validate(length(min = 1, max = 30, message="invalid x509 subject 'OrganizationalUnit'"))]
+    #[validate(length(
+        min = 1,
+        max = 30,
+        message = "invalid x509 subject 'OrganizationalUnit'"
+    ))]
     organizational_unit: String,
-    #[validate(length(min = 1, max = 30, message="invalid x509 subject 'Organization'"))]
+    #[validate(length(min = 1, max = 30, message = "invalid x509 subject 'Organization'"))]
     organization: String,
-    #[validate(length(min = 1, max = 30, message="invalid x509 subject 'Locality'"))]
+    #[validate(length(min = 1, max = 30, message = "invalid x509 subject 'Locality'"))]
     locality: String,
-    #[validate(length(min = 1, max = 30, message="invalid x509 subject 'StateOrProvinceName'"))]
+    #[validate(length(
+        min = 1,
+        max = 30,
+        message = "invalid x509 subject 'StateOrProvinceName'"
+    ))]
     province_name: String,
-    #[validate(length(min = 2, max = 2, message="invalid x509 subject 'CountryName'"))]
+    #[validate(length(min = 2, max = 2, message = "invalid x509 subject 'CountryName'"))]
     country_name: String,
     key_type: X509KeyType,
-    #[validate(custom(function = "validate_x509_key_size", message="invalid x509 attribute 'key_length'"))]
+    #[validate(custom(
+        function = "validate_x509_key_size",
+        message = "invalid x509 attribute 'key_length'"
+    ))]
     key_length: String,
     digest_algorithm: X509DigestAlgorithm,
-    #[validate(custom(function = "validate_utc_time", message="invalid x509 attribute 'create_at'"))]
+    #[validate(custom(
+        function = "validate_utc_time",
+        message = "invalid x509 attribute 'create_at'"
+    ))]
     create_at: String,
-    #[validate(custom(function= "validate_utc_time_not_expire", message="invalid x509 attribute 'expire_at'"))]
+    #[validate(custom(
+        function = "validate_utc_time_not_expire",
+        message = "invalid x509 attribute 'expire_at'"
+    ))]
     expire_at: String,
 }
 
 #[derive(Debug, Validate, Deserialize)]
 pub struct X509KeyImportParameter {
     key_type: X509KeyType,
-    #[validate(custom(function = "validate_x509_key_size", message="invalid x509 attribute 'key_length'"))]
+    #[validate(custom(
+        function = "validate_x509_key_size",
+        message = "invalid x509 attribute 'key_length'"
+    ))]
     key_length: String,
     digest_algorithm: X509DigestAlgorithm,
-    #[validate(custom(function = "validate_utc_time", message="invalid x509 attribute 'create_at'"))]
+    #[validate(custom(
+        function = "validate_utc_time",
+        message = "invalid x509 attribute 'create_at'"
+    ))]
     create_at: String,
-    #[validate(custom(function= "validate_utc_time_not_expire", message="invalid x509 attribute 'expire_at'"))]
+    #[validate(custom(
+        function = "validate_utc_time_not_expire",
+        message = "invalid x509 attribute 'expire_at'"
+    ))]
     expire_at: String,
 }
-
-
 
 impl X509KeyGenerationParameter {
     pub fn get_subject_name(&self) -> Result<x509::X509Name> {
@@ -100,7 +135,9 @@ impl X509KeyGenerationParameter {
 
 fn validate_x509_key_size(key_size: &str) -> std::result::Result<(), ValidationError> {
     if !X509_VALID_KEY_SIZE.contains(&key_size) {
-        return Err(ValidationError::new("invalid key size, possible values are 2048/3072/4096"));
+        return Err(ValidationError::new(
+            "invalid key size, possible values are 2048/3072/4096",
+        ));
     }
     Ok(())
 }
@@ -118,21 +155,32 @@ pub struct X509Plugin {
     certificate: SecVec<u8>,
     identity: String,
     attributes: HashMap<String, String>,
-    parent_key: Option<SecParentDateKey>
+    parent_key: Option<SecParentDateKey>,
 }
 
 impl X509Plugin {
-
     fn generate_serial_number() -> Result<BigNum> {
         let mut serial_number = BigNum::new()?;
         serial_number.rand(128, MsbOption::MAYBE_ZERO, true)?;
         Ok(serial_number)
     }
 
-    fn generate_crl_endpoint(&self, name: &str, infra_config: &HashMap<String, String>) -> Result<String>{
-        let domain_name = infra_config.get(INFRA_CONFIG_DOMAIN_NAME).ok_or(
-            Error::GeneratingKeyError(format!("{} is not configured", INFRA_CONFIG_DOMAIN_NAME)))?;
-        Ok(format!("URI:https://{}/api/v1/keys/{}/crl", domain_name, name))
+    fn generate_crl_endpoint(
+        &self,
+        name: &str,
+        infra_config: &HashMap<String, String>,
+    ) -> Result<String> {
+        let domain_name =
+            infra_config
+                .get(INFRA_CONFIG_DOMAIN_NAME)
+                .ok_or(Error::GeneratingKeyError(format!(
+                    "{} is not configured",
+                    INFRA_CONFIG_DOMAIN_NAME
+                )))?;
+        Ok(format!(
+            "URI:https://{}/api/v1/keys/{}/crl",
+            domain_name, name
+        ))
     }
 
     //The openssl config for ca would be like:
@@ -144,10 +192,15 @@ impl X509Plugin {
     // nsCertType = objCA
     // nsComment = "Signatrust Root CA"
     #[allow(deprecated)]
-    fn generate_x509ca_keys(&self, _infra_config: &HashMap<String, String>) -> Result<DataKeyContent> {
+    fn generate_x509ca_keys(
+        &self,
+        _infra_config: &HashMap<String, String>,
+    ) -> Result<DataKeyContent> {
         let parameter = attributes_validate::<X509KeyGenerationParameter>(&self.attributes)?;
         //generate self signed certificate
-        let keys = parameter.key_type.get_real_key_type(parameter.key_length.parse()?)?;
+        let keys = parameter
+            .key_type
+            .get_real_key_type(parameter.key_length.parse()?)?;
         let mut generator = x509::X509Builder::new()?;
         let serial_number = X509Plugin::generate_serial_number()?;
         generator.set_subject_name(parameter.get_subject_name()?.as_ref())?;
@@ -155,24 +208,61 @@ impl X509Plugin {
         generator.set_pubkey(keys.as_ref())?;
         generator.set_version(2)?;
         generator.set_serial_number(Asn1Integer::from_bn(serial_number.as_ref())?.as_ref())?;
-        generator.set_not_before(Asn1Time::days_from_now(days_in_duration(&parameter.create_at)? as u32)?.as_ref())?;
-        generator.set_not_after(Asn1Time::days_from_now(days_in_duration(&parameter.expire_at)? as u32)?.as_ref())?;
+        generator.set_not_before(
+            Asn1Time::days_from_now(days_in_duration(&parameter.create_at)? as u32)?.as_ref(),
+        )?;
+        generator.set_not_after(
+            Asn1Time::days_from_now(days_in_duration(&parameter.expire_at)? as u32)?.as_ref(),
+        )?;
         //ca profile
         generator.append_extension(BasicConstraints::new().ca().pathlen(1).critical().build()?)?;
-        generator.append_extension(SubjectKeyIdentifier::new().build(&generator.x509v3_context(None, None))?)?;
-        generator.append_extension(AuthorityKeyIdentifier::new().keyid(true).issuer(true).build(&generator.x509v3_context(None, None))?)?;
-        generator.append_extension(KeyUsage::new().crl_sign().digital_signature().key_cert_sign().critical().build()?)?;
-        generator.append_extension(X509Extension::new_nid(None, None, Nid::NETSCAPE_COMMENT, "Signatrust Root CA")?)?;
-        generator.append_extension(X509Extension::new_nid(None, None, Nid::NETSCAPE_CERT_TYPE, "objCA")?)?;
+        generator.append_extension(
+            SubjectKeyIdentifier::new().build(&generator.x509v3_context(None, None))?,
+        )?;
+        generator.append_extension(
+            AuthorityKeyIdentifier::new()
+                .keyid(true)
+                .issuer(true)
+                .build(&generator.x509v3_context(None, None))?,
+        )?;
+        generator.append_extension(
+            KeyUsage::new()
+                .crl_sign()
+                .digital_signature()
+                .key_cert_sign()
+                .critical()
+                .build()?,
+        )?;
+        generator.append_extension(X509Extension::new_nid(
+            None,
+            None,
+            Nid::NETSCAPE_COMMENT,
+            "Signatrust Root CA",
+        )?)?;
+        generator.append_extension(X509Extension::new_nid(
+            None,
+            None,
+            Nid::NETSCAPE_CERT_TYPE,
+            "objCA",
+        )?)?;
 
-        generator.sign(keys.as_ref(), parameter.digest_algorithm.get_real_algorithm())?;
+        generator.sign(
+            keys.as_ref(),
+            parameter.digest_algorithm.get_real_algorithm(),
+        )?;
         let cert = generator.build();
-        Ok(DataKeyContent{
+        Ok(DataKeyContent {
             private_key: keys.private_key_to_pem_pkcs8()?,
             public_key: keys.public_key_to_pem()?,
             certificate: cert.to_pem()?,
-            fingerprint: encode_u8_to_hex_string(cert.digest(
-                MessageDigest::from_name("sha1").ok_or(Error::GeneratingKeyError("unable to generate digester".to_string()))?)?.as_ref()),
+            fingerprint: encode_u8_to_hex_string(
+                cert.digest(
+                    MessageDigest::from_name("sha1").ok_or(Error::GeneratingKeyError(
+                        "unable to generate digester".to_string(),
+                    ))?,
+                )?
+                .as_ref(),
+            ),
             serial_number: Some(encode_u8_to_hex_string(&serial_number.to_vec())),
         })
     }
@@ -187,16 +277,25 @@ impl X509Plugin {
     // nsCertType = objCA
     // nsComment = "Signatrust Intermediate CA"
     #[allow(deprecated)]
-    fn generate_x509ica_keys(&self, infra_config: &HashMap<String, String>) -> Result<DataKeyContent> {
+    fn generate_x509ica_keys(
+        &self,
+        infra_config: &HashMap<String, String>,
+    ) -> Result<DataKeyContent> {
         let parameter = attributes_validate::<X509KeyGenerationParameter>(&self.attributes)?;
         //load the ca certificate and private key
         if self.parent_key.is_none() {
-            return Err(Error::GeneratingKeyError("parent key is not provided".to_string()));
+            return Err(Error::GeneratingKeyError(
+                "parent key is not provided".to_string(),
+            ));
         }
-        let ca_key = PKey::private_key_from_pem(self.parent_key.clone().unwrap().private_key.unsecure())?;
-        let ca_cert = x509::X509::from_pem(self.parent_key.clone().unwrap().certificate.unsecure())?;
+        let ca_key =
+            PKey::private_key_from_pem(self.parent_key.clone().unwrap().private_key.unsecure())?;
+        let ca_cert =
+            x509::X509::from_pem(self.parent_key.clone().unwrap().certificate.unsecure())?;
         //generate self signed certificate
-        let keys = parameter.key_type.get_real_key_type(parameter.key_length.parse()?)?;
+        let keys = parameter
+            .key_type
+            .get_real_key_type(parameter.key_length.parse()?)?;
         let mut generator = x509::X509Builder::new()?;
         let serial_number = X509Plugin::generate_serial_number()?;
         generator.set_subject_name(parameter.get_subject_name()?.as_ref())?;
@@ -204,25 +303,68 @@ impl X509Plugin {
         generator.set_pubkey(keys.as_ref())?;
         generator.set_version(2)?;
         generator.set_serial_number(Asn1Integer::from_bn(serial_number.as_ref())?.as_ref())?;
-        generator.set_not_before(Asn1Time::days_from_now(days_in_duration(&parameter.create_at)? as u32)?.as_ref())?;
-        generator.set_not_after(Asn1Time::days_from_now(days_in_duration(&parameter.expire_at)? as u32)?.as_ref())?;
+        generator.set_not_before(
+            Asn1Time::days_from_now(days_in_duration(&parameter.create_at)? as u32)?.as_ref(),
+        )?;
+        generator.set_not_after(
+            Asn1Time::days_from_now(days_in_duration(&parameter.expire_at)? as u32)?.as_ref(),
+        )?;
         //ca profile
         generator.append_extension(BasicConstraints::new().ca().pathlen(0).critical().build()?)?;
-        generator.append_extension(SubjectKeyIdentifier::new().build(&generator.x509v3_context(Some(ca_cert.as_ref()), None))?)?;
-        generator.append_extension(AuthorityKeyIdentifier::new().keyid(true).issuer(true).build(&generator.x509v3_context(Some(ca_cert.as_ref()), None))?)?;
-        generator.append_extension(KeyUsage::new().crl_sign().digital_signature().key_cert_sign().critical().build()?)?;
-        generator.append_extension(X509Extension::new_nid(None, None, Nid::CRL_DISTRIBUTION_POINTS, &self.generate_crl_endpoint(&self.parent_key.clone().unwrap().name, infra_config)?)?)?;
-        generator.append_extension(X509Extension::new_nid(None, None, Nid::NETSCAPE_COMMENT, "Signatrust Intermediate CA")?)?;
-        generator.append_extension(X509Extension::new_nid(None, None, Nid::NETSCAPE_CERT_TYPE, "objCA")?)?;
-        generator.sign(ca_key.as_ref(), parameter.digest_algorithm.get_real_algorithm())?;
+        generator.append_extension(
+            SubjectKeyIdentifier::new()
+                .build(&generator.x509v3_context(Some(ca_cert.as_ref()), None))?,
+        )?;
+        generator.append_extension(
+            AuthorityKeyIdentifier::new()
+                .keyid(true)
+                .issuer(true)
+                .build(&generator.x509v3_context(Some(ca_cert.as_ref()), None))?,
+        )?;
+        generator.append_extension(
+            KeyUsage::new()
+                .crl_sign()
+                .digital_signature()
+                .key_cert_sign()
+                .critical()
+                .build()?,
+        )?;
+        generator.append_extension(X509Extension::new_nid(
+            None,
+            None,
+            Nid::CRL_DISTRIBUTION_POINTS,
+            &self.generate_crl_endpoint(&self.parent_key.clone().unwrap().name, infra_config)?,
+        )?)?;
+        generator.append_extension(X509Extension::new_nid(
+            None,
+            None,
+            Nid::NETSCAPE_COMMENT,
+            "Signatrust Intermediate CA",
+        )?)?;
+        generator.append_extension(X509Extension::new_nid(
+            None,
+            None,
+            Nid::NETSCAPE_CERT_TYPE,
+            "objCA",
+        )?)?;
+        generator.sign(
+            ca_key.as_ref(),
+            parameter.digest_algorithm.get_real_algorithm(),
+        )?;
         let cert = generator.build();
         //use parent private key to sign the certificate
-        Ok(DataKeyContent{
+        Ok(DataKeyContent {
             private_key: keys.private_key_to_pem_pkcs8()?,
             public_key: keys.public_key_to_pem()?,
             certificate: cert.to_pem()?,
-            fingerprint: encode_u8_to_hex_string(cert.digest(
-                MessageDigest::from_name("sha1").ok_or(Error::GeneratingKeyError("unable to generate digester".to_string()))?)?.as_ref()),
+            fingerprint: encode_u8_to_hex_string(
+                cert.digest(
+                    MessageDigest::from_name("sha1").ok_or(Error::GeneratingKeyError(
+                        "unable to generate digester".to_string(),
+                    ))?,
+                )?
+                .as_ref(),
+            ),
             serial_number: Some(encode_u8_to_hex_string(&serial_number.to_vec())),
         })
     }
@@ -238,16 +380,25 @@ impl X509Plugin {
     // nsCertType = objsign
     // nsComment = "Signatrust Sign Certificate"
     #[allow(deprecated)]
-    fn generate_x509ee_keys(&self, infra_config: &HashMap<String, String>) -> Result<DataKeyContent> {
+    fn generate_x509ee_keys(
+        &self,
+        infra_config: &HashMap<String, String>,
+    ) -> Result<DataKeyContent> {
         let parameter = attributes_validate::<X509KeyGenerationParameter>(&self.attributes)?;
         //load the ca certificate and private key
         if self.parent_key.is_none() {
-            return Err(Error::GeneratingKeyError("parent key is not provided".to_string()));
+            return Err(Error::GeneratingKeyError(
+                "parent key is not provided".to_string(),
+            ));
         }
-        let ca_key = PKey::private_key_from_pem(self.parent_key.clone().unwrap().private_key.unsecure())?;
-        let ca_cert = x509::X509::from_pem(self.parent_key.clone().unwrap().certificate.unsecure())?;
+        let ca_key =
+            PKey::private_key_from_pem(self.parent_key.clone().unwrap().private_key.unsecure())?;
+        let ca_cert =
+            x509::X509::from_pem(self.parent_key.clone().unwrap().certificate.unsecure())?;
         //generate self signed certificate
-        let keys = parameter.key_type.get_real_key_type(parameter.key_length.parse()?)?;
+        let keys = parameter
+            .key_type
+            .get_real_key_type(parameter.key_length.parse()?)?;
         let mut generator = x509::X509Builder::new()?;
         let serial_number = X509Plugin::generate_serial_number()?;
         generator.set_subject_name(parameter.get_subject_name()?.as_ref())?;
@@ -255,25 +406,68 @@ impl X509Plugin {
         generator.set_pubkey(keys.as_ref())?;
         generator.set_version(2)?;
         generator.set_serial_number(Asn1Integer::from_bn(serial_number.as_ref())?.as_ref())?;
-        generator.set_not_before(Asn1Time::days_from_now(days_in_duration(&parameter.create_at)? as u32)?.as_ref())?;
-        generator.set_not_after(Asn1Time::days_from_now(days_in_duration(&parameter.expire_at)? as u32)?.as_ref())?;
+        generator.set_not_before(
+            Asn1Time::days_from_now(days_in_duration(&parameter.create_at)? as u32)?.as_ref(),
+        )?;
+        generator.set_not_after(
+            Asn1Time::days_from_now(days_in_duration(&parameter.expire_at)? as u32)?.as_ref(),
+        )?;
         //ca profile
         generator.append_extension(BasicConstraints::new().critical().build()?)?;
-        generator.append_extension(SubjectKeyIdentifier::new().build(&generator.x509v3_context(Some(ca_cert.as_ref()), None))?)?;
-        generator.append_extension(AuthorityKeyIdentifier::new().keyid(true).issuer(true).build(&generator.x509v3_context(Some(ca_cert.as_ref()), None))?)?;
-        generator.append_extension(KeyUsage::new().crl_sign().digital_signature().key_cert_sign().critical().build()?)?;
-        generator.append_extension(X509Extension::new_nid(None, None, Nid::CRL_DISTRIBUTION_POINTS, &self.generate_crl_endpoint(&self.parent_key.clone().unwrap().name, infra_config)?)?)?;
-        generator.append_extension(X509Extension::new_nid(None, None, Nid::NETSCAPE_COMMENT, "Signatrust Sign Certificate")?)?;
-        generator.append_extension(X509Extension::new_nid(None, None, Nid::NETSCAPE_CERT_TYPE, "objsign")?)?;
-        generator.sign(ca_key.as_ref(), parameter.digest_algorithm.get_real_algorithm())?;
+        generator.append_extension(
+            SubjectKeyIdentifier::new()
+                .build(&generator.x509v3_context(Some(ca_cert.as_ref()), None))?,
+        )?;
+        generator.append_extension(
+            AuthorityKeyIdentifier::new()
+                .keyid(true)
+                .issuer(true)
+                .build(&generator.x509v3_context(Some(ca_cert.as_ref()), None))?,
+        )?;
+        generator.append_extension(
+            KeyUsage::new()
+                .crl_sign()
+                .digital_signature()
+                .key_cert_sign()
+                .critical()
+                .build()?,
+        )?;
+        generator.append_extension(X509Extension::new_nid(
+            None,
+            None,
+            Nid::CRL_DISTRIBUTION_POINTS,
+            &self.generate_crl_endpoint(&self.parent_key.clone().unwrap().name, infra_config)?,
+        )?)?;
+        generator.append_extension(X509Extension::new_nid(
+            None,
+            None,
+            Nid::NETSCAPE_COMMENT,
+            "Signatrust Sign Certificate",
+        )?)?;
+        generator.append_extension(X509Extension::new_nid(
+            None,
+            None,
+            Nid::NETSCAPE_CERT_TYPE,
+            "objsign",
+        )?)?;
+        generator.sign(
+            ca_key.as_ref(),
+            parameter.digest_algorithm.get_real_algorithm(),
+        )?;
         let cert = generator.build();
         //use parent private key to sign the certificate
-        Ok(DataKeyContent{
+        Ok(DataKeyContent {
             private_key: keys.private_key_to_pem_pkcs8()?,
             public_key: keys.public_key_to_pem()?,
             certificate: cert.to_pem()?,
-            fingerprint: encode_u8_to_hex_string(cert.digest(
-                MessageDigest::from_name("sha1").ok_or(Error::GeneratingKeyError("unable to generate digester".to_string()))?)?.as_ref()),
+            fingerprint: encode_u8_to_hex_string(
+                cert.digest(
+                    MessageDigest::from_name("sha1").ok_or(Error::GeneratingKeyError(
+                        "unable to generate digester".to_string(),
+                    ))?,
+                )?
+                .as_ref(),
+            ),
             serial_number: Some(encode_u8_to_hex_string(&serial_number.to_vec())),
         })
     }
@@ -296,7 +490,10 @@ impl SignPlugins for X509Plugin {
         Ok(plugin)
     }
 
-    fn validate_and_update(key: &mut DataKey) -> Result<()> where Self: Sized {
+    fn validate_and_update(key: &mut DataKey) -> Result<()>
+    where
+        Self: Sized,
+    {
         let _ = attributes_validate::<X509KeyImportParameter>(&key.attributes)?;
         let _private_key = PKey::private_key_from_pem(&key.private_key)?;
         let certificate = x509::X509::from_pem(&key.certificate)?;
@@ -304,10 +501,18 @@ impl SignPlugins for X509Plugin {
             let _public_key = PKey::public_key_from_pem(&key.public_key)?;
         }
         let unix_time = Asn1Time::from_unix(0)?.diff(certificate.not_after())?;
-        let expire = SystemTime::UNIX_EPOCH + Duration::from_secs(unix_time.days as u64 * 86400 + unix_time.secs as u64);
+        let expire = SystemTime::UNIX_EPOCH
+            + Duration::from_secs(unix_time.days as u64 * 86400 + unix_time.secs as u64);
         key.expire_at = expire.into();
         key.fingerprint = encode_u8_to_hex_string(
-            certificate.digest(MessageDigest::from_name("sha1").ok_or(Error::GeneratingKeyError("unable to generate digester".to_string()))?)?.as_ref());
+            certificate
+                .digest(
+                    MessageDigest::from_name("sha1").ok_or(Error::GeneratingKeyError(
+                        "unable to generate digester".to_string(),
+                    ))?,
+                )?
+                .as_ref(),
+        );
         Ok(())
     }
 
@@ -319,12 +524,18 @@ impl SignPlugins for X509Plugin {
         todo!()
     }
 
-    fn generate_keys(&self, key_type: &KeyType,  infra_config: &HashMap<String, String>) -> Result<DataKeyContent> {
+    fn generate_keys(
+        &self,
+        key_type: &KeyType,
+        infra_config: &HashMap<String, String>,
+    ) -> Result<DataKeyContent> {
         match key_type {
-            KeyType::X509CA => { self.generate_x509ca_keys(infra_config) }
-            KeyType::X509ICA => { self.generate_x509ica_keys(infra_config) }
-            KeyType::X509EE => { self.generate_x509ee_keys(infra_config) }
-            _ => { Err(Error::GeneratingKeyError("x509 plugin only support x509ca, x509ica and x509ee key type".to_string())) }
+            KeyType::X509CA => self.generate_x509ca_keys(infra_config),
+            KeyType::X509ICA => self.generate_x509ica_keys(infra_config),
+            KeyType::X509EE => self.generate_x509ee_keys(infra_config),
+            _ => Err(Error::GeneratingKeyError(
+                "x509 plugin only support x509ca, x509ica and x509ee key type".to_string(),
+            )),
         }
     }
 
@@ -334,9 +545,15 @@ impl SignPlugins for X509Plugin {
         let mut cert_stack = Stack::new()?;
         cert_stack.push(certificate.clone())?;
         if self.parent_key.is_some() {
-            cert_stack.push(x509::X509::from_pem(self.parent_key.clone().unwrap().certificate.unsecure())?)?;
+            cert_stack.push(x509::X509::from_pem(
+                self.parent_key.clone().unwrap().certificate.unsecure(),
+            )?)?;
         }
-        match SignType::from_str(options.get(options::SIGN_TYPE).unwrap_or(&SignType::Cms.to_string()))? {
+        match SignType::from_str(
+            options
+                .get(options::SIGN_TYPE)
+                .unwrap_or(&SignType::Cms.to_string()),
+        )? {
             SignType::Authenticode => {
                 let p7b = efi_signer::EfiImage::pem_to_p7(self.certificate.unsecure())?;
                 Ok(efi_signer::EfiImage::do_sign_signature(
@@ -344,7 +561,9 @@ impl SignPlugins for X509Plugin {
                     p7b,
                     private_key.private_key_to_pem_pkcs8()?,
                     None,
-                    efi_signer::DigestAlgorithm::Sha256)?.encode()?)
+                    efi_signer::DigestAlgorithm::Sha256,
+                )?
+                .encode()?)
             }
             SignType::PKCS7 => {
                 let pkcs7 = Pkcs7::sign(
@@ -355,7 +574,7 @@ impl SignPlugins for X509Plugin {
                     Pkcs7Flags::DETACHED
                         | Pkcs7Flags::NOCERTS
                         | Pkcs7Flags::BINARY
-                        | Pkcs7Flags::NOSMIMECAP
+                        | Pkcs7Flags::NOSMIMECAP,
                 )?;
                 Ok(pkcs7.to_der()?)
             }
@@ -369,56 +588,91 @@ impl SignPlugins for X509Plugin {
                     CMSOptions::DETACHED
                         | CMSOptions::CMS_NOCERTS
                         | CMSOptions::BINARY
-                        | CMSOptions::NOSMIMECAP
+                        | CMSOptions::NOSMIMECAP,
                 )?;
                 Ok(cms_signature.to_der()?)
             }
         }
     }
 
-    fn generate_crl_content(&self, revoked_keys: Vec<RevokedKey>, last_update: DateTime<Utc>, next_update: DateTime<Utc>) -> Result<Vec<u8>> {
+    fn generate_crl_content(
+        &self,
+        revoked_keys: Vec<RevokedKey>,
+        last_update: DateTime<Utc>,
+        next_update: DateTime<Utc>,
+    ) -> Result<Vec<u8>> {
         let parameter = attributes_validate::<X509KeyGenerationParameter>(&self.attributes)?;
         let private_key = PKey::private_key_from_pem(self.private_key.unsecure())?;
         let certificate = x509::X509::from_pem(self.certificate.unsecure())?;
 
         //prepare raw crl content
-        let crl =  unsafe{ X509_CRL_new() };
-        let x509_name= certificate.subject_name().as_ptr();
+        let crl = unsafe { X509_CRL_new() };
+        let x509_name = certificate.subject_name().as_ptr();
 
-        unsafe { X509_CRL_set_issuer_name(crl, x509_name); };
-        unsafe {X509_CRL_set1_lastUpdate(crl, Asn1Time::from_unix(last_update.naive_utc().timestamp())?.as_ptr())};
-        unsafe {X509_CRL_set1_nextUpdate(crl, Asn1Time::from_unix(next_update.naive_utc().timestamp())?.as_ptr())};
+        unsafe {
+            X509_CRL_set_issuer_name(crl, x509_name);
+        };
+        unsafe {
+            X509_CRL_set1_lastUpdate(
+                crl,
+                Asn1Time::from_unix(last_update.naive_utc().timestamp())?.as_ptr(),
+            )
+        };
+        unsafe {
+            X509_CRL_set1_nextUpdate(
+                crl,
+                Asn1Time::from_unix(next_update.naive_utc().timestamp())?.as_ptr(),
+            )
+        };
         for revoked_key in revoked_keys {
             //TODO: Add revoke reason here.
             if let Some(serial_number) = revoked_key.serial_number {
                 let cert_serial = BigNum::from_slice(&decode_hex_string_to_u8(&serial_number))?;
-                let revoked =unsafe{X509_REVOKED_new()};
-                unsafe {X509_REVOKED_set_serialNumber(revoked, Asn1Integer::from_bn(&cert_serial)?.as_ptr())};
-                unsafe {X509_REVOKED_set_revocationDate(revoked, Asn1Time::from_unix(revoked_key.create_at.naive_utc().timestamp())?.as_ptr())};
-                unsafe {X509_CRL_add0_revoked(crl, revoked)};
+                let revoked = unsafe { X509_REVOKED_new() };
+                unsafe {
+                    X509_REVOKED_set_serialNumber(
+                        revoked,
+                        Asn1Integer::from_bn(&cert_serial)?.as_ptr(),
+                    )
+                };
+                unsafe {
+                    X509_REVOKED_set_revocationDate(
+                        revoked,
+                        Asn1Time::from_unix(revoked_key.create_at.naive_utc().timestamp())?
+                            .as_ptr(),
+                    )
+                };
+                unsafe { X509_CRL_add0_revoked(crl, revoked) };
             }
         }
-        unsafe {X509_CRL_sign(crl, private_key.as_ptr(), parameter.digest_algorithm.get_real_algorithm().as_ptr())};
-        let content = unsafe {X509Crl::from_ptr(crl)};
+        unsafe {
+            X509_CRL_sign(
+                crl,
+                private_key.as_ptr(),
+                parameter.digest_algorithm.get_real_algorithm().as_ptr(),
+            )
+        };
+        let content = unsafe { X509Crl::from_ptr(crl) };
         Ok(content.to_pem()?)
     }
 }
 
 #[cfg(test)]
 mod test {
-    use chrono::{Duration, Utc};
-    use std::env;
     use super::*;
-    use secstr::SecVec;
+    use crate::domain::datakey::entity::KeyType;
     use crate::domain::datakey::entity::{KeyState, ParentKey, Visibility, X509RevokeReason};
-    use crate::domain::datakey::entity::{KeyType};
     use crate::domain::encryption_engine::EncryptionEngine;
     use crate::infra::encryption::dummy_engine::DummyEngine;
+    use chrono::{Duration, Utc};
+    use secstr::SecVec;
+    use std::env;
 
     fn get_infra_config() -> HashMap<String, String> {
-        HashMap::from([
-            (INFRA_CONFIG_DOMAIN_NAME.to_string(), "test.hostname".to_string()),
-        ])
+        HashMap::from([(
+            INFRA_CONFIG_DOMAIN_NAME.to_string(),
+            "test.hostname".to_string(),
+        )])
     }
 
     fn get_encryption_engine() -> Box<dyn EncryptionEngine> {
@@ -433,16 +687,23 @@ mod test {
             ("locality".to_string(), "guangzhou".to_string()),
             ("province_name".to_string(), "guangzhou".to_string()),
             ("country_name".to_string(), "cn".to_string()),
-            ("key_type".to_string() ,"rsa".to_string()),
+            ("key_type".to_string(), "rsa".to_string()),
             ("key_length".to_string(), "2048".to_string()),
             ("digest_algorithm".to_string(), "sha2_256".to_string()),
             ("create_at".to_string(), Utc::now().to_string()),
-            ("expire_at".to_string(), (Utc::now() + Duration::days(365)).to_string()),
+            (
+                "expire_at".to_string(),
+                (Utc::now() + Duration::days(365)).to_string(),
+            ),
             ("passphrase".to_string(), "123456".to_string()),
         ])
     }
 
-    fn get_default_datakey(name: Option<String>, parameter: Option<HashMap<String, String>>, key_type: Option<KeyType>) -> DataKey {
+    fn get_default_datakey(
+        name: Option<String>,
+        parameter: Option<HashMap<String, String>>,
+        key_type: Option<KeyType>,
+    ) -> DataKey {
         let now = Utc::now();
         let mut datakey = DataKey {
             id: 0,
@@ -485,41 +746,59 @@ mod test {
         let infra_config = get_infra_config();
         // create ca
         let ca_key = get_default_datakey(
-            Some("fake ca".to_string()), Some(parameter.clone()), Some(KeyType::X509CA));
-        let sec_datakey = SecDataKey::load(
-            &ca_key, &dummy_engine).await.expect("load sec datakey successfully");
+            Some("fake ca".to_string()),
+            Some(parameter.clone()),
+            Some(KeyType::X509CA),
+        );
+        let sec_datakey = SecDataKey::load(&ca_key, &dummy_engine)
+            .await
+            .expect("load sec datakey successfully");
         let plugin = X509Plugin::new(sec_datakey).expect("create plugin successfully");
-        let ca_content = plugin.generate_keys(&KeyType::X509CA, &infra_config).expect(format!("generate ca key with no passphrase successfully").as_str());
+        let ca_content = plugin
+            .generate_keys(&KeyType::X509CA, &infra_config)
+            .expect(format!("generate ca key with no passphrase successfully").as_str());
 
         // create ica
         let mut ica_key = get_default_datakey(
-            Some("fake ica".to_string()), Some(parameter.clone()), Some(KeyType::X509CA));
-        ica_key.parent_key = Some(ParentKey{
+            Some("fake ica".to_string()),
+            Some(parameter.clone()),
+            Some(KeyType::X509CA),
+        );
+        ica_key.parent_key = Some(ParentKey {
             name: "fake ca".to_string(),
             private_key: ca_content.private_key,
             public_key: ca_content.public_key,
             certificate: ca_content.certificate,
             attributes: ca_key.attributes.clone(),
         });
-        let sec_datakey = SecDataKey::load(
-            &ica_key, &dummy_engine).await.expect("load sec datakey successfully");
+        let sec_datakey = SecDataKey::load(&ica_key, &dummy_engine)
+            .await
+            .expect("load sec datakey successfully");
         let plugin = X509Plugin::new(sec_datakey).expect("create plugin successfully");
-        let ica_content = plugin.generate_keys(&KeyType::X509ICA, &infra_config).expect(format!("generate ica key with no passphrase successfully").as_str());
+        let ica_content = plugin
+            .generate_keys(&KeyType::X509ICA, &infra_config)
+            .expect(format!("generate ica key with no passphrase successfully").as_str());
 
         //create ee
         let mut ee_key = get_default_datakey(
-            Some("fake ee".to_string()), Some(parameter.clone()), Some(KeyType::X509CA));
-        ee_key.parent_key = Some(ParentKey{
+            Some("fake ee".to_string()),
+            Some(parameter.clone()),
+            Some(KeyType::X509CA),
+        );
+        ee_key.parent_key = Some(ParentKey {
             name: "fake ca".to_string(),
             private_key: ica_content.private_key,
             public_key: ica_content.public_key,
             certificate: ica_content.certificate,
             attributes: ica_key.attributes.clone(),
         });
-        let sec_datakey = SecDataKey::load(
-            &ica_key, &dummy_engine).await.expect("load sec datakey successfully");
+        let sec_datakey = SecDataKey::load(&ica_key, &dummy_engine)
+            .await
+            .expect("load sec datakey successfully");
         let plugin = X509Plugin::new(sec_datakey).expect("create plugin successfully");
-        let ee_content = plugin.generate_keys(&KeyType::X509EE, &infra_config).expect(format!("generate ee key with no passphrase successfully").as_str());
+        let ee_content = plugin
+            .generate_keys(&KeyType::X509EE, &infra_config)
+            .expect(format!("generate ee key with no passphrase successfully").as_str());
 
         let sec_keys = SecDataKey {
             name: "".to_string(),
@@ -537,9 +816,11 @@ mod test {
     fn test_key_type_generate_parameter() {
         let mut parameter = get_default_parameter();
         parameter.insert("key_type".to_string(), "invalid".to_string());
-        attributes_validate::<X509KeyGenerationParameter>(&parameter).expect_err("invalid key type");
+        attributes_validate::<X509KeyGenerationParameter>(&parameter)
+            .expect_err("invalid key type");
         parameter.insert("key_type".to_string(), "".to_string());
-        attributes_validate::<X509KeyGenerationParameter>(&parameter).expect_err("invalid empty key type");
+        attributes_validate::<X509KeyGenerationParameter>(&parameter)
+            .expect_err("invalid empty key type");
         for key_type in all::<X509KeyType>().collect::<Vec<_>>() {
             parameter.insert("key_type".to_string(), key_type.to_string());
             attributes_validate::<X509KeyGenerationParameter>(&parameter).expect("valid key type");
@@ -549,13 +830,16 @@ mod test {
     #[test]
     fn test_key_size_generate_parameter() {
         let mut parameter = get_default_parameter();
-        parameter.insert("key_length".to_string(),  "1024".to_string());
-        attributes_validate::<X509KeyGenerationParameter>(&parameter).expect_err("invalid key length");
+        parameter.insert("key_length".to_string(), "1024".to_string());
+        attributes_validate::<X509KeyGenerationParameter>(&parameter)
+            .expect_err("invalid key length");
         parameter.insert("key_length".to_string(), "".to_string());
-        attributes_validate::<X509KeyGenerationParameter>(&parameter).expect_err("invalid empty key length");
+        attributes_validate::<X509KeyGenerationParameter>(&parameter)
+            .expect_err("invalid empty key length");
         for key_length in X509_VALID_KEY_SIZE {
             parameter.insert("key_length".to_string(), key_length.to_string());
-            attributes_validate::<X509KeyGenerationParameter>(&parameter).expect("valid key length");
+            attributes_validate::<X509KeyGenerationParameter>(&parameter)
+                .expect("valid key length");
         }
     }
 
@@ -563,22 +847,27 @@ mod test {
     fn test_digest_algorithm_generate_parameter() {
         let mut parameter = get_default_parameter();
         parameter.insert("digest_algorithm".to_string(), "1234".to_string());
-        attributes_validate::<X509KeyGenerationParameter>(&parameter).expect_err("invalid digest algorithm");
-        parameter.insert("digest_algorithm".to_string(),"".to_string());
-        attributes_validate::<X509KeyGenerationParameter>(&parameter).expect_err("invalid empty digest algorithm");
+        attributes_validate::<X509KeyGenerationParameter>(&parameter)
+            .expect_err("invalid digest algorithm");
+        parameter.insert("digest_algorithm".to_string(), "".to_string());
+        attributes_validate::<X509KeyGenerationParameter>(&parameter)
+            .expect_err("invalid empty digest algorithm");
         for key_length in all::<X509DigestAlgorithm>().collect::<Vec<_>>() {
-            parameter.insert("digest_algorithm".to_string(),key_length.to_string());
-            attributes_validate::<X509KeyGenerationParameter>(&parameter).expect("valid digest algorithm");
+            parameter.insert("digest_algorithm".to_string(), key_length.to_string());
+            attributes_validate::<X509KeyGenerationParameter>(&parameter)
+                .expect("valid digest algorithm");
         }
     }
 
     #[test]
     fn test_create_at_generate_parameter() {
         let mut parameter = get_default_parameter();
-        parameter.insert("create_at".to_string(),"1234".to_string());
-        attributes_validate::<X509KeyGenerationParameter>(&parameter).expect_err("invalid create at");
-        parameter.insert("create_at".to_string(),"".to_string());
-        attributes_validate::<X509KeyGenerationParameter>(&parameter).expect_err("invalid empty create at");
+        parameter.insert("create_at".to_string(), "1234".to_string());
+        attributes_validate::<X509KeyGenerationParameter>(&parameter)
+            .expect_err("invalid create at");
+        parameter.insert("create_at".to_string(), "".to_string());
+        attributes_validate::<X509KeyGenerationParameter>(&parameter)
+            .expect_err("invalid empty create at");
         parameter.insert("create_at".to_string(), Utc::now().to_string());
         attributes_validate::<X509KeyGenerationParameter>(&parameter).expect("valid create at");
     }
@@ -586,13 +875,22 @@ mod test {
     #[test]
     fn test_expire_at_generate_parameter() {
         let mut parameter = get_default_parameter();
-        parameter.insert("expire_at".to_string(),"1234".to_string());
-        attributes_validate::<X509KeyGenerationParameter>(&parameter).expect_err("invalid expire at");
+        parameter.insert("expire_at".to_string(), "1234".to_string());
+        attributes_validate::<X509KeyGenerationParameter>(&parameter)
+            .expect_err("invalid expire at");
         parameter.insert("expire_at".to_string(), "".to_string());
-        attributes_validate::<X509KeyGenerationParameter>(&parameter).expect_err("invalid empty expire at");
-        parameter.insert("expire_at".to_string(),(Utc::now() - Duration::days(1)).to_string());
-        attributes_validate::<X509KeyGenerationParameter>(&parameter).expect_err("expire at expired");
-        parameter.insert("expire_at".to_string(), (Utc::now() + Duration::minutes(1)).to_string());
+        attributes_validate::<X509KeyGenerationParameter>(&parameter)
+            .expect_err("invalid empty expire at");
+        parameter.insert(
+            "expire_at".to_string(),
+            (Utc::now() - Duration::days(1)).to_string(),
+        );
+        attributes_validate::<X509KeyGenerationParameter>(&parameter)
+            .expect_err("expire at expired");
+        parameter.insert(
+            "expire_at".to_string(),
+            (Utc::now() + Duration::minutes(1)).to_string(),
+        );
         attributes_validate::<X509KeyGenerationParameter>(&parameter).expect("valid expire at");
     }
 
@@ -605,10 +903,15 @@ mod test {
         for hash in all::<X509DigestAlgorithm>().collect::<Vec<_>>() {
             parameter.insert("digest_algorithm".to_string(), hash.to_string());
             let sec_datakey = SecDataKey::load(
-                &get_default_datakey(
-                    None, Some(parameter.clone()), Some(KeyType::X509CA)), &dummy_engine).await.expect("load sec datakey successfully");
+                &get_default_datakey(None, Some(parameter.clone()), Some(KeyType::X509CA)),
+                &dummy_engine,
+            )
+            .await
+            .expect("load sec datakey successfully");
             let plugin = X509Plugin::new(sec_datakey).expect("create plugin successfully");
-            plugin.generate_keys(&KeyType::X509CA, &infra_config).expect(format!("generate ca key with digest {} successfully", hash).as_str());
+            plugin
+                .generate_keys(&KeyType::X509CA, &infra_config)
+                .expect(format!("generate ca key with digest {} successfully", hash).as_str());
         }
     }
 
@@ -620,10 +923,17 @@ mod test {
         for key_size in X509_VALID_KEY_SIZE {
             parameter.insert("key_size".to_string(), key_size.to_string());
             let sec_datakey = SecDataKey::load(
-                &get_default_datakey(
-                    None, Some(parameter.clone()), Some(KeyType::X509CA)), &dummy_engine).await.expect("load sec datakey successfully");
+                &get_default_datakey(None, Some(parameter.clone()), Some(KeyType::X509CA)),
+                &dummy_engine,
+            )
+            .await
+            .expect("load sec datakey successfully");
             let plugin = X509Plugin::new(sec_datakey).expect("create plugin successfully");
-            plugin.generate_keys(&KeyType::X509CA, &infra_config).expect(format!("generate ca key with key size {} successfully", key_size).as_str());
+            plugin
+                .generate_keys(&KeyType::X509CA, &infra_config)
+                .expect(
+                    format!("generate ca key with key size {} successfully", key_size).as_str(),
+                );
         }
     }
 
@@ -635,10 +945,17 @@ mod test {
         for key_type in all::<X509KeyType>().collect::<Vec<_>>() {
             parameter.insert("key_type".to_string(), key_type.to_string());
             let sec_datakey = SecDataKey::load(
-                &get_default_datakey(
-                    None, Some(parameter.clone()), Some(KeyType::X509CA)), &dummy_engine).await.expect("load sec datakey successfully");
+                &get_default_datakey(None, Some(parameter.clone()), Some(KeyType::X509CA)),
+                &dummy_engine,
+            )
+            .await
+            .expect("load sec datakey successfully");
             let plugin = X509Plugin::new(sec_datakey).expect("create plugin successfully");
-            plugin.generate_keys(&KeyType::X509CA, &infra_config).expect(format!("generate ca key with key type {} successfully", key_type).as_str());
+            plugin
+                .generate_keys(&KeyType::X509CA, &infra_config)
+                .expect(
+                    format!("generate ca key with key type {} successfully", key_type).as_str(),
+                );
         }
     }
 
@@ -649,17 +966,27 @@ mod test {
         let infra_config = get_infra_config();
 
         let sec_datakey = SecDataKey::load(
-            &get_default_datakey(
-                None, Some(parameter.clone()), Some(KeyType::X509CA)), &dummy_engine).await.expect("load sec datakey successfully");
+            &get_default_datakey(None, Some(parameter.clone()), Some(KeyType::X509CA)),
+            &dummy_engine,
+        )
+        .await
+        .expect("load sec datakey successfully");
         let plugin = X509Plugin::new(sec_datakey).expect("create plugin successfully");
-        plugin.generate_keys(&KeyType::X509CA, &infra_config).expect(format!("generate ca key with no passphrase successfully").as_str());
+        plugin
+            .generate_keys(&KeyType::X509CA, &infra_config)
+            .expect(format!("generate ca key with no passphrase successfully").as_str());
 
         parameter.insert("passphrase".to_string(), "".to_string());
         let sec_datakey = SecDataKey::load(
-            &get_default_datakey(
-                None, Some(parameter.clone()), Some(KeyType::X509CA)), &dummy_engine).await.expect("load sec datakey successfully");
+            &get_default_datakey(None, Some(parameter.clone()), Some(KeyType::X509CA)),
+            &dummy_engine,
+        )
+        .await
+        .expect("load sec datakey successfully");
         let plugin = X509Plugin::new(sec_datakey).expect("create plugin successfully");
-        plugin.generate_keys(&KeyType::X509CA, &infra_config).expect(format!("generate ca key with passphrase successfully").as_str());
+        plugin
+            .generate_keys(&KeyType::X509CA, &infra_config)
+            .expect(format!("generate ca key with passphrase successfully").as_str());
     }
 
     #[test]
@@ -726,7 +1053,10 @@ X5BboR/QJakEK+H+EUQAiDs=
         datakey.private_key = private_key.as_bytes().to_vec();
         X509Plugin::validate_and_update(&mut datakey).expect("validate and update should work");
         assert_eq!("2123-04-29 09:48:00 UTC", datakey.expire_at.to_string());
-        assert_eq!("C9345187DFA0BFB6DCBCC4827BBEA7312E43754B", datakey.fingerprint);
+        assert_eq!(
+            "C9345187DFA0BFB6DCBCC4827BBEA7312E43754B",
+            datakey.fingerprint
+        );
     }
 
     #[tokio::test]
@@ -734,7 +1064,9 @@ X5BboR/QJakEK+H+EUQAiDs=
         let parameter = get_default_parameter();
         let content = "hello world".as_bytes();
         let instance = get_default_plugin().await;
-        let _signature = instance.sign(content.to_vec(), parameter).expect("sign successfully");
+        let _signature = instance
+            .sign(content.to_vec(), parameter)
+            .expect("sign successfully");
     }
 
     #[tokio::test]
@@ -744,41 +1076,77 @@ X5BboR/QJakEK+H+EUQAiDs=
         let infra_config = get_infra_config();
         // create ca
         let mut ca_key = get_default_datakey(
-            Some("fake ca".to_string()), Some(parameter.clone()), Some(KeyType::X509CA));
-        let sec_datakey = SecDataKey::load(
-            &ca_key, &dummy_engine).await.expect("load sec datakey successfully");
+            Some("fake ca".to_string()),
+            Some(parameter.clone()),
+            Some(KeyType::X509CA),
+        );
+        let sec_datakey = SecDataKey::load(&ca_key, &dummy_engine)
+            .await
+            .expect("load sec datakey successfully");
         let plugin = X509Plugin::new(sec_datakey).expect("create plugin successfully");
-        let ca_content = plugin.generate_keys(&KeyType::X509CA, &infra_config).expect(format!("generate ca key with no passphrase successfully").as_str());
+        let ca_content = plugin
+            .generate_keys(&KeyType::X509CA, &infra_config)
+            .expect(format!("generate ca key with no passphrase successfully").as_str());
         ca_key.private_key = ca_content.private_key;
         ca_key.public_key = ca_content.public_key;
         ca_key.certificate = ca_content.certificate;
         ca_key.serial_number = ca_content.serial_number;
         ca_key.fingerprint = ca_content.fingerprint;
-        let crl_sec_datakey = SecDataKey::load(
-            &ca_key, &dummy_engine).await.expect("load sec datakey successfully");
+        let crl_sec_datakey = SecDataKey::load(&ca_key, &dummy_engine)
+            .await
+            .expect("load sec datakey successfully");
         let plugin = X509Plugin::new(crl_sec_datakey).expect("create plugin successfully");
         let revoke_time = Utc::now();
         let last_update = Utc::now() + Duration::days(1);
         let next_update = Utc::now() + Duration::days(2);
-        let serial_number = X509Plugin::generate_serial_number().expect("generate serial number successfully");
-        let revoked_keys = RevokedKey{
+        let serial_number =
+            X509Plugin::generate_serial_number().expect("generate serial number successfully");
+        let revoked_keys = RevokedKey {
             id: 0,
             key_id: 0,
             ca_id: 0,
             reason: X509RevokeReason::Unspecified,
             create_at: revoke_time.clone(),
-            serial_number: Some(encode_u8_to_hex_string(&serial_number.to_vec()))
+            serial_number: Some(encode_u8_to_hex_string(&serial_number.to_vec())),
         };
         //generate crl
-        let content = plugin.generate_crl_content(vec![revoked_keys], last_update.clone(), next_update.clone()).expect("generate crl successfully");
+        let content = plugin
+            .generate_crl_content(vec![revoked_keys], last_update.clone(), next_update.clone())
+            .expect("generate crl successfully");
         let crl = X509Crl::from_pem(&content).expect("load generated crl successfully");
-        assert_eq!(crl.last_update()==Asn1Time::from_unix(last_update.naive_utc().timestamp()).expect("convert to asn1 time successfully"), true);
-        assert_eq!(crl.next_update().expect("next update is set")==Asn1Time::from_unix(next_update.naive_utc().timestamp()).expect("convert to asn1 time successfully"), true);
+        assert_eq!(
+            crl.last_update()
+                == Asn1Time::from_unix(last_update.naive_utc().timestamp())
+                    .expect("convert to asn1 time successfully"),
+            true
+        );
+        assert_eq!(
+            crl.next_update().expect("next update is set")
+                == Asn1Time::from_unix(next_update.naive_utc().timestamp())
+                    .expect("convert to asn1 time successfully"),
+            true
+        );
         assert_eq!(crl.get_revoked().is_some(), true);
-        let revoked = crl.get_revoked().expect("revoke stack is not empty").get(0).expect("first revoke is not empty");
-        assert_eq!(revoked.serial_number().to_owned().expect("convert to asn1 number work") == Asn1Integer::from_bn(&serial_number).expect("convert from bn number should work"), true);
-        assert_eq!(revoked.revocation_date().to_owned()==Asn1Time::from_unix(revoke_time.naive_utc().timestamp()).expect("convert to asn1 time successfully"), true);
-
+        let revoked = crl
+            .get_revoked()
+            .expect("revoke stack is not empty")
+            .get(0)
+            .expect("first revoke is not empty");
+        assert_eq!(
+            revoked
+                .serial_number()
+                .to_owned()
+                .expect("convert to asn1 number work")
+                == Asn1Integer::from_bn(&serial_number)
+                    .expect("convert from bn number should work"),
+            true
+        );
+        assert_eq!(
+            revoked.revocation_date().to_owned()
+                == Asn1Time::from_unix(revoke_time.naive_utc().timestamp())
+                    .expect("convert to asn1 time successfully"),
+            true
+        );
     }
 
     #[tokio::test]

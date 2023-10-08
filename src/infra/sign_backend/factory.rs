@@ -14,24 +14,28 @@
  *
  */
 
-use std::str::FromStr;
 use crate::domain::sign_service::{SignBackend, SignBackendType};
-use crate::util::error::{Result};
-use std::sync::{Arc, RwLock};
-use config::{Config};
-use sea_orm::DatabaseConnection;
 use crate::infra::sign_backend::memory::backend::MemorySignBackend;
+use crate::util::error::Result;
+use config::Config;
+use sea_orm::DatabaseConnection;
+use std::str::FromStr;
+use std::sync::{Arc, RwLock};
 
 pub struct SignBackendFactory {}
 
 impl SignBackendFactory {
-    pub async fn new_engine(config: Arc<RwLock<Config>>, db_connection: &'static DatabaseConnection) -> Result<Box<dyn SignBackend>> {
-        let engine_type = SignBackendType::from_str(
-            config.read()?.get_string("sign-backend.type")?.as_str(),
-        )?;
+    pub async fn new_engine(
+        config: Arc<RwLock<Config>>,
+        db_connection: &'static DatabaseConnection,
+    ) -> Result<Box<dyn SignBackend>> {
+        let engine_type =
+            SignBackendType::from_str(config.read()?.get_string("sign-backend.type")?.as_str())?;
         info!("sign backend configured with plugin {:?}", engine_type);
         match engine_type {
-            SignBackendType::Memory => Ok(Box::new(MemorySignBackend::new(config, db_connection).await?)),
+            SignBackendType::Memory => Ok(Box::new(
+                MemorySignBackend::new(config, db_connection).await?,
+            )),
         }
     }
 }

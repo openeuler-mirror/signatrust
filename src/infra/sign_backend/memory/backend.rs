@@ -14,7 +14,6 @@
  *
  */
 
-
 use std::collections::HashMap;
 
 use crate::domain::sign_service::SignBackend;
@@ -23,19 +22,18 @@ use std::sync::Arc;
 use config::Config;
 use std::sync::RwLock;
 
-use crate::infra::database::model::clusterkey::repository;
-use crate::infra::kms::factory;
-use crate::infra::encryption::engine::{EncryptionEngineWithClusterKey};
-use crate::domain::encryption_engine::EncryptionEngine;
-use crate::domain::datakey::entity::{INFRA_CONFIG_DOMAIN_NAME, RevokedKey, SecDataKey};
-use crate::infra::sign_plugin::signers::Signers;
 use crate::domain::datakey::entity::DataKey;
+use crate::domain::datakey::entity::{RevokedKey, SecDataKey, INFRA_CONFIG_DOMAIN_NAME};
+use crate::domain::encryption_engine::EncryptionEngine;
+use crate::infra::database::model::clusterkey::repository;
+use crate::infra::encryption::algorithm::factory::AlgorithmFactory;
+use crate::infra::encryption::engine::EncryptionEngineWithClusterKey;
+use crate::infra::kms::factory;
+use crate::infra::sign_plugin::signers::Signers;
 use crate::util::error::{Error, Result};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use sea_orm::DatabaseConnection;
-use crate::infra::encryption::algorithm::factory::AlgorithmFactory;
-
 
 /// Memory Sign Backend will perform all sensitive operations directly in host memory.
 pub struct MemorySignBackend {
@@ -50,14 +48,18 @@ impl MemorySignBackend {
     /// 2. initialize the cluster repo
     /// 2. initialize the encryption engine including the cluster key
     /// 3. initialize the signing plugins
-    pub async fn new(server_config: Arc<RwLock<Config>>, db_connection: &'static DatabaseConnection) -> Result<MemorySignBackend> {
+    pub async fn new(
+        server_config: Arc<RwLock<Config>>,
+        db_connection: &'static DatabaseConnection,
+    ) -> Result<MemorySignBackend> {
         //initialize the kms backend
         let kms_provider = factory::KMSProviderFactory::new_provider(
-            &server_config.read()?.get_table("memory.kms-provider")?
+            &server_config.read()?.get_table("memory.kms-provider")?,
         )?;
-        let repository =
-            repository::ClusterKeyRepository::new(db_connection);
-        let engine_config = server_config.read()?.get_table("memory.encryption-engine")?;
+        let repository = repository::ClusterKeyRepository::new(db_connection);
+        let engine_config = server_config
+            .read()?
+            .get_table("memory.encryption-engine")?;
         let encryptor = AlgorithmFactory::new_algorithm(
             &engine_config
                 .get("algorithm")
@@ -68,13 +70,16 @@ impl MemorySignBackend {
             repository,
             encryptor,
             &engine_config,
-            kms_provider
+            kms_provider,
         )?;
         engine.initialize().await?;
 
-        let infra_configs = HashMap::from([
-            (INFRA_CONFIG_DOMAIN_NAME.to_string(), server_config.read()?.get_string("control-server.domain_name")?),
-        ]);
+        let infra_configs = HashMap::from([(
+            INFRA_CONFIG_DOMAIN_NAME.to_string(),
+            server_config
+                .read()?
+                .get_string("control-server.domain_name")?,
+        )]);
 
         Ok(MemorySignBackend {
             server_config,
@@ -88,7 +93,10 @@ impl MemorySignBackend {
 impl SignBackend for MemorySignBackend {
     async fn validate_and_update(&self, data_key: &mut DataKey) -> Result<()> {
         if let Err(err) = Signers::validate_and_update(data_key) {
-            return Err(Error::ParameterError(format!("failed to validate imported key content: {}", err)));
+            return Err(Error::ParameterError(format!(
+                "failed to validate imported key content: {}",
+                err
+            )));
         }
         data_key.private_key = self.engine.encode(data_key.private_key.clone()).await?;
         data_key.public_key = self.engine.encode(data_key.public_key.clone()).await?;
@@ -98,8 +106,8 @@ impl SignBackend for MemorySignBackend {
 
     async fn generate_keys(&self, data_key: &mut DataKey) -> Result<()> {
         let sec_key = SecDataKey::load(data_key, &self.engine).await?;
-        let content = Signers::load_from_data_key(&data_key.key_type, sec_key)?.generate_keys(
-            &data_key.key_type, &self.infra_configs)?;
+        let content = Signers::load_from_data_key(&data_key.key_type, sec_key)?
+            .generate_keys(&data_key.key_type, &self.infra_configs)?;
         data_key.private_key = self.engine.encode(content.private_key).await?;
         data_key.public_key = self.engine.encode(content.public_key).await?;
         data_key.certificate = self.engine.encode(content.certificate).await?;
@@ -112,7 +120,12 @@ impl SignBackend for MemorySignBackend {
         self.engine.rotate_key().await
     }
 
-    async fn sign(&self, data_key: &DataKey, content: Vec<u8>, options: HashMap<String, String>) -> Result<Vec<u8>> {
+    async fn sign(
+        &self,
+        data_key: &DataKey,
+        content: Vec<u8>,
+        options: HashMap<String, String>,
+    ) -> Result<Vec<u8>> {
         let sec_key = SecDataKey::load(data_key, &self.engine).await?;
         Signers::load_from_data_key(&data_key.key_type, sec_key)?.sign(content, options)
     }
@@ -123,8 +136,18 @@ impl SignBackend for MemorySignBackend {
         Ok(())
     }
 
-    async fn generate_crl_content(&self, data_key: &DataKey, revoked_keys: Vec<RevokedKey>, last_update: DateTime<Utc>, next_update: DateTime<Utc>) -> Result<Vec<u8>> {
+    async fn generate_crl_content(
+        &self,
+        data_key: &DataKey,
+        revoked_keys: Vec<RevokedKey>,
+        last_update: DateTime<Utc>,
+        next_update: DateTime<Utc>,
+    ) -> Result<Vec<u8>> {
         let sec_key = SecDataKey::load(data_key, &self.engine).await?;
-        Signers::load_from_data_key(&data_key.key_type, sec_key)?.generate_crl_content(revoked_keys, last_update, next_update)
+        Signers::load_from_data_key(&data_key.key_type, sec_key)?.generate_crl_content(
+            revoked_keys,
+            last_update,
+            next_update,
+        )
     }
 }

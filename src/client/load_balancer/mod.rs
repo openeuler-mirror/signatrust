@@ -1,4 +1,4 @@
-pub mod single;
 pub mod dns;
-pub mod traits;
 pub mod factory;
+pub mod single;
+pub mod traits;

@@ -14,19 +14,17 @@
  *
  */
 
-use crate::client::{sign_identity::SignIdentity};
-use crate::client::worker::traits::SignHandler;
 use crate::client::file_handler::traits::FileHandler;
+use crate::client::sign_identity::SignIdentity;
+use crate::client::worker::traits::SignHandler;
 use async_trait::async_trait;
 
 pub mod signatrust {
     tonic::include_proto!("signatrust");
 }
 
+use self::signatrust::{signatrust_client::SignatrustClient, SignStreamRequest};
 use tonic::transport::Channel;
-use self::signatrust::{
-    signatrust_client::SignatrustClient, SignStreamRequest,
-};
 
 use crate::util::error::Error;
 use std::io::{Cursor, Read};
@@ -37,21 +35,23 @@ pub struct RemoteSigner {
     token: Option<String>,
 }
 
-
 impl RemoteSigner {
-
-    pub fn new(channel: Channel, buffer_size: usize,token: Option<String>) -> Self {
+    pub fn new(channel: Channel, buffer_size: usize, token: Option<String>) -> Self {
         Self {
             client: SignatrustClient::new(channel),
             buffer_size,
-            token
+            token,
         }
     }
 }
 
 #[async_trait]
 impl SignHandler for RemoteSigner {
-    async fn process(&mut self, _handler: Box<dyn FileHandler>, item: SignIdentity) -> SignIdentity {
+    async fn process(
+        &mut self,
+        _handler: Box<dyn FileHandler>,
+        item: SignIdentity,
+    ) -> SignIdentity {
         let mut signed_content = Vec::new();
         let read_data = item.raw_content.borrow().clone();
         for sign_content in read_data.into_iter() {
@@ -60,10 +60,10 @@ impl SignHandler for RemoteSigner {
             let mut cursor = Cursor::new(sign_content);
             while let Ok(length) = cursor.read(&mut buffer) {
                 if length == 0 {
-                    break
+                    break;
                 }
                 let content = buffer[0..length].to_vec();
-                sign_segments.push(SignStreamRequest{
+                sign_segments.push(SignStreamRequest {
                     data: content,
                     options: item.sign_options.borrow().clone(),
                     key_type: format!("{}", item.key_type),
@@ -73,10 +73,12 @@ impl SignHandler for RemoteSigner {
             }
             if sign_segments.is_empty() {
                 *item.error.borrow_mut() = Err(Error::FileContentEmpty);
-                return item
+                return item;
             }
-            let result = self.client.sign_stream(
-                tokio_stream::iter(sign_segments)).await;
+            let result = self
+                .client
+                .sign_stream(tokio_stream::iter(sign_segments))
+                .await;
             match result {
                 Ok(result) => {
                     let data = result.into_inner();
@@ -91,11 +93,13 @@ impl SignHandler for RemoteSigner {
                 }
             }
         }
-        debug!("successfully sign file {}", item.file_path.as_path().display());
+        debug!(
+            "successfully sign file {}",
+            item.file_path.as_path().display()
+        );
         *item.signature.borrow_mut() = signed_content;
         //clear out temporary value
         *item.raw_content.borrow_mut() = Vec::new();
         item
     }
 }
-

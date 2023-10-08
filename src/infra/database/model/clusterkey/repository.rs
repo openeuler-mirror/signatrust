@@ -15,13 +15,15 @@
  */
 
 use super::dto::Entity as ClusterKeyDTO;
-use crate::infra::database::model::clusterkey;
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, ActiveValue::Set, QueryOrder};
 use crate::domain::clusterkey::entity::ClusterKey;
 use crate::domain::clusterkey::repository::Repository;
-use crate::util::error::{Result, Error};
+use crate::infra::database::model::clusterkey;
+use crate::util::error::{Error, Result};
 use async_trait::async_trait;
 use sea_orm::sea_query::OnConflict;
+use sea_orm::{
+    ActiveValue::Set, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder,
+};
 
 #[derive(Clone)]
 pub struct ClusterKeyRepository<'a> {
@@ -30,9 +32,7 @@ pub struct ClusterKeyRepository<'a> {
 
 impl<'a> ClusterKeyRepository<'a> {
     pub fn new(db_connection: &'a DatabaseConnection) -> Self {
-        Self {
-            db_connection,
-        }
+        Self { db_connection }
     }
 }
 
@@ -47,73 +47,74 @@ impl<'a> Repository for ClusterKeyRepository<'a> {
             ..Default::default()
         };
         //TODO: https://github.com/SeaQL/sea-orm/issues/1790
-        ClusterKeyDTO::insert(cluster_key).on_conflict(OnConflict::new()
-            .update_column(clusterkey::dto::Column::Id).to_owned()
-        ).exec(self.db_connection).await?;
+        ClusterKeyDTO::insert(cluster_key)
+            .on_conflict(
+                OnConflict::new()
+                    .update_column(clusterkey::dto::Column::Id)
+                    .to_owned(),
+            )
+            .exec(self.db_connection)
+            .await?;
         Ok(())
     }
 
     async fn get_latest(&self, algorithm: &str) -> Result<Option<ClusterKey>> {
-        match ClusterKeyDTO::find().filter(
-            clusterkey::dto::Column::Algorithm.eq(algorithm)
-        ).order_by_desc(clusterkey::dto::Column::Id).one(
-            self.db_connection).await? {
-            None => {
-                Ok(None)
-            }
-            Some(cluster_key) => {
-                Ok(Some(ClusterKey::from(cluster_key)))
-            }
+        match ClusterKeyDTO::find()
+            .filter(clusterkey::dto::Column::Algorithm.eq(algorithm))
+            .order_by_desc(clusterkey::dto::Column::Id)
+            .one(self.db_connection)
+            .await?
+        {
+            None => Ok(None),
+            Some(cluster_key) => Ok(Some(ClusterKey::from(cluster_key))),
         }
     }
 
     async fn get_by_id(&self, id: i32) -> Result<ClusterKey> {
-        match ClusterKeyDTO::find_by_id(id).one(self.db_connection).await? {
-             None => {
-                 Err(Error::NotFoundError)
-                }
-                Some(cluster_key) => {
-                 Ok(ClusterKey::from(cluster_key))
-                }
+        match ClusterKeyDTO::find_by_id(id)
+            .one(self.db_connection)
+            .await?
+        {
+            None => Err(Error::NotFoundError),
+            Some(cluster_key) => Ok(ClusterKey::from(cluster_key)),
         }
     }
     async fn delete_by_id(&self, id: i32) -> Result<()> {
-        let _ = ClusterKeyDTO::delete_by_id(
-            id).exec(self.db_connection).await?;
+        let _ = ClusterKeyDTO::delete_by_id(id)
+            .exec(self.db_connection)
+            .await?;
         Ok(())
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use sea_orm::{DatabaseBackend, MockDatabase, MockExecResult, Transaction};
     use crate::domain::clusterkey::entity::ClusterKey;
     use crate::domain::clusterkey::repository::Repository;
     use crate::infra::database::model::clusterkey::dto;
+    use crate::infra::database::model::clusterkey::repository::ClusterKeyRepository;
     use crate::util::error::Result;
-    use crate::infra::database::model::clusterkey::repository::{ClusterKeyRepository};
+    use sea_orm::{DatabaseBackend, MockDatabase, MockExecResult, Transaction};
 
     #[tokio::test]
     async fn test_cluster_key_repository_create_sql_statement() -> Result<()> {
         let now = chrono::Utc::now();
         let db = MockDatabase::new(DatabaseBackend::MySql)
-            .append_query_results([
-                vec![dto::Model {
-                    id: 0,
-                    data: vec![],
-                    algorithm: "".to_string(),
-                    identity: "".to_string(),
-                    create_at: now.clone(),
-                }],
-            ]).append_exec_results([
-            MockExecResult{
+            .append_query_results([vec![dto::Model {
+                id: 0,
+                data: vec![],
+                algorithm: "".to_string(),
+                identity: "".to_string(),
+                create_at: now.clone(),
+            }]])
+            .append_exec_results([MockExecResult {
                 last_insert_id: 1,
                 rows_affected: 1,
-            }
-        ]).into_connection();
+            }])
+            .into_connection();
 
         let key_repository = ClusterKeyRepository::new(&db);
-        let key = ClusterKey{
+        let key = ClusterKey {
             id: 0,
             data: vec![],
             algorithm: "fake_algorithm".to_string(),
@@ -128,7 +129,12 @@ mod tests {
                 Transaction::from_sql_and_values(
                     DatabaseBackend::MySql,
                     r#"INSERT INTO `cluster_key` (`data`, `algorithm`, `identity`, `create_at`) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE `id` = VALUES(`id`)"#,
-                    [vec![].into(), "fake_algorithm".into(), "123".into(), now.clone().into()]
+                    [
+                        vec![].into(),
+                        "fake_algorithm".into(),
+                        "123".into(),
+                        now.clone().into()
+                    ]
                 ),
             ]
         );
@@ -140,20 +146,18 @@ mod tests {
     async fn test_cluster_key_repository_delete_sql_statement() -> Result<()> {
         let now = chrono::Utc::now();
         let db = MockDatabase::new(DatabaseBackend::MySql)
-            .append_query_results([
-                vec![dto::Model {
-                    id: 1,
-                    data: vec![],
-                    algorithm: "fake_algorithm".to_string(),
-                    identity: "123".to_string(),
-                    create_at: now.clone(),
-                }],
-            ]).append_exec_results([
-            MockExecResult{
+            .append_query_results([vec![dto::Model {
+                id: 1,
+                data: vec![],
+                algorithm: "fake_algorithm".to_string(),
+                identity: "123".to_string(),
+                create_at: now.clone(),
+            }]])
+            .append_exec_results([MockExecResult {
                 last_insert_id: 1,
                 rows_affected: 1,
-            }
-        ]).into_connection();
+            }])
+            .into_connection();
 
         let key_repository = ClusterKeyRepository::new(&db);
         assert_eq!(key_repository.delete_by_id(1).await?, ());
@@ -185,14 +189,14 @@ mod tests {
                     create_at: now.clone(),
                 }],
                 vec![dto::Model {
-                  id: 2,
-                  data: vec![],
-                  algorithm: "fake_algorithm".to_string(),
-                  identity: "123".to_string(),
-                  create_at: now.clone(),
-                  }],
-              ],
-            ).into_connection();
+                    id: 2,
+                    data: vec![],
+                    algorithm: "fake_algorithm".to_string(),
+                    identity: "123".to_string(),
+                    create_at: now.clone(),
+                }],
+            ])
+            .into_connection();
 
         let key_repository = ClusterKeyRepository::new(&db);
         assert_eq!(
@@ -236,4 +240,3 @@ mod tests {
         Ok(())
     }
 }
-

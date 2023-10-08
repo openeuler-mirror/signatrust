@@ -64,7 +64,7 @@ impl Display for KeyType {
             KeyType::Pgp => write!(f, "pgp"),
             KeyType::X509EE => write!(f, "x509ee"),
             //client can use 'x509' to specify a x509 key type for the purpose of simplicity.
-            KeyType::X509 => write!(f, "x509ee")
+            KeyType::X509 => write!(f, "x509ee"),
         }
     }
 }

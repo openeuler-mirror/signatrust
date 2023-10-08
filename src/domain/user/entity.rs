@@ -17,31 +17,21 @@
 use crate::util::error::Result;
 use std::fmt::{Display, Formatter};
 
-
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct User {
     pub id: i32,
-    pub email: String
-
+    pub email: String,
 }
 
 impl Display for User {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "id: {}, email: {}",
-            self.id, self.email
-        )
+        write!(f, "id: {}, email: {}", self.id, self.email)
     }
 }
 
 impl User {
     pub fn new(email: String) -> Result<Self> {
-        Ok(User {
-            id: 0,
-            email,
-        })
+        Ok(User { id: 0, email })
     }
 }
 
@@ -63,4 +53,3 @@ mod tests {
         assert_eq!(expected, format!("{}", user));
     }
 }
-

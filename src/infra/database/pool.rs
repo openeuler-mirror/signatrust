@@ -16,11 +16,11 @@
 
 use config::Value;
 use once_cell::sync::OnceCell;
-use sqlx::mysql::{MySql};
+use sea_orm::{ConnectOptions, Database, DatabaseConnection};
+use sqlx::mysql::MySql;
 use sqlx::pool::Pool;
 use std::collections::HashMap;
 use std::time::Duration;
-use sea_orm::{DatabaseConnection, ConnectOptions, Database};
 
 use crate::util::error::{Error, Result};
 pub type DbPool = Pool<MySql>;
@@ -61,8 +61,13 @@ pub async fn create_pool(config: &HashMap<String, Value>) -> Result<()> {
         .sqlx_logging(true)
         .sqlx_logging_level(log::LevelFilter::Info);
 
-    DB_CONNECTION.set(Database::connect(opt).await?).expect("database connection configured");
-    get_db_connection()?.ping().await.expect("database connection failed");
+    DB_CONNECTION
+        .set(Database::connect(opt).await?)
+        .expect("database connection configured");
+    get_db_connection()?
+        .ping()
+        .await
+        .expect("database connection failed");
     Ok(())
 }
 pub fn get_db_connection() -> Result<&'static DatabaseConnection> {
@@ -76,8 +81,8 @@ pub fn get_db_connection() -> Result<&'static DatabaseConnection> {
 
 #[cfg(test)]
 mod tests {
-    use testcontainers::clients;
     use crate::util::error::Result;
+    use testcontainers::clients;
     use testcontainers::core::WaitFor;
     use testcontainers::images::generic::GenericImage;
 
@@ -93,13 +98,19 @@ mod tests {
         let database = docker.run(image.clone());
 
         let sqlx_image = GenericImage::new("tommylike/sqlx-cli", "0.7.1.1")
-            .with_env_var("DATABASE_HOST", database.get_bridge_ip_address().to_string())
+            .with_env_var(
+                "DATABASE_HOST",
+                database.get_bridge_ip_address().to_string(),
+            )
             .with_env_var("DATABASE_PORT", "3306")
             .with_env_var("DATABASE_USER", "test")
             .with_env_var("DATABASE_PASSWORD", "test")
             .with_env_var("DATABASE_NAME", "signatrust")
-            .with_volume("./migrations/", "/app/migrations/").with_entrypoint("/app/run_migrations.sh")
-            .with_wait_for(WaitFor::message_on_stdout("Applied 20230727020628/migrate extend-datakey-name"));
+            .with_volume("./migrations/", "/app/migrations/")
+            .with_entrypoint("/app/run_migrations.sh")
+            .with_wait_for(WaitFor::message_on_stdout(
+                "Applied 20230727020628/migrate extend-datakey-name",
+            ));
         let _migration = docker.run(sqlx_image.clone());
         Ok(())
     }

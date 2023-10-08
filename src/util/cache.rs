@@ -14,50 +14,51 @@
  *
  */
 
+use crate::domain::datakey::entity::DataKey;
+use crate::domain::user::entity::User;
+use crate::util::error::{Error, Result};
+use chrono::{DateTime, Duration, Utc};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use crate::util::error::{Error, Result};
-use crate::domain::datakey::entity::DataKey;
-use crate::domain::user::entity::User;
-use chrono::{DateTime, Duration, Utc};
 
 const DATAKEY_EXPIRE_SECOND: i64 = 10 * 60;
 const USER_EXPIRE_SECOND: i64 = 60 * 60;
 
-
-
 #[derive(Clone)]
-pub struct TimedFixedSizeCache
-{
+pub struct TimedFixedSizeCache {
     cached_keys: Arc<RwLock<HashMap<String, CachedDatakey>>>,
     cached_users: Arc<RwLock<HashMap<String, CachedUser>>>,
     key_size: Option<usize>,
     user_size: Option<usize>,
     key_expire: Option<i64>,
-    user_expire: Option<i64>
+    user_expire: Option<i64>,
 }
 #[derive(Clone)]
 pub struct CachedDatakey {
     time: DateTime<Utc>,
-    key: DataKey
+    key: DataKey,
 }
 #[derive(Clone)]
 pub struct CachedUser {
     time: DateTime<Utc>,
-    user: User
+    user: User,
 }
 
-impl TimedFixedSizeCache
-{
-    pub fn new(key_size: Option<usize>, user_size: Option<usize>, key_expire: Option<i64>, user_expire: Option<i64>) -> Self {
+impl TimedFixedSizeCache {
+    pub fn new(
+        key_size: Option<usize>,
+        user_size: Option<usize>,
+        key_expire: Option<i64>,
+        user_expire: Option<i64>,
+    ) -> Self {
         Self {
             cached_keys: Arc::new(RwLock::new(HashMap::new())),
             cached_users: Arc::new(RwLock::new(HashMap::new())),
             key_size,
             user_size,
             key_expire: key_expire.or(Some(DATAKEY_EXPIRE_SECOND)),
-            user_expire: user_expire.or(Some(USER_EXPIRE_SECOND))
+            user_expire: user_expire.or(Some(USER_EXPIRE_SECOND)),
         }
     }
 
@@ -78,9 +79,17 @@ impl TimedFixedSizeCache
                 self.cached_users.write().await.clear();
             }
         } else {
-            return Err(Error::UnsupportedTypeError("user cache not enabled".to_string()))
+            return Err(Error::UnsupportedTypeError(
+                "user cache not enabled".to_string(),
+            ));
         }
-        self.cached_users.write().await.insert(identity.to_owned(), CachedUser{time: Utc::now(), user} );
+        self.cached_users.write().await.insert(
+            identity.to_owned(),
+            CachedUser {
+                time: Utc::now(),
+                user,
+            },
+        );
         Ok(())
     }
 
@@ -101,12 +110,17 @@ impl TimedFixedSizeCache
                 self.cached_keys.write().await.clear();
             }
         } else {
-            return Err(Error::UnsupportedTypeError("datakey cache not enabled".to_string()))
+            return Err(Error::UnsupportedTypeError(
+                "datakey cache not enabled".to_string(),
+            ));
         }
-        self.cached_keys.write().await.insert(identity.to_owned(),  CachedDatakey{
-            time: Utc::now(),
-            key: datakey,
-        } );
+        self.cached_keys.write().await.insert(
+            identity.to_owned(),
+            CachedDatakey {
+                time: Utc::now(),
+                key: datakey,
+            },
+        );
         Ok(())
     }
 
@@ -119,11 +133,13 @@ impl TimedFixedSizeCache
     }
 
     pub async fn update_sign_datakey(&self, id_or_name: &str, datakey: DataKey) -> Result<()> {
-        self.update_datakey(&self.get_sign_identity(id_or_name), datakey).await
+        self.update_datakey(&self.get_sign_identity(id_or_name), datakey)
+            .await
     }
 
     pub async fn update_read_datakey(&self, id_or_name: &str, datakey: DataKey) -> Result<()> {
-        self.update_datakey(&self.get_read_identity(id_or_name), datakey).await
+        self.update_datakey(&self.get_read_identity(id_or_name), datakey)
+            .await
     }
 
     fn get_sign_identity(&self, key_name: &str) -> String {
@@ -137,19 +153,19 @@ impl TimedFixedSizeCache
 
 #[cfg(test)]
 mod test {
-    use std::thread::sleep;
-    use crate::domain::datakey::entity::KeyType::OpenPGP;
     use super::*;
+    use crate::domain::datakey::entity::KeyType::OpenPGP;
     use crate::util::error::Result;
+    use std::thread::sleep;
 
     #[tokio::test]
-    async fn test_user_cache() ->Result<()> {
-        let user_cache = TimedFixedSizeCache::new(None,Some(1), None, None);
-        let user1 = User{
+    async fn test_user_cache() -> Result<()> {
+        let user_cache = TimedFixedSizeCache::new(None, Some(1), None, None);
+        let user1 = User {
             id: 1,
             email: "fake_email@gmail.com".to_string(),
         };
-        let user2 = User{
+        let user2 = User {
             id: 2,
             email: "fake_email@gmail.com".to_string(),
         };
@@ -163,11 +179,14 @@ mod test {
         assert_eq!(user_cache.get_user(&identity1).await, None);
         assert_eq!(user_cache.get_user(&identity2).await, Some(user2.clone()));
 
-        let user_cache = TimedFixedSizeCache::new(None,None, None, None);
+        let user_cache = TimedFixedSizeCache::new(None, None, None, None);
         assert_eq!(user_cache.get_user(&identity1).await, None);
-        assert!(user_cache.update_user(&identity2, user2.clone()).await.is_err());
+        assert!(user_cache
+            .update_user(&identity2, user2.clone())
+            .await
+            .is_err());
 
-        let user_cache = TimedFixedSizeCache::new(None,Some(1), None, Some(1));
+        let user_cache = TimedFixedSizeCache::new(None, Some(1), None, Some(1));
         assert_eq!(user_cache.update_user(&identity2, user2).await?, ());
         sleep(Duration::seconds(2).to_std()?);
         assert_eq!(user_cache.get_user(&identity2).await, None);
@@ -175,9 +194,9 @@ mod test {
     }
 
     #[tokio::test]
-    async fn test_datakey_cache() ->Result<()> {
-        let key_cache = TimedFixedSizeCache::new(Some(2),None, None, None);
-        let datakey1 = DataKey{
+    async fn test_datakey_cache() -> Result<()> {
+        let key_cache = TimedFixedSizeCache::new(Some(2), None, None, None);
+        let datakey1 = DataKey {
             id: 1,
             name: "fake datakey1".to_string(),
             visibility: Default::default(),
@@ -199,7 +218,7 @@ mod test {
             request_revoke_users: None,
             parent_key: None,
         };
-        let datakey2 = DataKey{
+        let datakey2 = DataKey {
             id: 2,
             name: "fake datakey2".to_string(),
             visibility: Default::default(),
@@ -224,27 +243,52 @@ mod test {
         let identity1 = "datakey1";
         let identity2 = "1";
         assert_eq!(key_cache.get_read_datakey(&identity1).await, None);
-        assert_eq!(key_cache.update_read_datakey(&identity1, datakey1.clone()).await?, ());
-        assert_eq!(key_cache.get_read_datakey(&identity1).await, Some(datakey1.clone()));
+        assert_eq!(
+            key_cache
+                .update_read_datakey(&identity1, datakey1.clone())
+                .await?,
+            ()
+        );
+        assert_eq!(
+            key_cache.get_read_datakey(&identity1).await,
+            Some(datakey1.clone())
+        );
         assert_eq!(key_cache.get_sign_datakey(&identity1).await, None);
         assert_eq!(key_cache.get_datakey(&identity1).await, None);
-        assert_eq!(key_cache.update_sign_datakey(&identity1, datakey1.clone()).await?, ());
-        assert_eq!(key_cache.get_sign_datakey(&identity1).await, Some(datakey1.clone()));
-        assert_eq!(key_cache.update_sign_datakey(&identity2, datakey2.clone()).await?, ());
-        assert_eq!(key_cache.get_sign_datakey(&identity2).await, Some(datakey2.clone()));
+        assert_eq!(
+            key_cache
+                .update_sign_datakey(&identity1, datakey1.clone())
+                .await?,
+            ()
+        );
+        assert_eq!(
+            key_cache.get_sign_datakey(&identity1).await,
+            Some(datakey1.clone())
+        );
+        assert_eq!(
+            key_cache
+                .update_sign_datakey(&identity2, datakey2.clone())
+                .await?,
+            ()
+        );
+        assert_eq!(
+            key_cache.get_sign_datakey(&identity2).await,
+            Some(datakey2.clone())
+        );
         assert_eq!(key_cache.get_sign_datakey(&identity1).await, None);
         assert_eq!(key_cache.get_read_datakey(&identity1).await, None);
 
-
-        let key_cache = TimedFixedSizeCache::new(None,None, None, None);
+        let key_cache = TimedFixedSizeCache::new(None, None, None, None);
         assert_eq!(key_cache.get_datakey(&identity1).await, None);
-        assert!(key_cache.update_datakey(&identity1, datakey1.clone()).await.is_err());
+        assert!(key_cache
+            .update_datakey(&identity1, datakey1.clone())
+            .await
+            .is_err());
 
-        let key_cache = TimedFixedSizeCache::new(Some(1),None, Some(1), Some(1));
+        let key_cache = TimedFixedSizeCache::new(Some(1), None, Some(1), Some(1));
         assert_eq!(key_cache.update_datakey(&identity1, datakey1).await?, ());
         sleep(Duration::seconds(2).to_std()?);
         assert_eq!(key_cache.get_datakey(&identity1).await, None);
         Ok(())
     }
-
 }

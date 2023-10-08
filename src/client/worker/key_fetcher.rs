@@ -14,17 +14,15 @@
  *
  */
 
+use crate::util::error::{Error, Result};
 use std::collections::HashMap;
-use crate::util::error::{Result, Error};
 
 pub mod signatrust {
     tonic::include_proto!("signatrust");
 }
 
+use self::signatrust::{signatrust_client::SignatrustClient, GetKeyInfoRequest};
 use tonic::transport::Channel;
-use self::signatrust::{
-    signatrust_client::SignatrustClient, GetKeyInfoRequest
-};
 
 pub struct KeyFetcher {
     client: SignatrustClient<Channel>,
@@ -32,16 +30,19 @@ pub struct KeyFetcher {
 }
 
 impl KeyFetcher {
-
     pub fn new(channel: Channel, token: Option<String>) -> Self {
         Self {
             client: SignatrustClient::new(channel),
-            token
+            token,
         }
     }
 
-    pub async fn get_key_attributes(&mut self, key_name: &str, key_type: &str) -> Result<HashMap<String, String>> {
-        let key = GetKeyInfoRequest{
+    pub async fn get_key_attributes(
+        &mut self,
+        key_name: &str,
+        key_type: &str,
+    ) -> Result<HashMap<String, String>> {
+        let key = GetKeyInfoRequest {
             key_type: key_type.to_string(),
             key_id: key_name.to_string(),
             token: self.token.clone(),
@@ -55,9 +56,7 @@ impl KeyFetcher {
                     Err(Error::RemoteSignError(format!("{:?}", data.error)))
                 }
             }
-            Err(err) => {
-                Err(Error::RemoteSignError(format!("{:?}", err)))
-            }
+            Err(err) => Err(Error::RemoteSignError(format!("{:?}", err))),
         }
     }
 }

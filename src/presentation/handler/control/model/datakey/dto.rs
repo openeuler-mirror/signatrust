@@ -14,30 +14,32 @@
  *
  */
 
-use crate::domain::datakey::entity::{DataKey, DatakeyPaginationQuery, KeyState, PagedDatakey, Visibility, X509CRL};
 use crate::domain::datakey::entity::KeyType;
+use crate::domain::datakey::entity::{
+    DataKey, DatakeyPaginationQuery, KeyState, PagedDatakey, Visibility, X509CRL,
+};
 use crate::util::error::Result;
+use crate::util::key::{get_datakey_full_name, sorted_map};
 use chrono::{DateTime, Utc};
 use std::str::FromStr;
-use crate::util::key::{get_datakey_full_name, sorted_map};
 
-use validator::{Validate, ValidationError};
-use std::collections::HashMap;
+use crate::presentation::handler::control::model::user::dto::UserIdentity;
 use crate::util::error::Error;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use utoipa::{IntoParams, ToSchema};
-use crate::presentation::handler::control::model::user::dto::UserIdentity;
+use validator::{Validate, ValidationError};
 
 #[derive(Deserialize, Serialize, ToSchema)]
 pub struct PublicKeyContent {
-   pub(crate) content: String,
+    pub(crate) content: String,
 }
 
 impl TryFrom<DataKey> for PublicKeyContent {
     type Error = Error;
 
     fn try_from(value: DataKey) -> std::result::Result<Self, Self::Error> {
-        Ok(PublicKeyContent{
+        Ok(PublicKeyContent {
             content: String::from_utf8_lossy(&value.public_key).to_string(),
         })
     }
@@ -52,7 +54,7 @@ impl TryFrom<DataKey> for CertificateContent {
     type Error = Error;
 
     fn try_from(value: DataKey) -> std::result::Result<Self, Self::Error> {
-        Ok(CertificateContent{
+        Ok(CertificateContent {
             content: String::from_utf8_lossy(&value.certificate).to_string(),
         })
     }
@@ -67,7 +69,7 @@ impl TryFrom<X509CRL> for CRLContent {
     type Error = Error;
 
     fn try_from(value: X509CRL) -> std::result::Result<Self, Self::Error> {
-        Ok(CRLContent{
+        Ok(CRLContent {
             content: String::from_utf8_lossy(&value.data).to_string(),
         })
     }
@@ -99,7 +101,6 @@ pub struct ListKeyQuery {
     /// the request page index, starts from 1, max 1000
     #[validate(range(min = 1, max = 1000))]
     pub page_number: u64,
-
 }
 
 impl From<ListKeyQuery> for DatakeyPaginationQuery {
@@ -110,11 +111,10 @@ impl From<ListKeyQuery> for DatakeyPaginationQuery {
             name: value.name,
             description: value.description,
             key_type: value.key_type,
-            visibility: value.visibility
+            visibility: value.visibility,
         }
     }
 }
-
 
 #[derive(Debug, Validate, Deserialize, ToSchema)]
 pub struct CreateDataKeyDTO {
@@ -215,7 +215,7 @@ pub struct PagedMetaDTO {
 #[derive(Debug, Serialize, ToSchema)]
 pub struct PagedDatakeyDTO {
     pub data: Vec<DataKeyDTO>,
-    pub meta: PagedMetaDTO
+    pub meta: PagedMetaDTO,
 }
 
 impl TryFrom<PagedDatakey> for PagedDatakeyDTO {
@@ -235,7 +235,6 @@ impl TryFrom<PagedDatakey> for PagedDatakeyDTO {
     }
 }
 
-
 fn validate_utc_time(expire: &str) -> std::result::Result<(), ValidationError> {
     if expire.parse::<DateTime<Utc>>().is_err() {
         return Err(ValidationError::new("failed to parse time string to utc"));
@@ -245,24 +244,15 @@ fn validate_utc_time(expire: &str) -> std::result::Result<(), ValidationError> {
 
 fn validate_key_visibility(visibility: &str) -> std::result::Result<(), ValidationError> {
     match Visibility::from_str(visibility) {
-        Ok(_) => {
-            Ok(())
-        }
-        Err(_) => {
-            Err(ValidationError::new("unsupported key visibility"))
-        }
+        Ok(_) => Ok(()),
+        Err(_) => Err(ValidationError::new("unsupported key visibility")),
     }
 }
 
-
 fn validate_key_type(key_type: &str) -> std::result::Result<(), ValidationError> {
     match KeyType::from_str(key_type) {
-        Ok(_) => {
-            Ok(())
-        }
-        Err(_) => {
-            Err(ValidationError::new("unsupported key type"))
-        }
+        Ok(_) => Ok(()),
+        Err(_) => Err(ValidationError::new("unsupported key type")),
     }
 }
 
@@ -378,7 +368,7 @@ mod tests {
     use super::*;
     #[test]
     fn test_public_key_content_from_datakey() {
-        let key1 = DataKey{
+        let key1 = DataKey {
             id: 1,
             name: "Test Key".to_string(),
             description: "".to_string(),
@@ -389,9 +379,9 @@ mod tests {
             parent_id: Some(2),
             fingerprint: "".to_string(),
             serial_number: None,
-            private_key: vec![7,8,9,10],
-            public_key: vec![4,5,6],
-            certificate: vec![1,2,3],
+            private_key: vec![7, 8, 9, 10],
+            public_key: vec![4, 5, 6],
+            certificate: vec![1, 2, 3],
             create_at: Default::default(),
             expire_at: Default::default(),
             key_state: KeyState::Disabled,
@@ -406,7 +396,7 @@ mod tests {
 
     #[test]
     fn test_certificate_content_from_datakey() {
-        let key1 = DataKey{
+        let key1 = DataKey {
             id: 1,
             name: "Test Key".to_string(),
             description: "".to_string(),
@@ -417,9 +407,9 @@ mod tests {
             parent_id: Some(2),
             fingerprint: "".to_string(),
             serial_number: None,
-            private_key: vec![7,8,9,10],
-            public_key: vec![4,5,6],
-            certificate: vec![1,2,3],
+            private_key: vec![7, 8, 9, 10],
+            public_key: vec![4, 5, 6],
+            certificate: vec![1, 2, 3],
             create_at: Default::default(),
             expire_at: Default::default(),
             key_state: KeyState::Disabled,
@@ -434,7 +424,7 @@ mod tests {
 
     #[test]
     fn test_datakey_dto_from_datakey() {
-        let key1 = DataKey{
+        let key1 = DataKey {
             id: 1,
             name: "Test Key".to_string(),
             description: "".to_string(),
@@ -445,9 +435,9 @@ mod tests {
             parent_id: Some(2),
             fingerprint: "".to_string(),
             serial_number: None,
-            private_key: vec![7,8,9,10],
-            public_key: vec![4,5,6],
-            certificate: vec![1,2,3],
+            private_key: vec![7, 8, 9, 10],
+            public_key: vec![4, 5, 6],
+            certificate: vec![1, 2, 3],
             create_at: Default::default(),
             expire_at: Default::default(),
             key_state: KeyState::Disabled,
@@ -461,10 +451,10 @@ mod tests {
 
     #[test]
     fn test_crl_content_from_crl_model() {
-        let crl = X509CRL{
+        let crl = X509CRL {
             id: 1,
             ca_id: 2,
-            data: vec![1,2,3],
+            data: vec![1, 2, 3],
             create_at: Default::default(),
             update_at: Default::default(),
         };
@@ -474,7 +464,7 @@ mod tests {
 
     #[test]
     fn test_list_key_query() {
-        let page_query_invalid1 = ListKeyQuery{
+        let page_query_invalid1 = ListKeyQuery {
             key_type: Some("x509ee".to_string()),
             visibility: Some("public".to_string()),
             name: Some("test".to_string()),
@@ -483,7 +473,7 @@ mod tests {
             page_number: 1,
         };
         assert!(page_query_invalid1.validate().is_err());
-        let page_query_invalid2 = ListKeyQuery{
+        let page_query_invalid2 = ListKeyQuery {
             key_type: Some("x509ee".to_string()),
             visibility: Some("public".to_string()),
             name: Some("test".to_string()),
@@ -492,7 +482,7 @@ mod tests {
             page_number: 1,
         };
         assert!(page_query_invalid2.validate().is_err());
-        let page_query_invalid3 = ListKeyQuery{
+        let page_query_invalid3 = ListKeyQuery {
             key_type: Some("x509ee".to_string()),
             visibility: Some("public".to_string()),
             name: Some("test".to_string()),
@@ -501,7 +491,7 @@ mod tests {
             page_number: 0,
         };
         assert!(page_query_invalid3.validate().is_err());
-        let page_query_invalid4 = ListKeyQuery{
+        let page_query_invalid4 = ListKeyQuery {
             key_type: Some("x509ee".to_string()),
             visibility: Some("public".to_string()),
             name: Some("test".to_string()),
@@ -510,7 +500,7 @@ mod tests {
             page_number: 1001,
         };
         assert!(page_query_invalid4.validate().is_err());
-        let query = ListKeyQuery{
+        let query = ListKeyQuery {
             key_type: Some("x509ee".to_string()),
             visibility: Some("public".to_string()),
             name: Some("test".to_string()),
@@ -529,7 +519,7 @@ mod tests {
 
     #[test]
     fn test_create_datakey_dto() {
-        let invalid_name1 = CreateDataKeyDTO{
+        let invalid_name1 = CreateDataKeyDTO {
             name: "Tes".to_string(),
             description: "".to_string(),
             visibility: Some("public".to_string()),
@@ -539,11 +529,12 @@ mod tests {
             expire_at: Default::default(),
         };
         assert!(invalid_name1.validate().is_err());
-        let invalid_name2 = CreateDataKeyDTO{
+        let invalid_name2 = CreateDataKeyDTO {
             name: "1234567890123456789012345678901234567890123456789012345678901234\
             567890123456789012345678901234567890123456789012345678901234567890123456\
             7890123456789012345678901234567890123456789012345678901234567890123456789\
-            012345678901234567890123456789012345678901234567890".to_string(),
+            012345678901234567890123456789012345678901234567890"
+                .to_string(),
             description: "".to_string(),
             visibility: Some("public".to_string()),
             attributes: HashMap::new(),
@@ -552,12 +543,13 @@ mod tests {
             expire_at: Default::default(),
         };
         assert!(invalid_name2.validate().is_err());
-        let invalid_desc1 = CreateDataKeyDTO{
+        let invalid_desc1 = CreateDataKeyDTO {
             name: "Test".to_string(),
             description: "1234567890123456789012345678901234567890123456789012345678901234\
             567890123456789012345678901234567890123456789012345678901234567890123456\
             7890123456789012345678901234567890123456789012345678901234567890123456789\
-            012345678901234567890123456789012345678901234567890".to_string(),
+            012345678901234567890123456789012345678901234567890"
+                .to_string(),
             visibility: Some("public".to_string()),
             attributes: HashMap::new(),
             key_type: "pgp".to_string(),
@@ -565,7 +557,7 @@ mod tests {
             expire_at: Default::default(),
         };
         assert!(invalid_desc1.validate().is_err());
-        let invalid_visibility = CreateDataKeyDTO{
+        let invalid_visibility = CreateDataKeyDTO {
             name: "Test".to_string(),
             description: "test descr".to_string(),
             visibility: Some("123".to_string()),
@@ -576,7 +568,7 @@ mod tests {
         };
         assert!(invalid_visibility.validate().is_err());
 
-        let invalid_type = CreateDataKeyDTO{
+        let invalid_type = CreateDataKeyDTO {
             name: "Test".to_string(),
             description: "test descr".to_string(),
             visibility: Some("public".to_string()),
@@ -587,7 +579,7 @@ mod tests {
         };
         assert!(invalid_type.validate().is_err());
 
-        let invalid_expire = CreateDataKeyDTO{
+        let invalid_expire = CreateDataKeyDTO {
             name: "Test".to_string(),
             description: "test descr".to_string(),
             visibility: Some("public".to_string()),
@@ -598,7 +590,7 @@ mod tests {
         };
         assert!(invalid_expire.validate().is_err());
 
-        let dto = CreateDataKeyDTO{
+        let dto = CreateDataKeyDTO {
             name: "Test".to_string(),
             description: "test descr".to_string(),
             visibility: Some("public".to_string()),
@@ -607,7 +599,7 @@ mod tests {
             parent_id: Some(2),
             expire_at: Utc::now().to_string(),
         };
-        let identity = UserIdentity{
+        let identity = UserIdentity {
             email: "email1".to_string(),
             id: 1,
             csrf_generation_token: None,
@@ -622,7 +614,7 @@ mod tests {
 
     #[test]
     fn test_import_datakey_dto() {
-        let invalid_name1 = ImportDataKeyDTO{
+        let invalid_name1 = ImportDataKeyDTO {
             name: "Tes".to_string(),
             description: "".to_string(),
             visibility: Some("public".to_string()),
@@ -633,11 +625,12 @@ mod tests {
             private_key: "1234".to_string(),
         };
         assert!(invalid_name1.validate().is_err());
-        let invalid_name2 = ImportDataKeyDTO{
+        let invalid_name2 = ImportDataKeyDTO {
             name: "1234567890123456789012345678901234567890123456789012345678901234\
             567890123456789012345678901234567890123456789012345678901234567890123456\
             7890123456789012345678901234567890123456789012345678901234567890123456789\
-            012345678901234567890123456789012345678901234567890".to_string(),
+            012345678901234567890123456789012345678901234567890"
+                .to_string(),
             description: "".to_string(),
             visibility: Some("public".to_string()),
             attributes: HashMap::new(),
@@ -647,12 +640,13 @@ mod tests {
             private_key: "1234".to_string(),
         };
         assert!(invalid_name2.validate().is_err());
-        let invalid_desc1 = ImportDataKeyDTO{
+        let invalid_desc1 = ImportDataKeyDTO {
             name: "Test".to_string(),
             description: "1234567890123456789012345678901234567890123456789012345678901234\
             567890123456789012345678901234567890123456789012345678901234567890123456\
             7890123456789012345678901234567890123456789012345678901234567890123456789\
-            012345678901234567890123456789012345678901234567890".to_string(),
+            012345678901234567890123456789012345678901234567890"
+                .to_string(),
             visibility: Some("public".to_string()),
             attributes: HashMap::new(),
             key_type: "pgp".to_string(),
@@ -661,7 +655,7 @@ mod tests {
             private_key: "1234".to_string(),
         };
         assert!(invalid_desc1.validate().is_err());
-        let invalid_visibility = ImportDataKeyDTO{
+        let invalid_visibility = ImportDataKeyDTO {
             name: "Test".to_string(),
             description: "test descr".to_string(),
             visibility: Some("123".to_string()),
@@ -673,7 +667,7 @@ mod tests {
         };
         assert!(invalid_visibility.validate().is_err());
 
-        let invalid_type = ImportDataKeyDTO{
+        let invalid_type = ImportDataKeyDTO {
             name: "Test".to_string(),
             description: "test descr".to_string(),
             visibility: Some("public".to_string()),
@@ -685,7 +679,7 @@ mod tests {
         };
         assert!(invalid_type.validate().is_err());
 
-        let dto = ImportDataKeyDTO{
+        let dto = ImportDataKeyDTO {
             name: "Test".to_string(),
             description: "test descr".to_string(),
             visibility: Some("public".to_string()),
@@ -695,7 +689,7 @@ mod tests {
             public_key: "1234".to_string(),
             private_key: "1234".to_string(),
         };
-        let identity = UserIdentity{
+        let identity = UserIdentity {
             email: "email1".to_string(),
             id: 1,
             csrf_generation_token: None,

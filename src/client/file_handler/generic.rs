@@ -15,15 +15,15 @@
  */
 
 use super::traits::FileHandler;
-use crate::util::sign::{KeyType};
 use crate::util::error::Result;
+use crate::util::sign::KeyType;
 use async_trait::async_trait;
 use std::path::PathBuf;
 use tokio::fs;
 use uuid::Uuid;
 
-use crate::util::options;
 use crate::util::error::Error;
+use crate::util::options;
 use std::collections::HashMap;
 
 //Stands for ASCII Armored file
@@ -66,7 +66,7 @@ impl FileHandler for GenericFileHandler {
         data: Vec<Vec<u8>>,
         temp_dir: &PathBuf,
         _sign_options: &HashMap<String, String>,
-        _key_attributes: &HashMap<String, String>
+        _key_attributes: &HashMap<String, String>,
     ) -> Result<(String, String)> {
         let temp_file = temp_dir.join(Uuid::new_v4().to_string());
         //convert bytes into string
@@ -121,7 +121,9 @@ mod test {
         let path = PathBuf::from("./test_data/test.txt");
         let data = vec![vec![1, 2, 3]];
         let temp_dir = env::temp_dir();
-        let result = handler.assemble_data(&path, data, &temp_dir, &options, &HashMap::new()).await;
+        let result = handler
+            .assemble_data(&path, data, &temp_dir, &options, &HashMap::new())
+            .await;
         assert!(result.is_ok());
         let (temp_file, file_name) = result.expect("invoke assemble data should work");
         assert_eq!(temp_file.starts_with(temp_dir.to_str().unwrap()), true);

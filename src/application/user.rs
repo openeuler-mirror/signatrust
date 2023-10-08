@@ -14,32 +14,32 @@
  *
  */
 
-use crate::domain::user::entity::User;
 use crate::domain::token::entity::Token;
-use crate::domain::user::repository::Repository as UserRepository;
 use crate::domain::token::repository::Repository as TokenRepository;
-use crate::util::error::{Result, Error};
+use crate::domain::user::entity::User;
+use crate::domain::user::repository::Repository as UserRepository;
+use crate::presentation::handler::control::model::token::dto::CreateTokenDTO;
+use crate::presentation::handler::control::model::user::dto::UserIdentity;
+use crate::util::cache::TimedFixedSizeCache;
+use crate::util::error::{Error, Result};
+use crate::util::key::generate_api_token;
 use async_trait::async_trait;
+use chrono::Utc;
+use config::Config;
+use openidconnect::{
+    core::CoreClient, core::CoreResponseType, AuthenticationFlow, CsrfToken, Nonce, Scope,
+};
+use openidconnect::{
+    AuthUrl, ClientId, ClientSecret, IssuerUrl, JsonWebKeySet, RedirectUrl, TokenUrl, UserInfoUrl,
+};
+use reqwest::{header, Client, StatusCode};
+use serde::Deserialize;
 use std::sync::Arc;
 use std::sync::RwLock;
-use chrono::Utc;
-use serde::{Deserialize};
-use config::Config;
-use reqwest::{header, Client, StatusCode};
-use crate::presentation::handler::control::model::user::dto::UserIdentity;
-use openidconnect::{
-    Scope,
-    AuthenticationFlow, CsrfToken, Nonce,
-    core::CoreResponseType, core::CoreClient
-};
-use openidconnect::{JsonWebKeySet, ClientId, AuthUrl, UserInfoUrl, TokenUrl, RedirectUrl, ClientSecret, IssuerUrl};
 use url::Url;
-use crate::presentation::handler::control::model::token::dto::{CreateTokenDTO};
-use crate::util::key::{generate_api_token};
-use crate::util::cache::TimedFixedSizeCache;
 
 #[async_trait]
-pub trait UserService: Send + Sync{
+pub trait UserService: Send + Sync {
     async fn get_token(&self, u: &UserIdentity) -> Result<Vec<Token>>;
     async fn delete_token(&self, u: &UserIdentity, id: i32) -> Result<()>;
     async fn get_valid_token(&self, token: &str) -> Result<Token>;
@@ -69,14 +69,13 @@ pub struct OIDCConfig {
     pub token_url: String,
     pub redirect_uri: String,
     pub user_info_url: String,
-    pub auth_url: String
+    pub auth_url: String,
 }
-
 
 pub struct DBUserService<R, T>
 where
     R: UserRepository,
-    T: TokenRepository
+    T: TokenRepository,
 {
     user_repository: R,
     token_repository: T,
@@ -86,14 +85,18 @@ where
 }
 
 impl<R, T> DBUserService<R, T>
-    where
-        R: UserRepository,
-        T: TokenRepository
+where
+    R: UserRepository,
+    T: TokenRepository,
 {
-    pub fn new(user_repository: R, token_repository: T, config: Arc<RwLock<Config>>) -> Result<Self> {
+    pub fn new(
+        user_repository: R,
+        token_repository: T,
+        config: Arc<RwLock<Config>>,
+    ) -> Result<Self> {
         // TODO: remove me when openid connect library is ready we have to save OIDC in another object
         // due to we hacked several OIDC methods.
-        let oidc_config = OIDCConfig{
+        let oidc_config = OIDCConfig {
             auth_url: config.read()?.get_string("oidc.auth_url")?,
             client_id: config.read()?.get_string("oidc.client_id")?,
             client_secret: config.read()?.get_string("oidc.client_secret")?,
@@ -108,14 +111,15 @@ impl<R, T> DBUserService<R, T>
             AuthUrl::new(oidc_config.auth_url.clone())?,
             Some(TokenUrl::new(oidc_config.token_url.clone())?),
             Some(UserInfoUrl::new(oidc_config.user_info_url.clone())?),
-            JsonWebKeySet::default()).set_redirect_uri(RedirectUrl::new(oidc_config.redirect_uri.clone())?,
-        );
+            JsonWebKeySet::default(),
+        )
+        .set_redirect_uri(RedirectUrl::new(oidc_config.redirect_uri.clone())?);
         Ok(Self {
             user_repository,
             token_repository,
             oidc_config,
             client,
-            tokens: TimedFixedSizeCache::new(None, Some(20), None, None)
+            tokens: TimedFixedSizeCache::new(None, Some(20), None, None),
         })
     }
 
@@ -123,15 +127,21 @@ impl<R, T> DBUserService<R, T>
     // https://github.com/ramosbugs/openidconnect-rs/issues/100
     async fn get_user_info(&self, access_token: &str) -> Result<UserEmail> {
         let mut auth_header = header::HeaderMap::new();
-        auth_header.insert("Authorization", header::HeaderValue::from_str( access_token)?);
+        auth_header.insert(
+            "Authorization",
+            header::HeaderValue::from_str(access_token)?,
+        );
         match Client::builder().default_headers(auth_header).build() {
             Ok(client) => {
-                let resp: UserEmail = client.get(&self.oidc_config.user_info_url).send().await?.json().await?;
+                let resp: UserEmail = client
+                    .get(&self.oidc_config.user_info_url)
+                    .send()
+                    .await?
+                    .json()
+                    .await?;
                 Ok(resp)
             }
-            Err(err) => {
-                Err(Error::AuthError(err.to_string()))
-            }
+            Err(err) => Err(Error::AuthError(err.to_string())),
         }
     }
 
@@ -139,22 +149,28 @@ impl<R, T> DBUserService<R, T>
     async fn get_access_token(&self, code: &str) -> Result<AccessToken> {
         match Client::builder().build() {
             Ok(client) => {
-                let response= client.post(&self.oidc_config.token_url).query(&[
-                    ("client_id", self.oidc_config.client_id.as_str()),
-                    ("client_secret", self.oidc_config.client_secret.as_str()),
-                    ("code", code),
-                    ("redirect_uri", self.oidc_config.redirect_uri.as_str()),
-                    ("grant_type", "authorization_code")]).send().await?;
+                let response = client
+                    .post(&self.oidc_config.token_url)
+                    .query(&[
+                        ("client_id", self.oidc_config.client_id.as_str()),
+                        ("client_secret", self.oidc_config.client_secret.as_str()),
+                        ("code", code),
+                        ("redirect_uri", self.oidc_config.redirect_uri.as_str()),
+                        ("grant_type", "authorization_code"),
+                    ])
+                    .send()
+                    .await?;
                 if response.status() != StatusCode::OK {
-                    Err(Error::AuthError(format!("failed to get access token {}", response.text().await?)))
+                    Err(Error::AuthError(format!(
+                        "failed to get access token {}",
+                        response.text().await?
+                    )))
                 } else {
                     let resp: AccessToken = response.json().await?;
                     Ok(resp)
                 }
             }
-            Err(err) => {
-                Err(Error::AuthError(err.to_string()))
-            }
+            Err(err) => Err(Error::AuthError(err.to_string())),
         }
     }
 }
@@ -163,7 +179,7 @@ impl<R, T> DBUserService<R, T>
 impl<R, T> UserService for DBUserService<R, T>
 where
     R: UserRepository,
-    T: TokenRepository
+    T: TokenRepository,
 {
     async fn get_token(&self, user: &UserIdentity) -> Result<Vec<Token>> {
         self.token_repository.get_token_by_user_id(user.id).await
@@ -172,7 +188,7 @@ where
     async fn delete_token(&self, u: &UserIdentity, id: i32) -> Result<()> {
         let token = self.token_repository.get_token_by_id(id).await?;
         if token.user_id != u.id {
-            return Err(Error::UnauthorizedError)
+            return Err(Error::UnauthorizedError);
         }
         self.token_repository.delete_by_user_and_id(id, u.id).await
     }
@@ -180,23 +196,23 @@ where
     async fn get_valid_token(&self, token: &str) -> Result<Token> {
         let token = self.token_repository.get_token_by_value(token).await?;
         if token.expire_at.gt(&Utc::now()) {
-            return Ok(token)
+            return Ok(token);
         }
         Err(Error::TokenExpiredError(token.to_string()))
     }
 
     async fn validate_token(&self, token: &str) -> Result<User> {
         if let Some(u) = self.tokens.get_user(token).await {
-            return Ok(u)
+            return Ok(u);
         }
         let tk = self.get_valid_token(token).await?;
         let user = self.user_repository.get_by_id(tk.user_id).await?;
         self.tokens.update_user(token, user.clone()).await?;
-        return Ok(user)
+        return Ok(user);
     }
 
     async fn save(&self, u: User) -> Result<User> {
-        return self.user_repository.create(u).await
+        return self.user_repository.create(u).await;
     }
 
     async fn get_user_by_id(&self, id: i32) -> Result<User> {
@@ -214,13 +230,16 @@ where
         //return token with un-hashed value
         new.token = real_token;
         Ok(new)
-
     }
 
     async fn get_login_url(&self) -> Result<Url> {
-        let (authorize_url, _, _) = self.client
-            .authorize_url(AuthenticationFlow::<CoreResponseType>::AuthorizationCode,
-                           CsrfToken::new_random, Nonce::new_random, )
+        let (authorize_url, _, _) = self
+            .client
+            .authorize_url(
+                AuthenticationFlow::<CoreResponseType>::AuthorizationCode,
+                CsrfToken::new_random,
+                Nonce::new_random,
+            )
             .add_scope(Scope::new("email".to_string()))
             .add_scope(Scope::new("openid".to_string()))
             .add_scope(Scope::new("profile".to_string()))
@@ -231,12 +250,17 @@ where
     async fn validate_user(&self, code: &str) -> Result<User> {
         match self.get_access_token(code).await {
             Ok(token_response) => {
-                let id: User = User::new(self.get_user_info(&token_response.access_token).await?.email)?;
-                return self.user_repository.create(id).await
+                let id: User = User::new(
+                    self.get_user_info(&token_response.access_token)
+                        .await?
+                        .email,
+                )?;
+                return self.user_repository.create(id).await;
             }
-            Err(err) => {
-                Err(Error::AuthError(format!("failed to get access token {}", err)))
-            }
+            Err(err) => Err(Error::AuthError(format!(
+                "failed to get access token {}",
+                err
+            ))),
         }
     }
 

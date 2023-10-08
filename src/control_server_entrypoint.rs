@@ -20,17 +20,17 @@ use clap::Parser;
 use config::Config;
 use std::env;
 use std::sync::{Arc, RwLock};
-use tokio_util::sync::CancellationToken;
 use tokio::{
     select,
     signal::unix::{signal, SignalKind},
 };
+use tokio_util::sync::CancellationToken;
 
-mod infra;
+mod application;
 mod domain;
+mod infra;
 mod presentation;
 mod util;
-mod application;
 
 #[macro_use]
 extern crate log;
@@ -45,7 +45,7 @@ extern crate lazy_static;
 pub struct App {
     #[arg(short, long)]
     #[arg(
-    help = "path of configuration file, 'config/server.toml' relative to working directory be used in default"
+        help = "path of configuration file, 'config/server.toml' relative to working directory be used in default"
     )]
     config: Option<String>,
 }
@@ -85,7 +85,11 @@ async fn main() -> Result<()> {
     //prepare config and logger
     env_logger::init();
     //control server starts
-    let control_server = presentation::server::control_server::ControlServer::new(SERVERCONFIG.clone(), CANCEL_TOKEN.clone()).await?;
+    let control_server = presentation::server::control_server::ControlServer::new(
+        SERVERCONFIG.clone(),
+        CANCEL_TOKEN.clone(),
+    )
+    .await?;
     control_server.run().await?;
     Ok(())
 }

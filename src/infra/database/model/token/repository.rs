@@ -14,27 +14,27 @@
  *
  */
 
-use crate::domain::token::entity::{Token};
+use crate::domain::token::entity::Token;
 use crate::domain::token::repository::Repository;
-use crate::util::error::Result;
-use async_trait::async_trait;
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, ActiveValue::Set, Condition, ActiveModelTrait};
 use crate::infra::database::model::token;
 use crate::infra::database::model::token::dto::Entity as TokenDTO;
 use crate::util::error;
+use crate::util::error::Result;
 use crate::util::key::get_token_hash;
-
+use async_trait::async_trait;
+use sea_orm::{
+    ActiveModelTrait, ActiveValue::Set, ColumnTrait, Condition, DatabaseConnection, EntityTrait,
+    QueryFilter,
+};
 
 #[derive(Clone)]
 pub struct TokenRepository<'a> {
-    db_connection: &'a DatabaseConnection
+    db_connection: &'a DatabaseConnection,
 }
 
 impl<'a> TokenRepository<'a> {
     pub fn new(db_connection: &'a DatabaseConnection) -> Self {
-        Self {
-            db_connection,
-        }
+        Self { db_connection }
     }
 }
 
@@ -45,7 +45,7 @@ impl<'a> Repository for TokenRepository<'a> {
             user_id: Set(token.user_id),
             description: Set(token.description),
             token: Set(get_token_hash(&token.token)),
-            create_at:Set(token.create_at),
+            create_at: Set(token.create_at),
             expire_at: Set(token.expire_at),
             ..Default::default()
         };
@@ -54,39 +54,39 @@ impl<'a> Repository for TokenRepository<'a> {
 
     async fn get_token_by_id(&self, id: i32) -> Result<Token> {
         match TokenDTO::find_by_id(id).one(self.db_connection).await? {
-            None => {
-                Err(error::Error::NotFoundError)
-            }
-            Some(token) => {
-                Ok(Token::from(token))
-            }
+            None => Err(error::Error::NotFoundError),
+            Some(token) => Ok(Token::from(token)),
         }
     }
 
     async fn get_token_by_value(&self, token: &str) -> Result<Token> {
-        match TokenDTO::find().filter(
-            token::dto::Column::Token.eq(get_token_hash(token))).one(
-            self.db_connection).await? {
-            None => {
-                Err(error::Error::NotFoundError)
-            }
-            Some(token) => {
-                Ok(Token::from(token))
-            }
+        match TokenDTO::find()
+            .filter(token::dto::Column::Token.eq(get_token_hash(token)))
+            .one(self.db_connection)
+            .await?
+        {
+            None => Err(error::Error::NotFoundError),
+            Some(token) => Ok(Token::from(token)),
         }
     }
 
     async fn delete_by_user_and_id(&self, id: i32, user_id: i32) -> Result<()> {
-        let _ = TokenDTO::delete_many().filter(Condition::all()
-            .add(token::dto::Column::Id.eq(id))
-            .add(token::dto::Column::UserId.eq(user_id))).exec(self.db_connection)
+        let _ = TokenDTO::delete_many()
+            .filter(
+                Condition::all()
+                    .add(token::dto::Column::Id.eq(id))
+                    .add(token::dto::Column::UserId.eq(user_id)),
+            )
+            .exec(self.db_connection)
             .await?;
         Ok(())
     }
 
     async fn get_token_by_user_id(&self, id: i32) -> Result<Vec<Token>> {
-        let tokens = TokenDTO::find().filter(
-            token::dto::Column::UserId.eq(id)).all(self.db_connection).await?;
+        let tokens = TokenDTO::find()
+            .filter(token::dto::Column::UserId.eq(id))
+            .all(self.db_connection)
+            .await?;
         let mut results = vec![];
         for dto in tokens.into_iter() {
             results.push(Token::from(dto));
@@ -97,36 +97,34 @@ impl<'a> Repository for TokenRepository<'a> {
 
 #[cfg(test)]
 mod tests {
-    use sea_orm::{DatabaseBackend, MockDatabase, MockExecResult, Transaction};
     use crate::domain::token::entity::Token;
     use crate::domain::token::repository::Repository;
     use crate::infra::database::model::token::dto;
+    use crate::infra::database::model::token::repository::TokenRepository;
     use crate::util::error::Result;
-    use crate::infra::database::model::token::repository::{TokenRepository};
     use crate::util::key::get_token_hash;
+    use sea_orm::{DatabaseBackend, MockDatabase, MockExecResult, Transaction};
 
     #[tokio::test]
     async fn test_token_repository_create_sql_statement() -> Result<()> {
         let now = chrono::Utc::now();
         let db = MockDatabase::new(DatabaseBackend::MySql)
-            .append_query_results([
-                vec![dto::Model {
-                    id: 1,
-                    user_id: 0,
-                    description: "fake_token".to_string(),
-                    token: "random_number".to_string(),
-                    create_at: now.clone(),
-                    expire_at: now.clone(),
-                }],
-            ]).append_exec_results([
-            MockExecResult{
+            .append_query_results([vec![dto::Model {
+                id: 1,
+                user_id: 0,
+                description: "fake_token".to_string(),
+                token: "random_number".to_string(),
+                create_at: now.clone(),
+                expire_at: now.clone(),
+            }]])
+            .append_exec_results([MockExecResult {
                 last_insert_id: 1,
                 rows_affected: 1,
-            }
-        ]).into_connection();
+            }])
+            .into_connection();
 
         let token_repository = TokenRepository::new(&db);
-        let user = Token{
+        let user = Token {
             id: 1,
             user_id: 0,
             description: "fake_token".to_string(),
@@ -153,7 +151,13 @@ mod tests {
                 Transaction::from_sql_and_values(
                     DatabaseBackend::MySql,
                     r#"INSERT INTO `token` (`user_id`, `description`, `token`, `create_at`, `expire_at`) VALUES (?, ?, ?, ?, ?)"#,
-                    [0i32.into(), "fake_token".into(), hashed_token.into(), now.clone().into(), now.clone().into()]
+                    [
+                        0i32.into(),
+                        "fake_token".into(),
+                        hashed_token.into(),
+                        now.clone().into(),
+                        now.clone().into()
+                    ]
                 ),
                 Transaction::from_sql_and_values(
                     DatabaseBackend::MySql,
@@ -170,21 +174,19 @@ mod tests {
     async fn test_token_repository_delete_sql_statement() -> Result<()> {
         let now = chrono::Utc::now();
         let db = MockDatabase::new(DatabaseBackend::MySql)
-            .append_query_results([
-                vec![dto::Model {
-                    id: 1,
-                    user_id: 0,
-                    description: "fake_token".to_string(),
-                    token: "random_number".to_string(),
-                    create_at: now.clone(),
-                    expire_at: now.clone(),
-                }],
-            ]).append_exec_results([
-            MockExecResult{
+            .append_query_results([vec![dto::Model {
+                id: 1,
+                user_id: 0,
+                description: "fake_token".to_string(),
+                token: "random_number".to_string(),
+                create_at: now.clone(),
+                expire_at: now.clone(),
+            }]])
+            .append_exec_results([MockExecResult {
                 last_insert_id: 1,
                 rows_affected: 1,
-            }
-        ]).into_connection();
+            }])
+            .into_connection();
 
         let token_repository = TokenRepository::new(&db);
         assert_eq!(token_repository.delete_by_user_and_id(1, 1).await?, ());
@@ -224,22 +226,26 @@ mod tests {
                     create_at: now.clone(),
                     expire_at: now.clone(),
                 }],
-                vec![dto::Model {
-                    id: 1,
-                    user_id: 0,
-                    description: "fake_token".to_string(),
-                    token: "random_number".to_string(),
-                    create_at: now.clone(),
-                    expire_at: now.clone(),
-                }, dto::Model {
-                    id: 2,
-                    user_id: 0,
-                    description: "fake_token2".to_string(),
-                    token: "random_number2".to_string(),
-                    create_at: now.clone(),
-                    expire_at: now.clone(),
-                }],
-            ]).into_connection();
+                vec![
+                    dto::Model {
+                        id: 1,
+                        user_id: 0,
+                        description: "fake_token".to_string(),
+                        token: "random_number".to_string(),
+                        create_at: now.clone(),
+                        expire_at: now.clone(),
+                    },
+                    dto::Model {
+                        id: 2,
+                        user_id: 0,
+                        description: "fake_token2".to_string(),
+                        token: "random_number2".to_string(),
+                        create_at: now.clone(),
+                        expire_at: now.clone(),
+                    },
+                ],
+            ])
+            .into_connection();
 
         let token_repository = TokenRepository::new(&db);
         assert_eq!(
@@ -268,22 +274,23 @@ mod tests {
         assert_eq!(
             token_repository.get_token_by_user_id(0).await?,
             vec![
-                 Token::from(dto::Model {
-                id: 1,
-                user_id: 0,
-                description: "fake_token".to_string(),
-                token: "random_number".to_string(),
-                create_at: now.clone(),
-                expire_at: now.clone(),
-            }),
                 Token::from(dto::Model {
-                id: 2,
-                user_id: 0,
-                description: "fake_token2".to_string(),
-                token: "random_number2".to_string(),
-                create_at: now.clone(),
-                expire_at: now.clone(),
-            })]
+                    id: 1,
+                    user_id: 0,
+                    description: "fake_token".to_string(),
+                    token: "random_number".to_string(),
+                    create_at: now.clone(),
+                    expire_at: now.clone(),
+                }),
+                Token::from(dto::Model {
+                    id: 2,
+                    user_id: 0,
+                    description: "fake_token2".to_string(),
+                    token: "random_number2".to_string(),
+                    create_at: now.clone(),
+                    expire_at: now.clone(),
+                })
+            ]
         );
 
         let hashed_token = get_token_hash("fake_content");

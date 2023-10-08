@@ -15,13 +15,12 @@
  */
 
 use crate::domain::kms_provider::KMSProvider;
-use crate::util::error::{Result};
+use crate::util::error::Result;
+use async_trait::async_trait;
 use config::Value;
 use std::collections::HashMap;
-use async_trait::async_trait;
 
-pub struct DummyKMS {
-}
+pub struct DummyKMS {}
 
 impl DummyKMS {
     pub fn new(_config: &HashMap<String, Value>) -> Result<DummyKMS> {
