@@ -1,3 +1,19 @@
+/*
+ *
+ *  * // Copyright (c) 2023 Huawei Technologies Co.,Ltd. All rights reserved.
+ *  * //
+ *  * // signatrust is licensed under Mulan PSL v2.
+ *  * // You can use this software according to the terms and conditions of the Mulan
+ *  * // PSL v2.
+ *  * // You may obtain a copy of Mulan PSL v2 at:
+ *  * //         http://license.coscl.org.cn/MulanPSL2
+ *  * // THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY
+ *  * // KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+ *  * // NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+ *  * // See the Mulan PSL v2 for more details.
+ *
+ */
+
 use crate::domain::datakey::entity::{DataKey, DatakeyPaginationQuery, KeyState, PagedDatakey, Visibility, X509CRL};
 use crate::domain::datakey::entity::KeyType;
 use crate::util::error::Result;
@@ -354,5 +370,341 @@ impl TryFrom<DataKey> for DataKeyDTO {
             request_delete_users: dto.request_delete_users,
             request_revoke_users: dto.request_revoke_users,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_public_key_content_from_datakey() {
+        let key1 = DataKey{
+            id: 1,
+            name: "Test Key".to_string(),
+            description: "".to_string(),
+            visibility: Visibility::Public,
+            user: 0,
+            attributes: HashMap::new(),
+            key_type: KeyType::OpenPGP,
+            parent_id: Some(2),
+            fingerprint: "".to_string(),
+            serial_number: None,
+            private_key: vec![7,8,9,10],
+            public_key: vec![4,5,6],
+            certificate: vec![1,2,3],
+            create_at: Default::default(),
+            expire_at: Default::default(),
+            key_state: KeyState::Disabled,
+            user_email: None,
+            request_delete_users: None,
+            request_revoke_users: None,
+            parent_key: None,
+        };
+        let public_key_content = PublicKeyContent::try_from(key1).unwrap();
+        assert_eq!(public_key_content.content, "\u{4}\u{5}\u{6}".to_string())
+    }
+
+    #[test]
+    fn test_certificate_content_from_datakey() {
+        let key1 = DataKey{
+            id: 1,
+            name: "Test Key".to_string(),
+            description: "".to_string(),
+            visibility: Visibility::Public,
+            user: 0,
+            attributes: HashMap::new(),
+            key_type: KeyType::OpenPGP,
+            parent_id: Some(2),
+            fingerprint: "".to_string(),
+            serial_number: None,
+            private_key: vec![7,8,9,10],
+            public_key: vec![4,5,6],
+            certificate: vec![1,2,3],
+            create_at: Default::default(),
+            expire_at: Default::default(),
+            key_state: KeyState::Disabled,
+            user_email: None,
+            request_delete_users: None,
+            request_revoke_users: None,
+            parent_key: None,
+        };
+        let certificate_content = CertificateContent::try_from(key1).unwrap();
+        assert_eq!(certificate_content.content, "\u{1}\u{2}\u{3}".to_string())
+    }
+
+    #[test]
+    fn test_datakey_dto_from_datakey() {
+        let key1 = DataKey{
+            id: 1,
+            name: "Test Key".to_string(),
+            description: "".to_string(),
+            visibility: Visibility::Public,
+            user: 0,
+            attributes: HashMap::new(),
+            key_type: KeyType::OpenPGP,
+            parent_id: Some(2),
+            fingerprint: "".to_string(),
+            serial_number: None,
+            private_key: vec![7,8,9,10],
+            public_key: vec![4,5,6],
+            certificate: vec![1,2,3],
+            create_at: Default::default(),
+            expire_at: Default::default(),
+            key_state: KeyState::Disabled,
+            user_email: None,
+            request_delete_users: None,
+            request_revoke_users: None,
+            parent_key: None,
+        };
+        assert!(DataKeyDTO::try_from(key1).is_ok());
+    }
+
+    #[test]
+    fn test_crl_content_from_crl_model() {
+        let crl = X509CRL{
+            id: 1,
+            ca_id: 2,
+            data: vec![1,2,3],
+            create_at: Default::default(),
+            update_at: Default::default(),
+        };
+        let crl_content = CRLContent::try_from(crl).unwrap();
+        assert_eq!(crl_content.content, "\u{1}\u{2}\u{3}".to_string())
+    }
+
+    #[test]
+    fn test_list_key_query() {
+        let page_query_invalid1 = ListKeyQuery{
+            key_type: Some("x509ee".to_string()),
+            visibility: Some("public".to_string()),
+            name: Some("test".to_string()),
+            description: Some("test".to_string()),
+            page_size: 9,
+            page_number: 1,
+        };
+        assert!(page_query_invalid1.validate().is_err());
+        let page_query_invalid2 = ListKeyQuery{
+            key_type: Some("x509ee".to_string()),
+            visibility: Some("public".to_string()),
+            name: Some("test".to_string()),
+            description: Some("test".to_string()),
+            page_size: 101,
+            page_number: 1,
+        };
+        assert!(page_query_invalid2.validate().is_err());
+        let page_query_invalid3 = ListKeyQuery{
+            key_type: Some("x509ee".to_string()),
+            visibility: Some("public".to_string()),
+            name: Some("test".to_string()),
+            description: Some("test".to_string()),
+            page_size: 100,
+            page_number: 0,
+        };
+        assert!(page_query_invalid3.validate().is_err());
+        let page_query_invalid4 = ListKeyQuery{
+            key_type: Some("x509ee".to_string()),
+            visibility: Some("public".to_string()),
+            name: Some("test".to_string()),
+            description: Some("test".to_string()),
+            page_size: 100,
+            page_number: 1001,
+        };
+        assert!(page_query_invalid4.validate().is_err());
+        let query = ListKeyQuery{
+            key_type: Some("x509ee".to_string()),
+            visibility: Some("public".to_string()),
+            name: Some("test".to_string()),
+            description: Some("test".to_string()),
+            page_size: 10,
+            page_number: 1,
+        };
+        let datakey_query = DatakeyPaginationQuery::from(query);
+        assert_eq!(datakey_query.key_type, Some("x509ee".to_string()));
+        assert_eq!(datakey_query.visibility, Some("public".to_string()));
+        assert_eq!(datakey_query.name, Some("test".to_string()));
+        assert_eq!(datakey_query.description, Some("test".to_string()));
+        assert_eq!(datakey_query.page_size, 10);
+        assert_eq!(datakey_query.page_number, 1);
+    }
+
+    #[test]
+    fn test_create_datakey_dto() {
+        let invalid_name1 = CreateDataKeyDTO{
+            name: "Tes".to_string(),
+            description: "".to_string(),
+            visibility: Some("public".to_string()),
+            attributes: HashMap::new(),
+            key_type: "pgp".to_string(),
+            parent_id: Some(2),
+            expire_at: Default::default(),
+        };
+        assert!(invalid_name1.validate().is_err());
+        let invalid_name2 = CreateDataKeyDTO{
+            name: "1234567890123456789012345678901234567890123456789012345678901234\
+            567890123456789012345678901234567890123456789012345678901234567890123456\
+            7890123456789012345678901234567890123456789012345678901234567890123456789\
+            012345678901234567890123456789012345678901234567890".to_string(),
+            description: "".to_string(),
+            visibility: Some("public".to_string()),
+            attributes: HashMap::new(),
+            key_type: "pgp".to_string(),
+            parent_id: Some(2),
+            expire_at: Default::default(),
+        };
+        assert!(invalid_name2.validate().is_err());
+        let invalid_desc1 = CreateDataKeyDTO{
+            name: "Test".to_string(),
+            description: "1234567890123456789012345678901234567890123456789012345678901234\
+            567890123456789012345678901234567890123456789012345678901234567890123456\
+            7890123456789012345678901234567890123456789012345678901234567890123456789\
+            012345678901234567890123456789012345678901234567890".to_string(),
+            visibility: Some("public".to_string()),
+            attributes: HashMap::new(),
+            key_type: "pgp".to_string(),
+            parent_id: Some(2),
+            expire_at: Default::default(),
+        };
+        assert!(invalid_desc1.validate().is_err());
+        let invalid_visibility = CreateDataKeyDTO{
+            name: "Test".to_string(),
+            description: "test descr".to_string(),
+            visibility: Some("123".to_string()),
+            attributes: HashMap::new(),
+            key_type: "pgp".to_string(),
+            parent_id: Some(2),
+            expire_at: Default::default(),
+        };
+        assert!(invalid_visibility.validate().is_err());
+
+        let invalid_type = CreateDataKeyDTO{
+            name: "Test".to_string(),
+            description: "test descr".to_string(),
+            visibility: Some("public".to_string()),
+            attributes: HashMap::new(),
+            key_type: "pgp1".to_string(),
+            parent_id: Some(2),
+            expire_at: Default::default(),
+        };
+        assert!(invalid_type.validate().is_err());
+
+        let invalid_expire = CreateDataKeyDTO{
+            name: "Test".to_string(),
+            description: "test descr".to_string(),
+            visibility: Some("public".to_string()),
+            attributes: HashMap::new(),
+            key_type: "pgp".to_string(),
+            parent_id: Some(2),
+            expire_at: "fake time".to_string(),
+        };
+        assert!(invalid_expire.validate().is_err());
+
+        let dto = CreateDataKeyDTO{
+            name: "Test".to_string(),
+            description: "test descr".to_string(),
+            visibility: Some("public".to_string()),
+            attributes: HashMap::new(),
+            key_type: "pgp".to_string(),
+            parent_id: Some(2),
+            expire_at: Utc::now().to_string(),
+        };
+        let identity = UserIdentity{
+            email: "email1".to_string(),
+            id: 1,
+            csrf_generation_token: None,
+            csrf_token: None,
+        };
+        let key = DataKey::create_from(dto, identity.clone()).unwrap();
+        assert_eq!(key.user, identity.id);
+        assert_eq!(key.key_state, KeyState::Disabled);
+        assert_eq!(key.key_type, KeyType::OpenPGP);
+        assert_eq!(key.attributes.keys().len(), 3);
+    }
+
+    #[test]
+    fn test_import_datakey_dto() {
+        let invalid_name1 = ImportDataKeyDTO{
+            name: "Tes".to_string(),
+            description: "".to_string(),
+            visibility: Some("public".to_string()),
+            attributes: HashMap::new(),
+            key_type: "pgp".to_string(),
+            certificate: "1234".to_string(),
+            public_key: "1234".to_string(),
+            private_key: "1234".to_string(),
+        };
+        assert!(invalid_name1.validate().is_err());
+        let invalid_name2 = ImportDataKeyDTO{
+            name: "1234567890123456789012345678901234567890123456789012345678901234\
+            567890123456789012345678901234567890123456789012345678901234567890123456\
+            7890123456789012345678901234567890123456789012345678901234567890123456789\
+            012345678901234567890123456789012345678901234567890".to_string(),
+            description: "".to_string(),
+            visibility: Some("public".to_string()),
+            attributes: HashMap::new(),
+            key_type: "pgp".to_string(),
+            certificate: "1234".to_string(),
+            public_key: "1234".to_string(),
+            private_key: "1234".to_string(),
+        };
+        assert!(invalid_name2.validate().is_err());
+        let invalid_desc1 = ImportDataKeyDTO{
+            name: "Test".to_string(),
+            description: "1234567890123456789012345678901234567890123456789012345678901234\
+            567890123456789012345678901234567890123456789012345678901234567890123456\
+            7890123456789012345678901234567890123456789012345678901234567890123456789\
+            012345678901234567890123456789012345678901234567890".to_string(),
+            visibility: Some("public".to_string()),
+            attributes: HashMap::new(),
+            key_type: "pgp".to_string(),
+            certificate: "1234".to_string(),
+            public_key: "1234".to_string(),
+            private_key: "1234".to_string(),
+        };
+        assert!(invalid_desc1.validate().is_err());
+        let invalid_visibility = ImportDataKeyDTO{
+            name: "Test".to_string(),
+            description: "test descr".to_string(),
+            visibility: Some("123".to_string()),
+            attributes: HashMap::new(),
+            key_type: "pgp".to_string(),
+            certificate: "1234".to_string(),
+            public_key: "1234".to_string(),
+            private_key: "1234".to_string(),
+        };
+        assert!(invalid_visibility.validate().is_err());
+
+        let invalid_type = ImportDataKeyDTO{
+            name: "Test".to_string(),
+            description: "test descr".to_string(),
+            visibility: Some("public".to_string()),
+            attributes: HashMap::new(),
+            key_type: "pgp1".to_string(),
+            certificate: "1234".to_string(),
+            public_key: "1234".to_string(),
+            private_key: "1234".to_string(),
+        };
+        assert!(invalid_type.validate().is_err());
+
+        let dto = ImportDataKeyDTO{
+            name: "Test".to_string(),
+            description: "test descr".to_string(),
+            visibility: Some("public".to_string()),
+            attributes: HashMap::new(),
+            key_type: "pgp".to_string(),
+            certificate: "1234".to_string(),
+            public_key: "1234".to_string(),
+            private_key: "1234".to_string(),
+        };
+        let identity = UserIdentity{
+            email: "email1".to_string(),
+            id: 1,
+            csrf_generation_token: None,
+            csrf_token: None,
+        };
+        let key = DataKey::import_from(dto, identity.clone()).unwrap();
+        assert_eq!(key.user, identity.id);
+        assert_eq!(key.key_state, KeyState::Disabled);
+        assert_eq!(key.key_type, KeyType::OpenPGP);
+        assert_eq!(key.attributes.keys().len(), 2);
     }
 }
