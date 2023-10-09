@@ -14,9 +14,9 @@
  *
  */
 
-use tonic::transport::Channel;
 use crate::util::error::Result;
 use async_trait::async_trait;
+use tonic::transport::Channel;
 
 #[async_trait]
 pub trait DynamicLoadBalancer {

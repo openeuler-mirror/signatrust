@@ -14,8 +14,8 @@
  *
  */
 
-use actix_web::{HttpResponse, Responder, Result, web, Scope};
 use crate::util::error::Error;
+use actix_web::{web, HttpResponse, Responder, Result, Scope};
 
 use crate::application::user::UserService;
 
@@ -39,6 +39,5 @@ async fn health(_user_service: web::Data<dyn UserService>) -> Result<impl Respon
 }
 
 pub fn get_scope() -> Scope {
-    web::scope("/health")
-        .service(web::resource("/").route(web::get().to(health)))
+    web::scope("/health").service(web::resource("/").route(web::get().to(health)))
 }

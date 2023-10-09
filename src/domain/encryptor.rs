@@ -57,9 +57,9 @@ mod test {
 
     #[test]
     fn test_algorithm_from_string_and_display() {
-        let _ = Algorithm::from_str("invalid_algorithm").expect_err("algorithm from invalid string should fail");
+        let _ = Algorithm::from_str("invalid_algorithm")
+            .expect_err("algorithm from invalid string should fail");
         let algorithm = Algorithm::from_str("aes256gsm").expect("algorithm from string failed");
         assert_eq!(format!("{}", algorithm), "Aes256GSM");
     }
 }
-

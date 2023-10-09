@@ -16,7 +16,6 @@ use crate::domain::encryption_engine::EncryptionEngine;
 use crate::util::error::Result;
 use async_trait::async_trait;
 
-
 #[derive(Default)]
 pub struct DummyEngine {}
 

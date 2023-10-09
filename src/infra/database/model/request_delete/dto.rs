@@ -13,14 +13,14 @@
  *  * // See the Mulan PSL v2 for more details.
  *
  */
+use crate::util::error::Error;
+use chrono::{DateTime, Utc};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
-use chrono::{DateTime, Utc};
-use crate::util::error::Error;
 
-use sqlx::types::chrono;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
+use sqlx::types::chrono;
 
 #[derive(Debug, Clone, PartialEq, sqlx::Type)]
 pub enum RequestType {
@@ -46,7 +46,7 @@ impl FromStr for RequestType {
         match s {
             "delete" => Ok(RequestType::Delete),
             "revoke" => Ok(RequestType::Revoke),
-            _ => Err(Error::UnsupportedTypeError(s.to_string()))
+            _ => Err(Error::UnsupportedTypeError(s.to_string())),
         }
     }
 }
@@ -67,7 +67,6 @@ pub struct Model {
 pub enum Relation {}
 
 impl ActiveModelBehavior for ActiveModel {}
-
 
 impl Model {
     pub fn new_for_delete(key_id: i32, user_id: i32, user_email: String) -> Self {

@@ -14,26 +14,35 @@
  *
  */
 
-use crate::util::error::Result;
-use std::collections::HashMap;
-use chrono::{DateTime, Utc};
 use crate::domain::datakey::entity::{DataKey, DataKeyContent, KeyType, RevokedKey, SecDataKey};
+use crate::util::error::Result;
+use chrono::{DateTime, Utc};
+use std::collections::HashMap;
 
 pub trait SignPlugins: Send + Sync {
     fn new(db: SecDataKey) -> Result<Self>
-        where
-            Self: Sized;
+    where
+        Self: Sized;
     fn validate_and_update(key: &mut DataKey) -> Result<()>
-        where
-            Self: Sized;
+    where
+        Self: Sized;
     fn parse_attributes(
         private_key: Option<Vec<u8>>,
         public_key: Option<Vec<u8>>,
         certificate: Option<Vec<u8>>,
     ) -> HashMap<String, String>
-        where
-            Self: Sized;
-    fn generate_keys(&self, key_type: &KeyType, infra_configs: &HashMap<String, String>) -> Result<DataKeyContent>;
+    where
+        Self: Sized;
+    fn generate_keys(
+        &self,
+        key_type: &KeyType,
+        infra_configs: &HashMap<String, String>,
+    ) -> Result<DataKeyContent>;
     fn sign(&self, content: Vec<u8>, options: HashMap<String, String>) -> Result<Vec<u8>>;
-    fn generate_crl_content(&self, revoked_keys: Vec<RevokedKey>, last_update: DateTime<Utc>, next_update: DateTime<Utc>) -> Result<Vec<u8>>;
+    fn generate_crl_content(
+        &self,
+        revoked_keys: Vec<RevokedKey>,
+        last_update: DateTime<Utc>,
+        next_update: DateTime<Utc>,
+    ) -> Result<Vec<u8>>;
 }

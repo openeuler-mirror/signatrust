@@ -13,15 +13,14 @@
  *  * // See the Mulan PSL v2 for more details.
  *
  */
-use chrono::{DateTime, Utc};
-use crate::domain::datakey::entity::{X509CRL};
+use crate::domain::datakey::entity::X509CRL;
 use crate::util::error::Error;
+use chrono::{DateTime, Utc};
 
-use sqlx::types::chrono;
+use crate::util::key::{decode_hex_string_to_u8, encode_u8_to_hex_string};
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
-use crate::util::key::{decode_hex_string_to_u8, encode_u8_to_hex_string};
-
+use sqlx::types::chrono;
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Deserialize, Serialize)]
 #[sea_orm(table_name = "x509_crl_content")]
@@ -62,13 +61,12 @@ impl TryFrom<Model> for X509CRL {
     }
 }
 
-
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-    belongs_to = "super::super::datakey::dto::Entity",
-    from = "Column::CaId",
-    to = "super::super::datakey::dto::Column::Id"
+        belongs_to = "super::super::datakey::dto::Entity",
+        from = "Column::CaId",
+        to = "super::super::datakey::dto::Column::Id"
     )]
     Datakey,
 }
@@ -79,4 +77,3 @@ impl Related<super::super::datakey::dto::Entity> for Entity {
     }
 }
 impl ActiveModelBehavior for ActiveModel {}
-

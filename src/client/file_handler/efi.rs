@@ -1,14 +1,14 @@
 use super::traits::FileHandler;
-use crate::util::options;
-use crate::util::sign::{SignType, KeyType};
 use crate::util::error::{Error, Result};
+use crate::util::options;
+use crate::util::sign::{KeyType, SignType};
 use async_trait::async_trait;
 use efi_signer::{DigestAlgorithm, EfiImage};
 use std::collections::HashMap;
 use std::fs::read;
+use std::io::Write;
 use std::path::PathBuf;
 use uuid::Uuid;
-use std::io::Write;
 pub struct EfiFileHandler {}
 
 impl EfiFileHandler {
@@ -50,7 +50,7 @@ impl FileHandler for EfiFileHandler {
         &self,
         path: &PathBuf,
         _sign_options: &mut HashMap<String, String>,
-        _key_attributes: &HashMap<String, String>
+        _key_attributes: &HashMap<String, String>,
     ) -> Result<Vec<Vec<u8>>> {
         let buf = read(path)?;
         let pe = EfiImage::parse(&buf)?;
@@ -58,7 +58,11 @@ impl FileHandler for EfiFileHandler {
             Some(algo) => pe.compute_digest(algo)?,
             None => pe.compute_digest(DigestAlgorithm::Sha256)?,
         };
-        info!("file {} digest {:x?}", path.as_path().display().to_string(), digest.as_slice());
+        info!(
+            "file {} digest {:x?}",
+            path.as_path().display().to_string(),
+            digest.as_slice()
+        );
         Ok(vec![digest])
     }
 
@@ -68,13 +72,13 @@ impl FileHandler for EfiFileHandler {
         data: Vec<Vec<u8>>,
         temp_dir: &PathBuf,
         _sign_options: &HashMap<String, String>,
-        _key_attributes: &HashMap<String, String>
+        _key_attributes: &HashMap<String, String>,
     ) -> Result<(String, String)> {
         let temp_file = temp_dir.join(Uuid::new_v4().to_string());
         let buf = read(path)?;
         let pe = EfiImage::parse(&buf)?;
 
-        let mut signatures :Vec<efi_signer::Signature> = Vec::new();
+        let mut signatures: Vec<efi_signer::Signature> = Vec::new();
 
         for d in data.iter() {
             signatures.push(efi_signer::Signature::decode(d)?);
@@ -164,7 +168,13 @@ mod test {
 
         let temp_dir = env::temp_dir();
         let result = handler
-            .assemble_data(&path, vec![signature_buf], &temp_dir, &options, &HashMap::new())
+            .assemble_data(
+                &path,
+                vec![signature_buf],
+                &temp_dir,
+                &options,
+                &HashMap::new(),
+            )
             .await;
         assert!(result.is_ok());
         let (temp_file, file_name) = result.expect("efi sign should work");

@@ -14,11 +14,11 @@
  *
  */
 
-use async_trait::async_trait;
-use crate::client::sign_identity::{SignIdentity};
-use async_channel::{Sender};
 use crate::client::file_handler::factory::FileHandlerFactory;
 use crate::client::file_handler::traits::FileHandler;
+use crate::client::sign_identity::SignIdentity;
+use async_channel::Sender;
+use async_trait::async_trait;
 
 #[async_trait]
 pub trait SignHandler {

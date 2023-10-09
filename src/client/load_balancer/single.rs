@@ -14,36 +14,37 @@
  *
  */
 
-use tonic::transport::{Channel, ClientTlsConfig};
 use super::traits::DynamicLoadBalancer;
+use tonic::transport::{Channel, ClientTlsConfig};
 
 use crate::util::error::Result;
-use tonic::transport::Endpoint;
 use async_trait::async_trait;
-
+use tonic::transport::Endpoint;
 
 pub struct SingleLoadBalancer {
     server: String,
     port: String,
-    client_config: Option<ClientTlsConfig>
+    client_config: Option<ClientTlsConfig>,
 }
 
 impl SingleLoadBalancer {
-    pub fn new(server: String, port: String, client_config: Option<ClientTlsConfig>) -> Result<Self> {
+    pub fn new(
+        server: String,
+        port: String,
+        client_config: Option<ClientTlsConfig>,
+    ) -> Result<Self> {
         Ok(Self {
             server,
             port,
-            client_config
+            client_config,
         })
     }
-
 }
 
 #[async_trait]
 impl DynamicLoadBalancer for SingleLoadBalancer {
     fn get_transport_channel(&self) -> Result<Channel> {
-        let mut endpoint = Endpoint::from_shared(
-            format!("http://{}:{}", self.server, self.port))?;
+        let mut endpoint = Endpoint::from_shared(format!("http://{}:{}", self.server, self.port))?;
         if let Some(tls_config) = self.client_config.clone() {
             endpoint = endpoint.tls_config(tls_config)?
         }

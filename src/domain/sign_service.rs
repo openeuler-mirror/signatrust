@@ -14,7 +14,7 @@
  *
  */
 
-use crate::util::error::{Result, Error};
+use crate::util::error::{Error, Result};
 use std::collections::HashMap;
 use std::str::FromStr;
 
@@ -33,21 +33,34 @@ impl FromStr for SignBackendType {
     fn from_str(s: &str) -> Result<Self> {
         match s {
             "memory" => Ok(SignBackendType::Memory),
-            _ => Err(Error::UnsupportedTypeError(format!("{} sign backend type", s))),
+            _ => Err(Error::UnsupportedTypeError(format!(
+                "{} sign backend type",
+                s
+            ))),
         }
     }
 }
 
 #[async_trait]
-pub trait SignBackend: Send + Sync{
+pub trait SignBackend: Send + Sync {
     async fn validate_and_update(&self, data_key: &mut DataKey) -> Result<()>;
     async fn generate_keys(&self, data_key: &mut DataKey) -> Result<()>;
     async fn rotate_key(&mut self) -> Result<bool>;
-    async fn sign(&self, data_key: &DataKey, content: Vec<u8>, options: HashMap<String, String>) -> Result<Vec<u8>>;
+    async fn sign(
+        &self,
+        data_key: &DataKey,
+        content: Vec<u8>,
+        options: HashMap<String, String>,
+    ) -> Result<Vec<u8>>;
     async fn decode_public_keys(&self, data_key: &mut DataKey) -> Result<()>;
-    async fn generate_crl_content(&self, data_key: &DataKey, revoked_keys: Vec<RevokedKey>, last_update: DateTime<Utc>, next_update: DateTime<Utc>) -> Result<Vec<u8>>;
+    async fn generate_crl_content(
+        &self,
+        data_key: &DataKey,
+        revoked_keys: Vec<RevokedKey>,
+        last_update: DateTime<Utc>,
+        next_update: DateTime<Utc>,
+    ) -> Result<Vec<u8>>;
 }
-
 
 #[cfg(test)]
 mod test {
@@ -55,8 +68,10 @@ mod test {
 
     #[test]
     fn test_sign_backend_type_from_string_and_display() {
-        let _ = SignBackendType::from_str("invalid_type").expect_err("sign backend type from invalid string should fail");
-        let sign_backend_type = SignBackendType::from_str("memory").expect("sign backend type from string failed");
+        let _ = SignBackendType::from_str("invalid_type")
+            .expect_err("sign backend type from invalid string should fail");
+        let sign_backend_type =
+            SignBackendType::from_str("memory").expect("sign backend type from string failed");
         assert_eq!(sign_backend_type, SignBackendType::Memory);
     }
 }

@@ -13,13 +13,12 @@
  *  * // See the Mulan PSL v2 for more details.
  *
  */
-use std::str::FromStr;
-use chrono::{DateTime, Utc};
 use crate::domain::datakey::entity::{RevokedKey, X509RevokeReason};
 use crate::util::error::Error;
+use chrono::{DateTime, Utc};
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
-
+use std::str::FromStr;
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Deserialize, Serialize)]
 #[sea_orm(table_name = "x509_keys_revoked")]
@@ -59,7 +58,7 @@ mod tests {
     #[test]
     fn test_revoked_key_dto_conversion() {
         let now = Utc::now();
-        let dto = Model{
+        let dto = Model {
             id: 0,
             key_id: 1,
             ca_id: 2,

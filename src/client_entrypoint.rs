@@ -15,18 +15,18 @@
  */
 
 #![allow(dead_code)]
-use std::env;
-use crate::util::error::{Result, Error};
-use clap::{Parser, Subcommand};
 use crate::client::cmd::add;
-use config::{Config, File};
-use std::sync::{Arc, atomic::AtomicBool, RwLock};
 use crate::client::cmd::traits::SignCommand;
+use crate::util::error::{Error, Result};
+use clap::{Parser, Subcommand};
+use config::{Config, File};
+use std::env;
+use std::sync::{atomic::AtomicBool, Arc, RwLock};
 
-mod infra;
-mod util;
 mod client;
 mod domain;
+mod infra;
+mod util;
 
 #[macro_use]
 extern crate log;
@@ -41,7 +41,7 @@ extern crate lazy_static;
 pub struct App {
     #[arg(short, long)]
     #[arg(
-    help = "path of configuration file, './client.toml' relative to working directory be used in default"
+        help = "path of configuration file, './client.toml' relative to working directory be used in default"
     )]
     config: Option<String>,
     #[command(subcommand)]
@@ -58,19 +58,29 @@ fn main() -> Result<()> {
     //prepare config and logger
     env_logger::init();
     let app = App::parse();
-    let path = app.config.unwrap_or(
-        format!("{}/{}", env::current_dir().expect("current dir not found").display(), "client.toml"));
-    let client = Config::builder().add_source(File::with_name(path.as_str())).build().expect("load client configuration file");
+    let path = app.config.unwrap_or(format!(
+        "{}/{}",
+        env::current_dir().expect("current dir not found").display(),
+        "client.toml"
+    ));
+    let client = Config::builder()
+        .add_source(File::with_name(path.as_str()))
+        .build()
+        .expect("load client configuration file");
 
     let signal = Arc::new(AtomicBool::new(false));
-    signal_hook::flag::register(signal_hook::consts::SIGTERM, Arc::clone(&signal)).expect("failed to register sigterm signal");
-    signal_hook::flag::register(signal_hook::consts::SIGINT, Arc::clone(&signal)).expect("failed to register sigint signal");
+    signal_hook::flag::register(signal_hook::consts::SIGTERM, Arc::clone(&signal))
+        .expect("failed to register sigterm signal");
+    signal_hook::flag::register(signal_hook::consts::SIGINT, Arc::clone(&signal))
+        .expect("failed to register sigint signal");
     //construct handler
     let command = match app.command {
-        Some(Commands::Add(add_command)) => {
-            Some(add::CommandAddHandler::new(signal, Arc::new(RwLock::new(client)), add_command)?)
-        }
-        None => {None}
+        Some(Commands::Add(add_command)) => Some(add::CommandAddHandler::new(
+            signal,
+            Arc::new(RwLock::new(client)),
+            add_command,
+        )?),
+        None => None,
     };
     //handler and quit
     if let Some(handler) = command {
@@ -81,7 +91,7 @@ fn main() -> Result<()> {
 
         if let Err(err) = handler.handle() {
             error!("failed to handle command: {}", err);
-            return Err(Error::PartialSuccessError)
+            return Err(Error::PartialSuccessError);
         }
     }
     Ok(())

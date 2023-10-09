@@ -15,8 +15,8 @@
  */
 
 use crate::util::{error::Result, key};
-use secstr::SecVec;
 use chrono::{DateTime, Utc};
+use secstr::SecVec;
 use std::fmt::{Display, Formatter};
 use std::vec::Vec;
 
@@ -77,7 +77,6 @@ pub struct SecClusterKey {
 }
 
 impl Default for SecClusterKey {
-
     fn default() -> Self {
         SecClusterKey {
             id: 0,
@@ -91,7 +90,9 @@ impl Default for SecClusterKey {
 
 impl SecClusterKey {
     pub async fn load<K>(cluster_key: ClusterKey, kms_provider: &Box<K>) -> Result<SecClusterKey>
-    where K: KMSProvider + ?Sized {
+    where
+        K: KMSProvider + ?Sized,
+    {
         Ok(Self {
             id: cluster_key.id,
             data: SecVec::new(key::decode_hex_string_to_u8(
@@ -119,8 +120,8 @@ impl Display for SecClusterKey {
 #[cfg(test)]
 mod test {
     use super::*;
-    use std::collections::HashMap;
     use crate::infra::kms::dummy::DummyKMS;
+    use std::collections::HashMap;
 
     fn get_dummy_kms_provider() -> Box<dyn KMSProvider> {
         Box::new(DummyKMS::new(&HashMap::new()).unwrap())
@@ -129,12 +130,18 @@ mod test {
     #[tokio::test]
     async fn test_sec_cluster_key_load_and_display() {
         let kms_provider = get_dummy_kms_provider();
-        let content = vec![1,2,3,4];
+        let content = vec![1, 2, 3, 4];
         let hexed_content = key::encode_u8_to_hex_string(&content).as_bytes().to_vec();
-        let cluster_key = ClusterKey::new(hexed_content, "FAKE_ALGORITHM".to_string()).expect("create cluster key failed");
-        let sec_cluster_key = SecClusterKey::load(cluster_key, &kms_provider).await.expect("load cluster key failed");
+        let cluster_key = ClusterKey::new(hexed_content, "FAKE_ALGORITHM".to_string())
+            .expect("create cluster key failed");
+        let sec_cluster_key = SecClusterKey::load(cluster_key, &kms_provider)
+            .await
+            .expect("load cluster key failed");
         assert_eq!(sec_cluster_key.data.unsecure(), content);
-        assert_eq!(true, format!("{}", sec_cluster_key).contains("FAKE_ALGORITHM"));
+        assert_eq!(
+            true,
+            format!("{}", sec_cluster_key).contains("FAKE_ALGORITHM")
+        );
     }
 
     #[test]
@@ -157,11 +164,11 @@ mod test {
 
     #[tokio::test]
     async fn test_cluster_key_new_and_display() {
-        let content = vec![1,2,3,4];
+        let content = vec![1, 2, 3, 4];
         let hexed_content = key::encode_u8_to_hex_string(&content).as_bytes().to_vec();
-        let cluster_key = ClusterKey::new(hexed_content.clone(), "FAKE_ALGORITHM".to_string()).expect("create cluster key failed");
+        let cluster_key = ClusterKey::new(hexed_content.clone(), "FAKE_ALGORITHM".to_string())
+            .expect("create cluster key failed");
         assert_eq!(cluster_key.data, hexed_content);
         assert_eq!(true, format!("{}", cluster_key).contains("FAKE_ALGORITHM"));
     }
 }
-

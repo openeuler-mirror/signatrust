@@ -28,10 +28,10 @@ use std::io::{Read, Seek, Write};
 use std::os::raw::{c_uchar, c_uint};
 use uuid::Uuid;
 
-use crate::util::options;
-use crate::util::sign::{SignType, KeyType};
 use crate::util::error::Error;
+use crate::util::options;
 use crate::util::options::DETACHED;
+use crate::util::sign::{KeyType, SignType};
 
 const FILE_EXTENSION: &str = "p7s";
 const PKEY_ID_PKCS7: c_uchar = 2;
@@ -99,7 +99,11 @@ impl KernelModuleFileHandler {
         Ok(())
     }
 
-    pub fn get_raw_content(&self, path: &PathBuf, sign_options: &mut HashMap<String, String>) -> Result<Vec<u8>> {
+    pub fn get_raw_content(
+        &self,
+        path: &PathBuf,
+        sign_options: &mut HashMap<String, String>,
+    ) -> Result<Vec<u8>> {
         let raw_content = fs::read(path)?;
         let mut file = fs::File::open(path)?;
         if file.metadata()?.len() <= SIGNATURE_SIZE as u64 {
@@ -113,7 +117,8 @@ impl KernelModuleFileHandler {
             Ok(ending) => {
                 return if ending == MAGIC_NUMBER {
                     file.seek(io::SeekFrom::End(-(SIGNATURE_SIZE as i64)))?;
-                    let mut signature_meta: [u8; SIGNATURE_SIZE - MAGIC_NUMBER_SIZE] = [0; SIGNATURE_SIZE - MAGIC_NUMBER_SIZE];
+                    let mut signature_meta: [u8; SIGNATURE_SIZE - MAGIC_NUMBER_SIZE] =
+                        [0; SIGNATURE_SIZE - MAGIC_NUMBER_SIZE];
                     let _ = file.read(&mut signature_meta)?;
                     //decode kernel module signature struct
                     let signature: ModuleSignature = bincode::decode_from_slice(
@@ -162,8 +167,9 @@ impl FileHandler for KernelModuleFileHandler {
         }
 
         if let Some(sign_type) = sign_options.get(options::SIGN_TYPE) {
-            if sign_type != SignType::Cms.to_string().as_str() &&
-                sign_type != SignType::PKCS7.to_string().as_str() {
+            if sign_type != SignType::Cms.to_string().as_str()
+                && sign_type != SignType::PKCS7.to_string().as_str()
+            {
                 return Err(Error::InvalidArgumentError(
                     "kernel module file only support cms or pkcs7 sign type".to_string(),
                 ));
@@ -177,7 +183,7 @@ impl FileHandler for KernelModuleFileHandler {
         &self,
         path: &PathBuf,
         sign_options: &mut HashMap<String, String>,
-        _key_attributes: &HashMap<String, String>
+        _key_attributes: &HashMap<String, String>,
     ) -> Result<Vec<Vec<u8>>> {
         Ok(vec![self.get_raw_content(path, sign_options)?])
     }
@@ -189,7 +195,7 @@ impl FileHandler for KernelModuleFileHandler {
         data: Vec<Vec<u8>>,
         temp_dir: &PathBuf,
         sign_options: &HashMap<String, String>,
-        _key_attributes: &HashMap<String, String>
+        _key_attributes: &HashMap<String, String>,
     ) -> Result<(String, String)> {
         let temp_file = temp_dir.join(Uuid::new_v4().to_string());
         //convert bytes into string
@@ -213,17 +219,20 @@ impl FileHandler for KernelModuleFileHandler {
 #[cfg(test)]
 mod test {
     use super::*;
-    use std::env;
     use rand::Rng;
+    use std::env;
 
-    fn generate_signed_kernel_module(length: usize, incorrect_length: bool) -> Result<(String, Vec<u8>)> {
+    fn generate_signed_kernel_module(
+        length: usize,
+        incorrect_length: bool,
+    ) -> Result<(String, Vec<u8>)> {
         let mut rng = rand::thread_rng();
         let temp_file = env::temp_dir().join(Uuid::new_v4().to_string());
         let mut file = fs::File::create(temp_file.clone())?;
         let raw_content: Vec<u8> = (0..length).map(|_| rng.gen_range(0..=255)).collect();
         file.write_all(&raw_content)?;
         //append fake signature
-        let signature = vec![1,2,3,4,5,6];
+        let signature = vec![1, 2, 3, 4, 5, 6];
         file.write_all(&signature)?;
         let mut size = signature.len();
         if incorrect_length {
@@ -235,7 +244,8 @@ mod test {
             signature,
             config::standard()
                 .with_fixed_int_encoding()
-                .with_big_endian())?)?;
+                .with_big_endian(),
+        )?)?;
         file.write_all(MAGIC_NUMBER.as_bytes())?;
         Ok((temp_file.display().to_string(), raw_content))
     }
@@ -253,10 +263,13 @@ mod test {
     fn test_get_raw_content_with_small_unsigned_content() {
         let mut sign_options = HashMap::new();
         let file_handler = KernelModuleFileHandler::new();
-        let (name, original_content) = generate_unsigned_kernel_module(SIGNATURE_SIZE-1).expect("generate unsigned kernel module failed");
+        let (name, original_content) = generate_unsigned_kernel_module(SIGNATURE_SIZE - 1)
+            .expect("generate unsigned kernel module failed");
         let path = PathBuf::from(name);
-        let raw_content = file_handler.get_raw_content(&path, &mut sign_options).expect("get raw content failed");
-        assert_eq!(raw_content.len(), SIGNATURE_SIZE-1);
+        let raw_content = file_handler
+            .get_raw_content(&path, &mut sign_options)
+            .expect("get raw content failed");
+        assert_eq!(raw_content.len(), SIGNATURE_SIZE - 1);
         assert_eq!(original_content, raw_content);
     }
 
@@ -264,10 +277,13 @@ mod test {
     fn test_get_raw_content_with_large_unsigned_content() {
         let mut sign_options = HashMap::new();
         let file_handler = KernelModuleFileHandler::new();
-        let (name, original_content) = generate_unsigned_kernel_module(SIGNATURE_SIZE+100).expect("generate unsigned kernel module failed");
+        let (name, original_content) = generate_unsigned_kernel_module(SIGNATURE_SIZE + 100)
+            .expect("generate unsigned kernel module failed");
         let path = PathBuf::from(name);
-        let raw_content = file_handler.get_raw_content(&path, &mut sign_options).expect("get raw content failed");
-        assert_eq!(raw_content.len(), SIGNATURE_SIZE+100);
+        let raw_content = file_handler
+            .get_raw_content(&path, &mut sign_options)
+            .expect("get raw content failed");
+        assert_eq!(raw_content.len(), SIGNATURE_SIZE + 100);
         assert_eq!(original_content, raw_content);
     }
 
@@ -275,9 +291,12 @@ mod test {
     fn test_get_raw_content_with_signed_content() {
         let mut sign_options = HashMap::new();
         let file_handler = KernelModuleFileHandler::new();
-        let (name, original_content) = generate_signed_kernel_module(100,false).expect("generate signed kernel module failed");
+        let (name, original_content) = generate_signed_kernel_module(100, false)
+            .expect("generate signed kernel module failed");
         let path = PathBuf::from(name);
-        let raw_content = file_handler.get_raw_content(&path, &mut sign_options).expect("get raw content failed");
+        let raw_content = file_handler
+            .get_raw_content(&path, &mut sign_options)
+            .expect("get raw content failed");
         assert_eq!(raw_content.len(), 100);
         assert_eq!(original_content, raw_content);
     }
@@ -286,7 +305,8 @@ mod test {
     fn test_get_raw_content_with_invalid_signed_content() {
         let mut sign_options = HashMap::new();
         let file_handler = KernelModuleFileHandler::new();
-        let (name, _) = generate_signed_kernel_module(100,true).expect("generate signed kernel module failed");
+        let (name, _) =
+            generate_signed_kernel_module(100, true).expect("generate signed kernel module failed");
         let path = PathBuf::from(name);
         let result = file_handler.get_raw_content(&path, &mut sign_options);
         assert_eq!(
@@ -308,14 +328,16 @@ mod test {
         );
 
         options.insert(options::KEY_TYPE.to_string(), KeyType::X509EE.to_string());
-        options.insert(options::SIGN_TYPE.to_string(), SignType::Authenticode.to_string());
+        options.insert(
+            options::SIGN_TYPE.to_string(),
+            SignType::Authenticode.to_string(),
+        );
         let result = handler.validate_options(&options);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
             "invalid argument: kernel module file only support cms or pkcs7 sign type"
         );
-
 
         options.insert(options::SIGN_TYPE.to_string(), SignType::Cms.to_string());
         let result = handler.validate_options(&options);
@@ -334,7 +356,9 @@ mod test {
         let path = PathBuf::from("./test_data/test.ko");
         let data = vec![vec![1, 2, 3]];
         let temp_dir = env::temp_dir();
-        let result = handler.assemble_data(&path, data, &temp_dir, &options, &HashMap::new()).await;
+        let result = handler
+            .assemble_data(&path, data, &temp_dir, &options, &HashMap::new())
+            .await;
         assert!(result.is_ok());
         let (temp_file, file_name) = result.expect("invoke assemble data should work");
         assert_eq!(temp_file.starts_with(temp_dir.to_str().unwrap()), true);
@@ -348,16 +372,21 @@ mod test {
         let handler = KernelModuleFileHandler::new();
         let mut options = HashMap::new();
         options.insert(DETACHED.to_string(), "false".to_string());
-        let (name, raw_content) = generate_signed_kernel_module(100,false).expect("generate signed kernel module failed");
+        let (name, raw_content) = generate_signed_kernel_module(100, false)
+            .expect("generate signed kernel module failed");
         let path = PathBuf::from(name.clone());
         let data = vec![vec![1, 2, 3]];
         let temp_dir = env::temp_dir();
-        let result = handler.assemble_data(&path, data, &temp_dir, &options, &HashMap::new()).await;
+        let result = handler
+            .assemble_data(&path, data, &temp_dir, &options, &HashMap::new())
+            .await;
         assert!(result.is_ok());
         let (temp_file, file_name) = result.expect("invoke assemble data should work");
         assert_eq!(temp_file.starts_with(temp_dir.to_str().unwrap()), true);
         assert_eq!(file_name, name);
-        let result = handler.get_raw_content(&PathBuf::from(temp_file), &mut options).expect("get raw content failed");
+        let result = handler
+            .get_raw_content(&PathBuf::from(temp_file), &mut options)
+            .expect("get raw content failed");
         assert_eq!(result, raw_content);
     }
 
@@ -365,12 +394,14 @@ mod test {
     async fn test_split_content() {
         let mut sign_options = HashMap::new();
         let file_handler = KernelModuleFileHandler::new();
-        let (name, original_content) = generate_unsigned_kernel_module(SIGNATURE_SIZE-1).expect("generate unsigned kernel module failed");
+        let (name, original_content) = generate_unsigned_kernel_module(SIGNATURE_SIZE - 1)
+            .expect("generate unsigned kernel module failed");
         let path = PathBuf::from(name);
-        let raw_content = file_handler.split_data(&path, &mut sign_options, &HashMap::new()).await.expect("get raw content failed");
-        assert_eq!(raw_content[0].len(), SIGNATURE_SIZE-1);
+        let raw_content = file_handler
+            .split_data(&path, &mut sign_options, &HashMap::new())
+            .await
+            .expect("get raw content failed");
+        assert_eq!(raw_content[0].len(), SIGNATURE_SIZE - 1);
         assert_eq!(original_content, raw_content[0]);
     }
-
 }
-

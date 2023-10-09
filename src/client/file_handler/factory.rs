@@ -14,31 +14,22 @@
  *
  */
 
-use super::rpm::RpmFileHandler;
 use super::efi::EfiFileHandler;
 use super::generic::GenericFileHandler;
 use super::kernel_module::KernelModuleFileHandler;
-use crate::util::sign::FileType;
+use super::rpm::RpmFileHandler;
 use super::traits::FileHandler;
+use crate::util::sign::FileType;
 
-pub struct FileHandlerFactory {
-}
+pub struct FileHandlerFactory {}
 
 impl FileHandlerFactory {
     pub fn get_handler(file_type: &FileType) -> Box<dyn FileHandler> {
         match file_type {
-            FileType::Rpm => {
-                Box::new(RpmFileHandler::new())
-            },
-            FileType::Generic => {
-                Box::new(GenericFileHandler::new())
-            },
-            FileType::KernelModule => {
-                Box::new(KernelModuleFileHandler::new())
-            },
-            FileType::EfiImage => {
-                Box::new(EfiFileHandler::new())
-            },
+            FileType::Rpm => Box::new(RpmFileHandler::new()),
+            FileType::Generic => Box::new(GenericFileHandler::new()),
+            FileType::KernelModule => Box::new(KernelModuleFileHandler::new()),
+            FileType::EfiImage => Box::new(EfiFileHandler::new()),
         }
     }
 }

@@ -16,10 +16,11 @@ use std::pin::Pin;
 pub mod health {
     tonic::include_proto!("grpc.health.v1");
 }
-use tokio_stream::{Stream, once};
+use tokio_stream::{once, Stream};
 
 use health::{
-    health_server::Health, health_server::HealthServer, HealthCheckRequest, HealthCheckResponse, health_check_response::ServingStatus,
+    health_check_response::ServingStatus, health_server::Health, health_server::HealthServer,
+    HealthCheckRequest, HealthCheckResponse,
 };
 use tonic::{Request, Response, Status};
 
@@ -34,8 +35,7 @@ impl HealthHandler {
 }
 
 #[tonic::async_trait]
-impl Health for HealthHandler
-{
+impl Health for HealthHandler {
     type WatchStream = ResponseStream;
     async fn check(
         &self,
@@ -57,11 +57,9 @@ impl Health for HealthHandler
         let reply_stream = once(Ok(reply));
         Ok(Response::new(Box::pin(reply_stream)))
     }
-
 }
 
-pub fn get_grpc_handler() -> HealthServer<HealthHandler>
-{
+pub fn get_grpc_handler() -> HealthServer<HealthHandler> {
     let app = HealthHandler::new();
     HealthServer::new(app)
 }

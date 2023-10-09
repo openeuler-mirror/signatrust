@@ -21,15 +21,15 @@ pub mod signatrust {
 }
 use tokio_stream::StreamExt;
 
-use signatrust::{
-    signatrust_server::Signatrust, signatrust_server::SignatrustServer, SignStreamRequest,
-    SignStreamResponse, GetKeyInfoRequest, GetKeyInfoResponse
-};
-use tonic::{Request, Response, Status, Streaming};
 use crate::application::datakey::KeyService;
 use crate::application::user::UserService;
 use crate::util::error::Error;
 use crate::util::error::Result as SignatrustResult;
+use signatrust::{
+    signatrust_server::Signatrust, signatrust_server::SignatrustServer, GetKeyInfoRequest,
+    GetKeyInfoResponse, SignStreamRequest, SignStreamResponse,
+};
+use tonic::{Request, Response, Status, Streaming};
 
 pub struct SignHandler<K, U>
 where
@@ -48,16 +48,27 @@ where
     pub fn new(key_service: K, user_service: U) -> Self {
         SignHandler {
             key_service,
-            user_service
+            user_service,
         }
     }
-    async fn validate_key_token_matched(&self, token: Option<String>, name: &str) -> SignatrustResult<()> {
+    async fn validate_key_token_matched(
+        &self,
+        token: Option<String>,
+        name: &str,
+    ) -> SignatrustResult<()> {
         let names: Vec<_> = name.split(':').collect();
         if names.len() <= 1 {
-            return Ok(())
+            return Ok(());
         }
-        if token.is_none() || !self.user_service.validate_token_and_email(names[0], &token.unwrap()).await? {
-            return Err(Error::AuthError("user token and email unmatched".to_string()))
+        if token.is_none()
+            || !self
+                .user_service
+                .validate_token_and_email(names[0], &token.unwrap())
+                .await?
+        {
+            return Err(Error::AuthError(
+                "user token and email unmatched".to_string(),
+            ));
         }
         Ok(())
     }
@@ -72,30 +83,32 @@ where
     async fn get_key_info(
         &self,
         request: Request<GetKeyInfoRequest>,
-    ) -> Result<Response<GetKeyInfoResponse>, Status>
-    {
+    ) -> Result<Response<GetKeyInfoResponse>, Status> {
         let request = request.into_inner();
         //perform token validation on private keys
-        if let Err(err) = self.validate_key_token_matched(request.token, &request.key_id).await {
+        if let Err(err) = self
+            .validate_key_token_matched(request.token, &request.key_id)
+            .await
+        {
             return Ok(Response::new(GetKeyInfoResponse {
                 attributes: HashMap::new(),
                 error: err.to_string(),
-            }))
+            }));
         }
-        return match self.key_service.get_by_type_and_name(request.key_type, request.key_id).await {
-            Ok(datakey) => {
-                Ok(Response::new(GetKeyInfoResponse {
-                    attributes: datakey.attributes,
-                    error: "".to_string(),
-                }))
-            }
-            Err(err) => {
-                Ok(Response::new(GetKeyInfoResponse {
-                    attributes: HashMap::new(),
-                    error: err.to_string(),
-                }))
-            }
-        }
+        return match self
+            .key_service
+            .get_by_type_and_name(request.key_type, request.key_id)
+            .await
+        {
+            Ok(datakey) => Ok(Response::new(GetKeyInfoResponse {
+                attributes: datakey.attributes,
+                error: "".to_string(),
+            })),
+            Err(err) => Ok(Response::new(GetKeyInfoResponse {
+                attributes: HashMap::new(),
+                error: err.to_string(),
+            })),
+        };
     }
     async fn sign_stream(
         &self,
@@ -120,30 +133,36 @@ where
             return Ok(Response::new(SignStreamResponse {
                 signature: vec![],
                 error: err.to_string(),
-            }))
+            }));
         }
-        debug!("begin to sign key_type :{} key_name: {}", key_type, key_name);
-        match self.key_service.sign(key_type, key_name, &options, data).await {
-            Ok(content) => {
-                Ok(Response::new(SignStreamResponse {
-                    signature: content,
-                    error: "".to_string()
-                }))
-            }
-            Err(err) => {
-                Ok(Response::new(SignStreamResponse {
-                    signature: vec![],
-                    error: err.to_string(),
-                }))
-            }
+        debug!(
+            "begin to sign key_type :{} key_name: {}",
+            key_type, key_name
+        );
+        match self
+            .key_service
+            .sign(key_type, key_name, &options, data)
+            .await
+        {
+            Ok(content) => Ok(Response::new(SignStreamResponse {
+                signature: content,
+                error: "".to_string(),
+            })),
+            Err(err) => Ok(Response::new(SignStreamResponse {
+                signature: vec![],
+                error: err.to_string(),
+            })),
         }
     }
 }
 
-pub fn get_grpc_handler<K, U>(key_service: K, user_service: U) -> SignatrustServer<SignHandler<K, U>>
+pub fn get_grpc_handler<K, U>(
+    key_service: K,
+    user_service: U,
+) -> SignatrustServer<SignHandler<K, U>>
 where
     K: KeyService + 'static,
-    U: UserService + 'static
+    U: UserService + 'static,
 {
     let app = SignHandler::new(key_service, user_service);
     SignatrustServer::new(app)

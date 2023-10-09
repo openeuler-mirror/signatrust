@@ -15,22 +15,51 @@
  */
 
 use super::entity::DataKey;
+use crate::domain::datakey::entity::{
+    DatakeyPaginationQuery, KeyState, PagedDatakey, RevokedKey, X509RevokeReason, X509CRL,
+};
 use crate::util::error::Result;
 use async_trait::async_trait;
 use chrono::Duration;
-use crate::domain::datakey::entity::{DatakeyPaginationQuery, KeyState, PagedDatakey, RevokedKey, X509CRL, X509RevokeReason};
 
 #[async_trait]
 pub trait Repository: Send + Sync {
     async fn create(&self, data_key: DataKey) -> Result<DataKey>;
     async fn delete(&self, id: i32) -> Result<()>;
-    async fn get_all_keys(&self, user_id: i32,  query: DatakeyPaginationQuery) -> Result<PagedDatakey>;
-    async fn get_by_id_or_name(&self, id: Option<i32>, name: Option<String>, raw_datakey: bool) -> Result<DataKey>;
+    async fn get_all_keys(
+        &self,
+        user_id: i32,
+        query: DatakeyPaginationQuery,
+    ) -> Result<PagedDatakey>;
+    async fn get_by_id_or_name(
+        &self,
+        id: Option<i32>,
+        name: Option<String>,
+        raw_datakey: bool,
+    ) -> Result<DataKey>;
     async fn update_state(&self, id: i32, state: KeyState) -> Result<()>;
     async fn update_key_data(&self, data_key: DataKey) -> Result<()>;
-    async fn get_enabled_key_by_type_and_name_with_parent_key(&self, key_type: String, name: String) -> Result<DataKey>;
-    async fn request_delete_key(&self, user_id: i32, user_email: String, id: i32, public_key: bool) -> Result<()>;
-    async fn request_revoke_key(&self, user_id: i32, user_email: String, id: i32, parent_id: i32, reason: X509RevokeReason, public_key: bool) -> Result<()>;
+    async fn get_enabled_key_by_type_and_name_with_parent_key(
+        &self,
+        key_type: String,
+        name: String,
+    ) -> Result<DataKey>;
+    async fn request_delete_key(
+        &self,
+        user_id: i32,
+        user_email: String,
+        id: i32,
+        public_key: bool,
+    ) -> Result<()>;
+    async fn request_revoke_key(
+        &self,
+        user_id: i32,
+        user_email: String,
+        id: i32,
+        parent_id: i32,
+        reason: X509RevokeReason,
+        public_key: bool,
+    ) -> Result<()>;
     async fn cancel_delete_key(&self, user_id: i32, id: i32) -> Result<()>;
     async fn cancel_revoke_key(&self, user_id: i32, id: i32, parent_id: i32) -> Result<()>;
     //crl related methods

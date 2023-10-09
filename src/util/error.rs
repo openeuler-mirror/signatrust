@@ -14,38 +14,38 @@
  *
  */
 
-use std::array::TryFromSliceError;
-use std::convert::Infallible;
+use actix_web::cookie::KeyError;
+use actix_web::{HttpResponse, ResponseError};
+use anyhow::Error as AnyhowError;
+use bincode::error::{DecodeError, EncodeError};
+use chrono::{OutOfRangeError, ParseError};
 use config::ConfigError;
+use csrf::CsrfError;
+use efi_signer::error::Error as EFIError;
+use openidconnect::url::ParseError as OIDCParseError;
+use openidconnect::ConfigurationError;
+use openidconnect::UserInfoError;
+use openssl::error::ErrorStack;
 use pgp::composed::key::SecretKeyParamsBuilderError;
 use pgp::errors::Error as PGPError;
 use reqwest::header::{InvalidHeaderValue, ToStrError as StrError};
 use reqwest::Error as RequestError;
+use rpm::Error as RPMError;
+use sea_orm::DbErr;
+use serde::{Deserialize, Serialize};
 use serde_json::Error as SerdeError;
 use sqlx::Error as SqlxError;
+use std::array::TryFromSliceError;
+use std::convert::Infallible;
 use std::io::Error as IOError;
 use std::net::AddrParseError;
 use std::num::ParseIntError;
 use std::string::FromUtf8Error;
 use std::sync::PoisonError;
-use rpm::Error as RPMError;
 use thiserror::Error as ThisError;
 use tonic::transport::Error as TonicError;
-use bincode::error::{EncodeError, DecodeError};
-use chrono::{OutOfRangeError, ParseError};
-use actix_web::{ResponseError, HttpResponse};
+use utoipa::ToSchema;
 use validator::ValidationErrors;
-use serde::{Deserialize, Serialize};
-use openssl::error::ErrorStack;
-use actix_web::cookie::KeyError;
-use openidconnect::url::ParseError as OIDCParseError;
-use openidconnect::ConfigurationError;
-use openidconnect::UserInfoError;
-use anyhow::Error as AnyhowError;
-use csrf::CsrfError;
-use utoipa::{ToSchema};
-use efi_signer::error::Error as EFIError;
-use sea_orm::DbErr;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -138,7 +138,7 @@ pub enum Error {
 
 #[derive(Deserialize, Serialize, ToSchema)]
 pub struct ErrorMessage {
-    detail: String
+    detail: String,
 }
 
 impl ResponseError for Error {
@@ -146,37 +146,37 @@ impl ResponseError for Error {
         match self {
             Error::ParameterError(_) | Error::UnsupportedTypeError(_) => {
                 warn!("parameter error: {}", self.to_string());
-                HttpResponse::BadRequest().json(ErrorMessage{
-                    detail: self.to_string()
+                HttpResponse::BadRequest().json(ErrorMessage {
+                    detail: self.to_string(),
                 })
             }
             Error::NotFoundError => {
                 warn!("record not found error: {}", self.to_string());
-                HttpResponse::NotFound().json(ErrorMessage{
-                    detail: self.to_string()
+                HttpResponse::NotFound().json(ErrorMessage {
+                    detail: self.to_string(),
                 })
             }
             Error::UnauthorizedError => {
                 warn!("unauthorized: {}", self.to_string());
-                HttpResponse::Unauthorized().json(ErrorMessage{
-                    detail: self.to_string()
+                HttpResponse::Unauthorized().json(ErrorMessage {
+                    detail: self.to_string(),
                 })
             }
             Error::ActionsNotAllowedError(_) => {
                 warn!("unprivileged: {}", self.to_string());
-                HttpResponse::Forbidden().json(ErrorMessage{
-                    detail: self.to_string()
+                HttpResponse::Forbidden().json(ErrorMessage {
+                    detail: self.to_string(),
                 })
             }
             Error::UnprivilegedError => {
                 warn!("unprivileged: {}", self.to_string());
-                HttpResponse::Forbidden().json(ErrorMessage{
-                    detail: self.to_string()
+                HttpResponse::Forbidden().json(ErrorMessage {
+                    detail: self.to_string(),
                 })
             }
             _ => {
                 warn!("internal error: {}", self.to_string());
-                HttpResponse::InternalServerError().json(ErrorMessage{
+                HttpResponse::InternalServerError().json(ErrorMessage {
                     detail: self.to_string(),
                 })
             }
@@ -188,18 +188,13 @@ impl From<SqlxError> for Error {
     fn from(sqlx_error: SqlxError) -> Self {
         match sqlx_error.as_database_error() {
             Some(db_error) => Error::DatabaseError(db_error.to_string()),
-            None => {
-                match sqlx_error {
-                    sqlx::Error::RowNotFound => {
-                        Error::NotFoundError
-                    },
-                    _ => {
-                        error!("{:?}", sqlx_error);
-                        Error::DatabaseError(format!("Unrecognized database error! {:?}", sqlx_error))
-                    }
+            None => match sqlx_error {
+                sqlx::Error::RowNotFound => Error::NotFoundError,
+                _ => {
+                    error!("{:?}", sqlx_error);
+                    Error::DatabaseError(format!("Unrecognized database error! {:?}", sqlx_error))
                 }
-
-            }
+            },
         }
     }
 }
@@ -215,7 +210,6 @@ impl From<IOError> for Error {
         Error::IOError(error.to_string())
     }
 }
-
 
 impl<T> From<PoisonError<T>> for Error {
     fn from(error: PoisonError<T>) -> Self {
@@ -302,12 +296,10 @@ impl From<EncodeError> for Error {
 }
 
 impl From<DecodeError> for Error {
-    fn from(err: DecodeError) -> Self
-    {
+    fn from(err: DecodeError) -> Self {
         Error::BincodeError(err.to_string())
     }
 }
-
 
 impl From<OutOfRangeError> for Error {
     fn from(err: OutOfRangeError) -> Self {
@@ -363,13 +355,11 @@ impl From<AnyhowError> for Error {
     }
 }
 
-
 impl From<UserInfoError<openidconnect::reqwest::Error<reqwest::Error>>> for Error {
     fn from(err: UserInfoError<openidconnect::reqwest::Error<reqwest::Error>>) -> Self {
-    Error::AuthError(err.to_string())
+        Error::AuthError(err.to_string())
+    }
 }
-}
-
 
 impl From<EFIError> for Error {
     fn from(error: EFIError) -> Self {
@@ -384,28 +374,37 @@ impl From<CsrfError> for Error {
 }
 
 impl From<actix_web::Error> for Error {
-    fn from(error: actix_web::Error) -> Self { Error::FrameworkError(error.to_string()) }
+    fn from(error: actix_web::Error) -> Self {
+        Error::FrameworkError(error.to_string())
+    }
 }
 
 impl From<data_encoding::DecodeError> for Error {
-    fn from(error: data_encoding::DecodeError) -> Self { Error::FrameworkError(error.to_string()) }
+    fn from(error: data_encoding::DecodeError) -> Self {
+        Error::FrameworkError(error.to_string())
+    }
 }
 
 impl From<Infallible> for Error {
-    fn from(error: Infallible) -> Self { Error::FrameworkError(error.to_string()) }
+    fn from(error: Infallible) -> Self {
+        Error::FrameworkError(error.to_string())
+    }
 }
 
 impl From<TryFromSliceError> for Error {
-    fn from(error: TryFromSliceError) -> Self { Error::FrameworkError(error.to_string()) }
+    fn from(error: TryFromSliceError) -> Self {
+        Error::FrameworkError(error.to_string())
+    }
 }
 
 impl From<Vec<u8>> for Error {
-    fn from(error: Vec<u8>) -> Self { Error::KeyParseError(format!("original vec {:?}", error)) }
+    fn from(error: Vec<u8>) -> Self {
+        Error::KeyParseError(format!("original vec {:?}", error))
+    }
 }
 
 impl From<DbErr> for Error {
-    fn from(error: DbErr) -> Self { Error::DatabaseError(error.to_string()) }
+    fn from(error: DbErr) -> Self {
+        Error::DatabaseError(error.to_string())
+    }
 }
-
-
-

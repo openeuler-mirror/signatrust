@@ -44,7 +44,7 @@ impl From<Model> for Token {
             description: dto.description.clone(),
             token: dto.token.clone(),
             create_at: dto.create_at,
-            expire_at:dto.expire_at,
+            expire_at: dto.expire_at,
         }
     }
 }
@@ -62,7 +62,7 @@ mod tests {
             description: "Test token".to_string(),
             token: "hashedtoken".to_string(),
             create_at: now,
-            expire_at: now + chrono::Duration::days(1)
+            expire_at: now + chrono::Duration::days(1),
         };
         let token = Token::from(dto.clone());
         assert_eq!(token.id, dto.id);
@@ -73,4 +73,3 @@ mod tests {
         assert_eq!(token.expire_at, dto.expire_at);
     }
 }
-

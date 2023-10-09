@@ -14,14 +14,13 @@
  *
  */
 
-use crate::infra::kms::huaweicloud::HuaweiCloudKMS;
-use crate::infra::kms::dummy::DummyKMS;
 use crate::domain::kms_provider::{KMSProvider, KMSType};
-use crate::util::error::{Result};
+use crate::infra::kms::dummy::DummyKMS;
+use crate::infra::kms::huaweicloud::HuaweiCloudKMS;
+use crate::util::error::Result;
 use config::Value;
 use std::collections::HashMap;
 use std::str::FromStr;
-
 
 pub struct KMSProviderFactory {}
 
@@ -52,7 +51,7 @@ mod test {
         config.insert("type".to_string(), Value::from("not_existed"));
         assert!(KMSProviderFactory::new_provider(&config).is_err());
         config.insert("type".to_string(), Value::from("dummy"));
-        KMSProviderFactory::new_provider(&config).expect("kms provider from valid string should succeed");
+        KMSProviderFactory::new_provider(&config)
+            .expect("kms provider from valid string should succeed");
     }
 }
-

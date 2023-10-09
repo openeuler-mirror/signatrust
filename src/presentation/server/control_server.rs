@@ -14,41 +14,41 @@
  *
  */
 
+use actix_identity::IdentityMiddleware;
+use actix_limitation::{Limiter, RateLimiter};
+use actix_session::{config::PersistentSession, storage::RedisSessionStore, SessionMiddleware};
+use actix_web::{cookie::Key, middleware, web, App, HttpServer};
+use config::Config;
+use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 use std::net::SocketAddr;
+use std::sync::{Arc, RwLock};
+use std::time::Duration;
+use time::Duration as timeDuration;
 use utoipa::{
     openapi::security::{ApiKey, ApiKeyValue, SecurityScheme},
     Modify, OpenApi,
 };
 use utoipa_swagger_ui::SwaggerUi;
-use std::sync::{Arc, RwLock};
-use actix_web::{App, HttpServer, middleware, web, cookie::Key};
-use config::{Config};
-use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
-use actix_identity::{IdentityMiddleware};
-use actix_session::{config::PersistentSession, storage::RedisSessionStore, SessionMiddleware};
-use actix_limitation::{Limiter, RateLimiter};
-use time::Duration as timeDuration;
-use std::time::Duration;
 
 use crate::infra::database::model::datakey::repository as datakeyRepository;
 use crate::infra::database::pool::{create_pool, get_db_connection};
 use crate::presentation::handler::control::*;
-use actix_web::{dev::ServiceRequest};
+use crate::util::error::{Error, Result};
 use actix_web::cookie::SameSite;
+use actix_web::dev::ServiceRequest;
 use secstr::SecVec;
 use tokio_util::sync::CancellationToken;
-use crate::util::error::{Error, Result};
 
 use crate::application::datakey::{DBKeyService, KeyService};
-use crate::infra::database::model::token::repository::TokenRepository;
-use crate::infra::database::model::user::repository::UserRepository;
-use crate::infra::sign_backend::factory::SignBackendFactory;
 use crate::application::user::{DBUserService, UserService};
 use crate::domain::datakey::entity::{DataKey, KeyState};
 use crate::domain::token::entity::Token;
 use crate::domain::user::entity::User;
-use crate::presentation::handler::control::model::token::dto::{CreateTokenDTO};
-use crate::presentation::handler::control::model::user::dto::{UserIdentity};
+use crate::infra::database::model::token::repository::TokenRepository;
+use crate::infra::database::model::user::repository::UserRepository;
+use crate::infra::sign_backend::factory::SignBackendFactory;
+use crate::presentation::handler::control::model::token::dto::CreateTokenDTO;
+use crate::presentation::handler::control::model::user::dto::UserIdentity;
 use crate::util::key::{file_exists, truncate_string_to_protect_key};
 
 pub struct ControlServer {
@@ -118,26 +118,27 @@ impl Modify for SecurityAddon {
 struct ControlApiDoc;
 
 impl ControlServer {
-    pub async fn new(server_config: Arc<RwLock<Config>>, cancel_token: CancellationToken) -> Result<Self> {
+    pub async fn new(
+        server_config: Arc<RwLock<Config>>,
+        cancel_token: CancellationToken,
+    ) -> Result<Self> {
         let database = server_config.read()?.get_table("database")?;
         create_pool(&database).await?;
-        let data_repository = datakeyRepository::DataKeyRepository::new(
-            get_db_connection()?,
-        );
-        let sign_backend = SignBackendFactory::new_engine(
-            server_config.clone(), get_db_connection()?).await?;
+        let data_repository = datakeyRepository::DataKeyRepository::new(get_db_connection()?);
+        let sign_backend =
+            SignBackendFactory::new_engine(server_config.clone(), get_db_connection()?).await?;
         //initialize repos
         let user_repo = UserRepository::new(get_db_connection()?);
         let token_repo = TokenRepository::new(get_db_connection()?);
 
         //initialize the service
-        let user_service = Arc::new(
-            DBUserService::new(
-                user_repo, token_repo,
-                server_config.clone())?) as Arc<dyn UserService>;
-        let key_service = Arc::new(
-            DBKeyService::new(
-                data_repository, sign_backend)) as Arc<dyn KeyService>;
+        let user_service = Arc::new(DBUserService::new(
+            user_repo,
+            token_repo,
+            server_config.clone(),
+        )?) as Arc<dyn UserService>;
+        let key_service =
+            Arc::new(DBKeyService::new(data_repository, sign_backend)) as Arc<dyn KeyService>;
         let server = ControlServer {
             user_service,
             key_service,
@@ -158,22 +159,30 @@ impl ControlServer {
                 .read()?
                 .get_string("control-server.server_port")?
         )
-            .parse()?;
+        .parse()?;
 
-        let key = self.server_config.read()?.get_string("control-server.cookie_key")?;
-        let redis_connection = self.server_config.read()?.get_string("control-server.redis_connection")?;
+        let key = self
+            .server_config
+            .read()?
+            .get_string("control-server.cookie_key")?;
+        let redis_connection = self
+            .server_config
+            .read()?
+            .get_string("control-server.redis_connection")?;
 
         info!("control server starts");
         // Start http server
-        let user_service = web::Data::from(
-            self.user_service.clone());
-        let key_service = web::Data::from(
-            self.key_service.clone());
+        let user_service = web::Data::from(self.user_service.clone());
+        let key_service = web::Data::from(self.key_service.clone());
 
         key_service.start_key_rotate_loop(self.cancel_token.clone())?;
         key_service.start_key_plugin_maintenance(
             self.cancel_token.clone(),
-            self.server_config.read()?.get_string("control-server.server_port")?.parse()?)?;
+            self.server_config
+                .read()?
+                .get_string("control-server.server_port")?
+                .parse()?,
+        )?;
 
         //prepare redis store
         let store = RedisSessionStore::new(&redis_connection).await?;
@@ -188,14 +197,20 @@ impl ControlServer {
                     }
                     None
                 })
-                .limit(self.server_config.read()?.get_string("control-server.limits_per_minute")?.parse()?)
+                .limit(
+                    self.server_config
+                        .read()?
+                        .get_string("control-server.limits_per_minute")?
+                        .parse()?,
+                )
                 .period(Duration::from_secs(60))
                 .build()
                 .unwrap(),
         );
 
         let openapi = ControlApiDoc::openapi();
-        let csrf_protect_key = web::Data::new(SecVec::new(truncate_string_to_protect_key(&key).to_vec()));
+        let csrf_protect_key =
+            web::Data::new(SecVec::new(truncate_string_to_protect_key(&key).to_vec()));
 
         let http_server = HttpServer::new(move || {
             App::new()
@@ -211,9 +226,10 @@ impl ControlServer {
                 .wrap(RateLimiter::default())
                 // session handler
                 .wrap(
-                    SessionMiddleware::builder(
-                        store.clone(), Key::from(key.as_bytes()))
-                        .session_lifecycle(PersistentSession::default().session_ttl(timeDuration::hours(1)))
+                    SessionMiddleware::builder(store.clone(), Key::from(key.as_bytes()))
+                        .session_lifecycle(
+                            PersistentSession::default().session_ttl(timeDuration::hours(1)),
+                        )
                         .cookie_name("Signatrust".to_owned())
                         .cookie_secure(true)
                         .cookie_domain(None)
@@ -227,25 +243,42 @@ impl ControlServer {
                 .app_data(limiter.clone())
                 //open api document
                 .service(
-                    SwaggerUi::new("/api/swagger-ui/{_:.*}").url("/api-doc/openapi.json", openapi.clone()),
+                    SwaggerUi::new("/api/swagger-ui/{_:.*}")
+                        .url("/api-doc/openapi.json", openapi.clone()),
                 )
-                .service(web::scope("/api/v1")
-                    .service(user_handler::get_scope())
-                    .service(datakey_handler::get_scope()))
-                .service(web::scope("/api")
-                    .service(health_handler::get_scope()))
+                .service(
+                    web::scope("/api/v1")
+                        .service(user_handler::get_scope())
+                        .service(datakey_handler::get_scope()),
+                )
+                .service(web::scope("/api").service(health_handler::get_scope()))
         });
-        let tls_cert = self.server_config.read()?.get_string("tls_cert").unwrap_or(String::new()).to_string();
-        let tls_key = self.server_config.read()?.get_string("tls_key").unwrap_or(String::new()).to_string();
+        let tls_cert = self
+            .server_config
+            .read()?
+            .get_string("tls_cert")
+            .unwrap_or(String::new())
+            .to_string();
+        let tls_key = self
+            .server_config
+            .read()?
+            .get_string("tls_key")
+            .unwrap_or(String::new())
+            .to_string();
         if tls_cert.is_empty() || tls_key.is_empty() {
             info!("tls key and cert not configured, control server tls will be disabled");
             http_server.bind(addr)?.run().await?;
         } else {
             if !file_exists(&tls_cert) || !file_exists(&tls_key) {
-                return Err(Error::FileFoundError(format!("tls cert: {} or key: {} file not found", tls_key, tls_cert)));
+                return Err(Error::FileFoundError(format!(
+                    "tls cert: {} or key: {} file not found",
+                    tls_key, tls_cert
+                )));
             }
             let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
-            builder.set_private_key_file(tls_key, SslFiletype::PEM).unwrap();
+            builder
+                .set_private_key_file(tls_key, SslFiletype::PEM)
+                .unwrap();
             builder.set_certificate_chain_file(tls_cert).unwrap();
             http_server.bind_openssl(addr, builder)?.run().await?;
         }
@@ -255,16 +288,21 @@ impl ControlServer {
     //used for control admin cmd
     pub async fn create_user_token(&self, user: User) -> Result<Token> {
         let user = self.user_service.save(user).await?;
-        self.user_service.generate_token(
-            &UserIdentity::from_user(user.clone()),
-            CreateTokenDTO::new("default admin token".to_owned())).await
+        self.user_service
+            .generate_token(
+                &UserIdentity::from_user(user.clone()),
+                CreateTokenDTO::new("default admin token".to_owned()),
+            )
+            .await
     }
 
     //used for control admin cmd
     pub async fn create_keys(&self, data: &mut DataKey, user: UserIdentity) -> Result<DataKey> {
         let key = self.key_service.create(user.clone(), data).await?;
         if data.key_state == KeyState::Disabled {
-            self.key_service.enable(Some(user), format!("{}", key.id)).await?;
+            self.key_service
+                .enable(Some(user), format!("{}", key.id))
+                .await?;
         }
         Ok(key)
     }

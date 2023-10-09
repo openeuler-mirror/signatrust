@@ -16,11 +16,10 @@
 
 use std::path::PathBuf;
 
-use std::cell::{RefCell};
-use crate::util::error::{Result};
+use crate::util::error::Result;
 use crate::util::sign::{FileType, KeyType};
+use std::cell::RefCell;
 use std::collections::HashMap;
-
 
 pub struct SignIdentity {
     //absolute file path
@@ -35,7 +34,13 @@ pub struct SignIdentity {
 }
 
 impl SignIdentity {
-    pub(crate) fn new(file_type: FileType, file_path: PathBuf, key_type: KeyType, key_id: String, sign_options: HashMap<String, String>) -> Self {
+    pub(crate) fn new(
+        file_type: FileType,
+        file_path: PathBuf,
+        key_type: KeyType,
+        key_id: String,
+        sign_options: HashMap<String, String>,
+    ) -> Self {
         Self {
             file_type,
             file_path,

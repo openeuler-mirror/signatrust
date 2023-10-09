@@ -22,15 +22,15 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
-    pub email: String
+    pub email: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-    belongs_to = "super::super::datakey::dto::Entity",
-    from = "Column::Id",
-    to = "super::super::datakey::dto::Column::User"
+        belongs_to = "super::super::datakey::dto::Entity",
+        from = "Column::Id",
+        to = "super::super::datakey::dto::Column::User"
     )]
     Datakey,
 }
@@ -48,7 +48,7 @@ impl From<Model> for User {
     fn from(dto: Model) -> Self {
         Self {
             id: dto.id,
-            email: dto.email
+            email: dto.email,
         }
     }
 }

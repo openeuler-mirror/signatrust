@@ -14,19 +14,21 @@
  *
  */
 
+use actix_web::{web, HttpResponse, Responder, Result, Scope};
 use std::str::FromStr;
-use actix_web::{
-    HttpResponse, Responder, Result, web, Scope
-};
 
-
-use crate::presentation::handler::control::model::datakey::dto::{CertificateContent, CreateDataKeyDTO, CRLContent, DataKeyDTO, ImportDataKeyDTO, ListKeyQuery, NameIdenticalQuery, PagedDatakeyDTO, PublicKeyContent, RevokeCertificateDTO};
-use crate::util::error::Error;
-use validator::Validate;
-use crate::application::datakey::KeyService;
-use crate::domain::datakey::entity::{DataKey, DatakeyPaginationQuery, KeyType, Visibility, X509RevokeReason};
-use crate::util::key::get_datakey_full_name;
 use super::model::user::dto::UserIdentity;
+use crate::application::datakey::KeyService;
+use crate::domain::datakey::entity::{
+    DataKey, DatakeyPaginationQuery, KeyType, Visibility, X509RevokeReason,
+};
+use crate::presentation::handler::control::model::datakey::dto::{
+    CRLContent, CertificateContent, CreateDataKeyDTO, DataKeyDTO, ImportDataKeyDTO, ListKeyQuery,
+    NameIdenticalQuery, PagedDatakeyDTO, PublicKeyContent, RevokeCertificateDTO,
+};
+use crate::util::error::Error;
+use crate::util::key::get_datakey_full_name;
+use validator::Validate;
 
 /// Create new key
 ///
@@ -116,10 +118,16 @@ use super::model::user::dto::UserIdentity;
     (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn create_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, datakey: web::Json<CreateDataKeyDTO>,) -> Result<impl Responder, Error> {
+async fn create_data_key(
+    user: UserIdentity,
+    key_service: web::Data<dyn KeyService>,
+    datakey: web::Json<CreateDataKeyDTO>,
+) -> Result<impl Responder, Error> {
     datakey.validate()?;
     let mut key = DataKey::create_from(datakey.0, user.clone())?;
-    Ok(HttpResponse::Created().json(DataKeyDTO::try_from(key_service.into_inner().create(user, &mut key).await?)?))
+    Ok(HttpResponse::Created().json(DataKeyDTO::try_from(
+        key_service.into_inner().create(user, &mut key).await?,
+    )?))
 }
 
 /// Get all available keys from database.
@@ -144,11 +152,18 @@ async fn create_data_key(user: UserIdentity, key_service: web::Data<dyn KeyServi
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn list_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, key: web::Query<ListKeyQuery>) -> Result<impl Responder, Error> {
+async fn list_data_key(
+    user: UserIdentity,
+    key_service: web::Data<dyn KeyService>,
+    key: web::Query<ListKeyQuery>,
+) -> Result<impl Responder, Error> {
     key.validate()?;
     //test visibility matched.
     Visibility::from_parameter(key.visibility.clone())?;
-    let keys = key_service.into_inner().get_all(user.id,  DatakeyPaginationQuery::from(key.into_inner())).await?;
+    let keys = key_service
+        .into_inner()
+        .get_all(user.id, DatakeyPaginationQuery::from(key.into_inner()))
+        .await?;
     Ok(HttpResponse::Ok().json(PagedDatakeyDTO::try_from(keys)?))
 }
 
@@ -177,8 +192,15 @@ async fn list_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn show_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, id_or_name: web::Path<String>) -> Result<impl Responder, Error> {
-    let key = key_service.into_inner().get_one(Some(user), id_or_name.into_inner()).await?;
+async fn show_data_key(
+    user: UserIdentity,
+    key_service: web::Data<dyn KeyService>,
+    id_or_name: web::Path<String>,
+) -> Result<impl Responder, Error> {
+    let key = key_service
+        .into_inner()
+        .get_one(Some(user), id_or_name.into_inner())
+        .await?;
     Ok(HttpResponse::Ok().json(DataKeyDTO::try_from(key)?))
 }
 
@@ -208,8 +230,15 @@ async fn show_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn delete_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, id_or_name: web::Path<String>) -> Result<impl Responder, Error> {
-    key_service.into_inner().request_delete(user, id_or_name.into_inner()).await?;
+async fn delete_data_key(
+    user: UserIdentity,
+    key_service: web::Data<dyn KeyService>,
+    id_or_name: web::Path<String>,
+) -> Result<impl Responder, Error> {
+    key_service
+        .into_inner()
+        .request_delete(user, id_or_name.into_inner())
+        .await?;
     Ok(HttpResponse::Ok())
 }
 
@@ -239,8 +268,15 @@ async fn delete_data_key(user: UserIdentity, key_service: web::Data<dyn KeyServi
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn cancel_delete_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, id_or_name: web::Path<String>) -> Result<impl Responder, Error> {
-    key_service.into_inner().cancel_delete(user, id_or_name.into_inner()).await?;
+async fn cancel_delete_data_key(
+    user: UserIdentity,
+    key_service: web::Data<dyn KeyService>,
+    id_or_name: web::Path<String>,
+) -> Result<impl Responder, Error> {
+    key_service
+        .into_inner()
+        .cancel_delete(user, id_or_name.into_inner())
+        .await?;
     Ok(HttpResponse::Ok())
 }
 
@@ -271,8 +307,20 @@ async fn cancel_delete_data_key(user: UserIdentity, key_service: web::Data<dyn K
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn revoke_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, id_or_name: web::Path<String>, reason: web::Json<RevokeCertificateDTO>) -> Result<impl Responder, Error> {
-    key_service.into_inner().request_revoke(user, id_or_name.into_inner(), X509RevokeReason::from_str(&reason.reason)?).await?;
+async fn revoke_data_key(
+    user: UserIdentity,
+    key_service: web::Data<dyn KeyService>,
+    id_or_name: web::Path<String>,
+    reason: web::Json<RevokeCertificateDTO>,
+) -> Result<impl Responder, Error> {
+    key_service
+        .into_inner()
+        .request_revoke(
+            user,
+            id_or_name.into_inner(),
+            X509RevokeReason::from_str(&reason.reason)?,
+        )
+        .await?;
     Ok(HttpResponse::Ok())
 }
 
@@ -302,8 +350,15 @@ async fn revoke_data_key(user: UserIdentity, key_service: web::Data<dyn KeyServi
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn cancel_revoke_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, id_or_name: web::Path<String>) -> Result<impl Responder, Error> {
-    key_service.into_inner().cancel_revoke(user, id_or_name.into_inner()).await?;
+async fn cancel_revoke_data_key(
+    user: UserIdentity,
+    key_service: web::Data<dyn KeyService>,
+    id_or_name: web::Path<String>,
+) -> Result<impl Responder, Error> {
+    key_service
+        .into_inner()
+        .cancel_revoke(user, id_or_name.into_inner())
+        .await?;
     Ok(HttpResponse::Ok())
 }
 
@@ -330,12 +385,20 @@ async fn cancel_revoke_data_key(user: UserIdentity, key_service: web::Data<dyn K
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn export_public_key(user: Option<UserIdentity>, key_service: web::Data<dyn KeyService>, id_or_name: web::Path<String>) -> Result<impl Responder, Error> {
-    let data_key = key_service.export_one(user, id_or_name.into_inner()).await?;
+async fn export_public_key(
+    user: Option<UserIdentity>,
+    key_service: web::Data<dyn KeyService>,
+    id_or_name: web::Path<String>,
+) -> Result<impl Responder, Error> {
+    let data_key = key_service
+        .export_one(user, id_or_name.into_inner())
+        .await?;
     if data_key.key_type != KeyType::OpenPGP {
-        return Ok(HttpResponse::Forbidden().finish())
+        return Ok(HttpResponse::Forbidden().finish());
     }
-    Ok(HttpResponse::Ok().content_type("text/plain").body(PublicKeyContent::try_from(data_key)?.content))
+    Ok(HttpResponse::Ok()
+        .content_type("text/plain")
+        .body(PublicKeyContent::try_from(data_key)?.content))
 }
 
 /// Get certificate content of specific key by id or name from database
@@ -361,12 +424,20 @@ async fn export_public_key(user: Option<UserIdentity>, key_service: web::Data<dy
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn export_certificate(user: Option<UserIdentity>, key_service: web::Data<dyn KeyService>, id_or_name: web::Path<String>) -> Result<impl Responder, Error> {
-    let data_key = key_service.export_one(user, id_or_name.into_inner()).await?;
+async fn export_certificate(
+    user: Option<UserIdentity>,
+    key_service: web::Data<dyn KeyService>,
+    id_or_name: web::Path<String>,
+) -> Result<impl Responder, Error> {
+    let data_key = key_service
+        .export_one(user, id_or_name.into_inner())
+        .await?;
     if data_key.key_type == KeyType::OpenPGP {
-        return Ok(HttpResponse::Forbidden().finish())
+        return Ok(HttpResponse::Forbidden().finish());
     }
-    Ok(HttpResponse::Ok().content_type("text/plain").body(CertificateContent::try_from(data_key)?.content))
+    Ok(HttpResponse::Ok()
+        .content_type("text/plain")
+        .body(CertificateContent::try_from(data_key)?.content))
 }
 
 /// Get Client Revoke List content of specific key(cert) by id or name from database
@@ -392,12 +463,19 @@ async fn export_certificate(user: Option<UserIdentity>, key_service: web::Data<d
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn export_crl(user: Option<UserIdentity>, key_service: web::Data<dyn KeyService>, id_or_name: web::Path<String>) -> Result<impl Responder, Error> {
+async fn export_crl(
+    user: Option<UserIdentity>,
+    key_service: web::Data<dyn KeyService>,
+    id_or_name: web::Path<String>,
+) -> Result<impl Responder, Error> {
     //note: we could not get any crl content by a openpgp id.
-    let crl_content = key_service.export_cert_crl(user, id_or_name.into_inner()).await?;
-    Ok(HttpResponse::Ok().content_type("text/plain").body(CRLContent::try_from(crl_content)?.content))
+    let crl_content = key_service
+        .export_cert_crl(user, id_or_name.into_inner())
+        .await?;
+    Ok(HttpResponse::Ok()
+        .content_type("text/plain")
+        .body(CRLContent::try_from(crl_content)?.content))
 }
-
 
 /// Enable specific key by id or name from database
 ///
@@ -424,8 +502,14 @@ async fn export_crl(user: Option<UserIdentity>, key_service: web::Data<dyn KeySe
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn enable_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, id_or_name: web::Path<String>) -> Result<impl Responder, Error> {
-    key_service.enable(Some(user), id_or_name.into_inner()).await?;
+async fn enable_data_key(
+    user: UserIdentity,
+    key_service: web::Data<dyn KeyService>,
+    id_or_name: web::Path<String>,
+) -> Result<impl Responder, Error> {
+    key_service
+        .enable(Some(user), id_or_name.into_inner())
+        .await?;
     Ok(HttpResponse::Ok())
 }
 
@@ -454,8 +538,14 @@ async fn enable_data_key(user: UserIdentity, key_service: web::Data<dyn KeyServi
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn disable_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, id_or_name: web::Path<String>) -> Result<impl Responder, Error> {
-    key_service.disable(Some(user), id_or_name.into_inner()).await?;
+async fn disable_data_key(
+    user: UserIdentity,
+    key_service: web::Data<dyn KeyService>,
+    id_or_name: web::Path<String>,
+) -> Result<impl Responder, Error> {
+    key_service
+        .disable(Some(user), id_or_name.into_inner())
+        .await?;
     Ok(HttpResponse::Ok())
 }
 
@@ -483,11 +573,19 @@ async fn disable_data_key(user: UserIdentity, key_service: web::Data<dyn KeyServ
         (status = 409, description = "Conflict in name")
     )
 )]
-async fn key_name_identical(user: UserIdentity, key_service: web::Data<dyn KeyService>, name_exist: web::Query<NameIdenticalQuery>,) -> Result<impl Responder, Error> {
+async fn key_name_identical(
+    user: UserIdentity,
+    key_service: web::Data<dyn KeyService>,
+    name_exist: web::Query<NameIdenticalQuery>,
+) -> Result<impl Responder, Error> {
     name_exist.validate()?;
     let visibility = Visibility::from_parameter(name_exist.visibility.clone())?;
     let key_name = get_datakey_full_name(&name_exist.name, &user.email, &visibility)?;
-    match key_service.into_inner().get_raw_key_by_name(&key_name).await {
+    match key_service
+        .into_inner()
+        .get_raw_key_by_name(&key_name)
+        .await
+    {
         Ok(_) => Ok(HttpResponse::Conflict()),
         Err(_) => Ok(HttpResponse::Ok()),
     }
@@ -558,29 +656,53 @@ async fn key_name_identical(user: UserIdentity, key_service: web::Data<dyn KeySe
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
-async fn import_data_key(user: UserIdentity, key_service: web::Data<dyn KeyService>, datakey: web::Json<ImportDataKeyDTO>) -> Result<impl Responder, Error> {
+async fn import_data_key(
+    user: UserIdentity,
+    key_service: web::Data<dyn KeyService>,
+    datakey: web::Json<ImportDataKeyDTO>,
+) -> Result<impl Responder, Error> {
     datakey.validate()?;
     let mut key = DataKey::import_from(datakey.0, user)?;
-    Ok(HttpResponse::Created().json(DataKeyDTO::try_from(key_service.into_inner().import(&mut key).await?)?))
+    Ok(HttpResponse::Created().json(DataKeyDTO::try_from(
+        key_service.into_inner().import(&mut key).await?,
+    )?))
 }
-
 
 pub fn get_scope() -> Scope {
     web::scope("/keys")
         .service(
             web::resource("/")
                 .route(web::get().to(list_data_key))
-                .route(web::post().to(create_data_key)))
-        .service( web::resource("/import").route(web::post().to(import_data_key)))
-        .service( web::resource("/name_identical").route(web::head().to(key_name_identical)))
-        .service( web::resource("/{id_or_name}").route(web::get().to(show_data_key)))
-        .service( web::resource("/{id_or_name}/public_key").route(web::get().to(export_public_key)))
-        .service( web::resource("/{id_or_name}/certificate").route(web::get().to(export_certificate)))
-        .service( web::resource("/{id_or_name}/crl").route(web::get().to(export_crl)))
-        .service( web::resource("/{id_or_name}/actions/enable").route(web::post().to(enable_data_key)))
-        .service( web::resource("/{id_or_name}/actions/disable").route(web::post().to(disable_data_key)))
-        .service( web::resource("/{id_or_name}/actions/request_delete").route(web::post().to(delete_data_key)))
-        .service( web::resource("/{id_or_name}/actions/cancel_delete").route(web::post().to(cancel_delete_data_key)))
-        .service( web::resource("/{id_or_name}/actions/request_revoke").route(web::post().to(revoke_data_key)))
-        .service( web::resource("/{id_or_name}/actions/cancel_revoke").route(web::post().to(cancel_revoke_data_key)))
+                .route(web::post().to(create_data_key)),
+        )
+        .service(web::resource("/import").route(web::post().to(import_data_key)))
+        .service(web::resource("/name_identical").route(web::head().to(key_name_identical)))
+        .service(web::resource("/{id_or_name}").route(web::get().to(show_data_key)))
+        .service(web::resource("/{id_or_name}/public_key").route(web::get().to(export_public_key)))
+        .service(
+            web::resource("/{id_or_name}/certificate").route(web::get().to(export_certificate)),
+        )
+        .service(web::resource("/{id_or_name}/crl").route(web::get().to(export_crl)))
+        .service(
+            web::resource("/{id_or_name}/actions/enable").route(web::post().to(enable_data_key)),
+        )
+        .service(
+            web::resource("/{id_or_name}/actions/disable").route(web::post().to(disable_data_key)),
+        )
+        .service(
+            web::resource("/{id_or_name}/actions/request_delete")
+                .route(web::post().to(delete_data_key)),
+        )
+        .service(
+            web::resource("/{id_or_name}/actions/cancel_delete")
+                .route(web::post().to(cancel_delete_data_key)),
+        )
+        .service(
+            web::resource("/{id_or_name}/actions/request_revoke")
+                .route(web::post().to(revoke_data_key)),
+        )
+        .service(
+            web::resource("/{id_or_name}/actions/cancel_revoke")
+                .route(web::post().to(cancel_revoke_data_key)),
+        )
 }

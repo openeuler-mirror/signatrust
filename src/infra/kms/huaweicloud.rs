@@ -19,11 +19,11 @@ use crate::util::error::{Error, Result};
 use async_trait::async_trait;
 use config::Value;
 use reqwest::{header::HeaderValue, Client, StatusCode};
+use secstr::*;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::HashMap;
 use tokio::sync::Mutex;
-use secstr::*;
 
 static SIGN_HEADER: &str = "x-auth-token";
 static AUTH_HEADER: &str = "x-subject-token";
@@ -65,10 +65,12 @@ impl HuaweiCloudKMS {
                 .get("username")
                 .unwrap_or(&Value::default())
                 .to_string(),
-            password: SecUtf8::from(config
-                .get("password")
-                .unwrap_or(&Value::default())
-                .to_string()),
+            password: SecUtf8::from(
+                config
+                    .get("password")
+                    .unwrap_or(&Value::default())
+                    .to_string(),
+            ),
             domain: config
                 .get("domain")
                 .unwrap_or(&Value::default())
@@ -232,7 +234,10 @@ mod test {
     use super::*;
     use mockito;
 
-    fn get_kms_config(iam_endpoint: Option<String>, kms_endpoint: Option<String>) -> HashMap<String, Value> {
+    fn get_kms_config(
+        iam_endpoint: Option<String>,
+        kms_endpoint: Option<String>,
+    ) -> HashMap<String, Value> {
         let mut config: HashMap<String, Value> = HashMap::new();
         config.insert("kms_id".to_string(), Value::from("fake_kms_id"));
         config.insert("username".to_string(), Value::from("fake_username"));
@@ -241,14 +246,22 @@ mod test {
         config.insert("project_name".to_string(), Value::from("fake_project_name"));
         config.insert("project_id".to_string(), Value::from("fake_project_id"));
         match iam_endpoint {
-            None => {config.insert("iam_endpoint".to_string(), Value::from("fake_endpoint"));}
-            Some(value) => {config.insert("iam_endpoint".to_string(), Value::from(value));}
+            None => {
+                config.insert("iam_endpoint".to_string(), Value::from("fake_endpoint"));
+            }
+            Some(value) => {
+                config.insert("iam_endpoint".to_string(), Value::from(value));
+            }
         }
         match kms_endpoint {
-            None => {config.insert("kms_endpoint".to_string(), Value::from("fake_endpoint"));}
-            Some(value) => {config.insert("kms_endpoint".to_string(), Value::from(value));}
+            None => {
+                config.insert("kms_endpoint".to_string(), Value::from("fake_endpoint"));
+            }
+            Some(value) => {
+                config.insert("kms_endpoint".to_string(), Value::from(value));
+            }
         }
-        return config
+        return config;
     }
 
     #[tokio::test]
@@ -261,26 +274,31 @@ mod test {
         let config = get_kms_config(Some(iam_url.clone()), Some(kms_url));
 
         // Mock auth request
-        let mock_auth = iam_server.mock("POST", "/v3/auth/tokens")
+        let mock_auth = iam_server
+            .mock("POST", "/v3/auth/tokens")
             .with_status(201)
             .with_header(AUTH_HEADER, "fake_auth_header")
             .create();
 
-        let mock_encode = kms_server.mock("POST", "/v1.0/fake_project_id/kms/encrypt-data")
+        let mock_encode = kms_server
+            .mock("POST", "/v1.0/fake_project_id/kms/encrypt-data")
             .with_status(200)
             .match_header(SIGN_HEADER, "fake_auth_header")
             .with_body(r#"{"key_id": "123", "cipher_text": "encoded"}"#)
             .create();
 
         //create kms client
-        let kms_client = HuaweiCloudKMS::new(&config).expect("create huaweicloud client should be successful");
-        let result = kms_client.encode("raw_content".to_string()).await.expect("request invoke should be successful");
+        let kms_client =
+            HuaweiCloudKMS::new(&config).expect("create huaweicloud client should be successful");
+        let result = kms_client
+            .encode("raw_content".to_string())
+            .await
+            .expect("request invoke should be successful");
 
         assert_eq!("encoded", result);
         mock_auth.assert();
         mock_encode.assert();
     }
-
 
     #[tokio::test]
     async fn test_huaweicloud_decode_successful() {
@@ -292,20 +310,26 @@ mod test {
         let config = get_kms_config(Some(iam_url.clone()), Some(kms_url));
 
         // Mock auth request
-        let mock_auth = iam_server.mock("POST", "/v3/auth/tokens")
+        let mock_auth = iam_server
+            .mock("POST", "/v3/auth/tokens")
             .with_status(201)
             .with_header(AUTH_HEADER, "fake_auth_header")
             .create();
 
-        let mock_decode = kms_server.mock("POST", "/v1.0/fake_project_id/kms/decrypt-data")
+        let mock_decode = kms_server
+            .mock("POST", "/v1.0/fake_project_id/kms/decrypt-data")
             .with_status(200)
             .match_header(SIGN_HEADER, "fake_auth_header")
             .with_body(r#"{"key_id": "123", "plain_text": "decoded", "plain_text_base64": "123"}"#)
             .create();
 
         //create kms client
-        let kms_client = HuaweiCloudKMS::new(&config).expect("create huaweicloud client should be successful");
-        let result = kms_client.decode("raw_content".to_string()).await.expect("request invoke should be successful");
+        let kms_client =
+            HuaweiCloudKMS::new(&config).expect("create huaweicloud client should be successful");
+        let result = kms_client
+            .decode("raw_content".to_string())
+            .await
+            .expect("request invoke should be successful");
 
         assert_eq!("decoded", result);
         mock_auth.assert();
@@ -320,7 +344,8 @@ mod test {
         let config = get_kms_config(Some(url.clone()), None);
 
         // Mock auth request
-        let mock_auth = server.mock("POST", "/v3/auth/tokens")
+        let mock_auth = server
+            .mock("POST", "/v3/auth/tokens")
             .with_status(201)
             .create();
 
@@ -328,7 +353,8 @@ mod test {
         let fake_request = json!({
             "fake_attribute": "123",
         });
-        let mock_request = server.mock("POST", "/kms/fake_endpoint")
+        let mock_request = server
+            .mock("POST", "/kms/fake_endpoint")
             .with_status(200)
             .match_header(SIGN_HEADER, "fake_auth_header")
             .match_body(mockito::Matcher::Json(fake_request.clone()))
@@ -336,11 +362,19 @@ mod test {
             .create();
 
         //create kms client
-        let kms_client = HuaweiCloudKMS::new(&config).expect("create huaweicloud client should be successful");
-        kms_client.auth_token_cache.lock().await.push_str("fake_auth_header");
+        let kms_client =
+            HuaweiCloudKMS::new(&config).expect("create huaweicloud client should be successful");
+        kms_client
+            .auth_token_cache
+            .lock()
+            .await
+            .push_str("fake_auth_header");
 
         let request_url = format!("{}/kms/fake_endpoint", url);
-        let result = kms_client.do_request(&request_url, &fake_request).await.expect("request invoke should be successful");
+        let result = kms_client
+            .do_request(&request_url, &fake_request)
+            .await
+            .expect("request invoke should be successful");
         let decoded: DecodeData = serde_json::from_value(result).expect("deserialize should ok");
 
         assert_eq!("123", decoded.key_id);
@@ -359,7 +393,8 @@ mod test {
         let config = get_kms_config(Some(url.clone()), None);
 
         // Mock auth request
-        let mock_auth = server.mock("POST", "/v3/auth/tokens")
+        let mock_auth = server
+            .mock("POST", "/v3/auth/tokens")
             .with_status(201)
             .with_header(AUTH_HEADER, "fake_auth_header")
             .create();
@@ -368,7 +403,8 @@ mod test {
         let fake_request = json!({
             "fake_attribute": "123",
         });
-        let mock_request = server.mock("POST", "/kms/decrypt-data")
+        let mock_request = server
+            .mock("POST", "/kms/decrypt-data")
             .with_status(200)
             .match_header(SIGN_HEADER, "fake_auth_header")
             .match_body(mockito::Matcher::Json(fake_request.clone()))
@@ -376,9 +412,13 @@ mod test {
             .create();
 
         //create kms client
-        let kms_client = HuaweiCloudKMS::new(&config).expect("create huaweicloud client should be successful");
+        let kms_client =
+            HuaweiCloudKMS::new(&config).expect("create huaweicloud client should be successful");
         let request_url = format!("{}/kms/decrypt-data", url);
-        let result = kms_client.do_request(&request_url, &fake_request).await.expect("request invoke should be successful");
+        let result = kms_client
+            .do_request(&request_url, &fake_request)
+            .await
+            .expect("request invoke should be successful");
         let decoded: DecodeData = serde_json::from_value(result).expect("deserialize should ok");
 
         assert_eq!("123", decoded.key_id);
@@ -397,7 +437,8 @@ mod test {
         let config = get_kms_config(Some(url.clone()), None);
 
         // Mock auth request
-        let mock_auth = server.mock("POST", "/v3/auth/tokens")
+        let mock_auth = server
+            .mock("POST", "/v3/auth/tokens")
             .with_status(201)
             .with_header(AUTH_HEADER, "fake_auth_header")
             .create();
@@ -406,7 +447,8 @@ mod test {
         let fake_request = json!({
             "fake_attribute": "123",
         });
-        let mock_request = server.mock("POST", "/kms/fake_endpoint")
+        let mock_request = server
+            .mock("POST", "/kms/fake_endpoint")
             .with_status(403)
             .match_header(SIGN_HEADER, "fake_auth_header")
             .match_body(mockito::Matcher::Json(fake_request.clone()))
@@ -414,9 +456,13 @@ mod test {
             .create();
 
         //create kms client
-        let kms_client = HuaweiCloudKMS::new(&config).expect("create huaweicloud client should be successful");
+        let kms_client =
+            HuaweiCloudKMS::new(&config).expect("create huaweicloud client should be successful");
         let request_url = format!("{}/kms/fake_endpoint", url);
-        let _result = kms_client.do_request(&request_url, &fake_request).await.expect_err("always failed to invoke request");
+        let _result = kms_client
+            .do_request(&request_url, &fake_request)
+            .await
+            .expect_err("always failed to invoke request");
 
         //auth and request should be invoked twice.
         mock_auth.expect_at_least(2).assert();
@@ -431,16 +477,21 @@ mod test {
         let config = get_kms_config(Some(url), None);
 
         // Create a mock server
-        let mock = server.mock("POST", "/v3/auth/tokens")
+        let mock = server
+            .mock("POST", "/v3/auth/tokens")
             .with_status(500)
             .create();
 
         //create kms client
-        let kms_client = HuaweiCloudKMS::new(&config).expect("create huaweicloud client should be successful");
+        let kms_client =
+            HuaweiCloudKMS::new(&config).expect("create huaweicloud client should be successful");
 
         //test auth request
         assert_eq!(true, kms_client.auth_token_cache.lock().await.is_empty());
-        kms_client.auth_request().await.expect_err("auth request failed with 500 status code");
+        kms_client
+            .auth_request()
+            .await
+            .expect_err("auth request failed with 500 status code");
         mock.assert();
     }
 
@@ -476,19 +527,27 @@ mod test {
         });
 
         // Create a mock server
-        let mock = server.mock("POST", "/v3/auth/tokens")
+        let mock = server
+            .mock("POST", "/v3/auth/tokens")
             .with_status(201)
             .with_header(AUTH_HEADER, "fake_auth_header")
             .match_body(mockito::Matcher::Json(request_body))
             .create();
 
         //create kms client
-        let kms_client = HuaweiCloudKMS::new(&config).expect("create huaweicloud client should be successful");
+        let kms_client =
+            HuaweiCloudKMS::new(&config).expect("create huaweicloud client should be successful");
 
         //test auth request
         assert_eq!(true, kms_client.auth_token_cache.lock().await.is_empty());
-        kms_client.auth_request().await.expect("auth request should be successful");
-        assert_eq!("fake_auth_header", kms_client.auth_token_cache.lock().await.as_str());
+        kms_client
+            .auth_request()
+            .await
+            .expect("auth request should be successful");
+        assert_eq!(
+            "fake_auth_header",
+            kms_client.auth_token_cache.lock().await.as_str()
+        );
         mock.assert();
     }
 }
