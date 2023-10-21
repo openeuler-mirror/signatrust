@@ -61,7 +61,7 @@ sha2 = "0.10.6"
 bincode = "2.0.0-rc.3"
 secstr = "0.5.1"
 openssl-sys = "0.9.90"
-openssl= "0.10.55"
+openssl= { version = "0.10.55", features = ["vendored"]}
 foreign-types-shared = "0.1.1"
 actix-identity = "0.5.2"
 actix-session = { version = "0.7.2", features = ["redis-rs-session"]}
