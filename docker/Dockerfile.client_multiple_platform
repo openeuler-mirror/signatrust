@@ -1,0 +1,11 @@
+FROM rust:latest
+ARG BINARY
+ARG PLATFORM
+LABEL Author=TommyLike<tommylikehu@gmail.com>
+WORKDIR /app
+COPY .. /app
+
+RUN apt update -y && apt install crossbuild-essential-arm64 libssl-dev protobuf-compiler -y
+RUN rustup target add $PLATFORM
+RUN cargo build --release --bin $BINARY --target $PLATFORM
+
