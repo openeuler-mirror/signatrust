@@ -30,7 +30,7 @@ use openssl::pkey::PKey;
 use openssl::stack::Stack;
 use openssl::x509;
 use openssl::x509::extension::{
-    AuthorityKeyIdentifier, BasicConstraints, KeyUsage, SubjectKeyIdentifier,
+    AuthorityKeyIdentifier, BasicConstraints, ExtendedKeyUsage, KeyUsage, SubjectKeyIdentifier,
 };
 use openssl::x509::{X509Crl, X509Extension};
 use openssl_sys::{
@@ -329,12 +329,13 @@ impl X509Plugin {
                 .critical()
                 .build()?,
         )?;
-        generator.append_extension(X509Extension::new_nid(
-            None,
-            None,
-            Nid::CRL_DISTRIBUTION_POINTS,
-            &self.generate_crl_endpoint(&self.parent_key.clone().unwrap().name, infra_config)?,
-        )?)?;
+        //NOTE: sbverify for EFI file will fail, enable when fixed
+        // generator.append_extension(X509Extension::new_nid(
+        //     None,
+        //     None,
+        //     Nid::CRL_DISTRIBUTION_POINTS,
+        //     &self.generate_crl_endpoint(&self.parent_key.clone().unwrap().name, infra_config)?,
+        // )?)?;
         generator.append_extension(X509Extension::new_nid(
             None,
             None,
@@ -432,12 +433,14 @@ impl X509Plugin {
                 .critical()
                 .build()?,
         )?;
-        generator.append_extension(X509Extension::new_nid(
-            None,
-            None,
-            Nid::CRL_DISTRIBUTION_POINTS,
-            &self.generate_crl_endpoint(&self.parent_key.clone().unwrap().name, infra_config)?,
-        )?)?;
+        generator.append_extension(ExtendedKeyUsage::new().code_signing().build()?)?;
+        //NOTE: sbverify for EFI file will fail, enable when fixed
+        // generator.append_extension(X509Extension::new_nid(
+        //     None,
+        //     None,
+        //     Nid::CRL_DISTRIBUTION_POINTS,
+        //     &self.generate_crl_endpoint(&self.parent_key.clone().unwrap().name, infra_config)?,
+        // )?)?;
         generator.append_extension(X509Extension::new_nid(
             None,
             None,

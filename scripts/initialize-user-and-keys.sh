@@ -23,19 +23,19 @@ function create_default_admin {
 function create_default_x509_ca {
   echo "start to create default x509 CA identified with default-x509"
   RUST_LOG=info ./target/debug/control-admin --config ./config/server.toml generate-keys --name default-x509ca --description "used for test purpose only" --key-type x509ca --email tommylikehu@gmail.com --param-key-type rsa --param-key-size 2048 \
-  --param-x509-common-name Infra --param-x509-organization Huawei --param-x509-locality ShenZhen --param-x509-province-name GuangDong --param-x509-country-name CN --param-x509-organizational-unit Infra --digest-algorithm sha2_256 --visibility public
+  --param-x509-common-name Infra --param-x509-organization Huawei --param-x509-locality ShenZhen --param-x509-province-name GuangDong --param-x509-country-name CN --param-x509-organizational-unit "Infra CA" --digest-algorithm sha2_256 --visibility public
 }
 
 function create_default_x509_ica {
   echo "start to create default x509 ICA identified with default-x509"
   RUST_LOG=info ./target/debug/control-admin --config ./config/server.toml generate-keys --name default-x509ica --description "used for test purpose only" --key-type x509ica --email tommylikehu@gmail.com --param-key-type rsa --param-key-size 2048 \
-  --param-x509-common-name Infra --param-x509-organization Huawei --param-x509-locality ShenZhen --param-x509-province-name GuangDong --param-x509-country-name CN --param-x509-organizational-unit Infra --digest-algorithm sha2_256 --param-x509-parent-name default-x509ca --visibility public
+  --param-x509-common-name Infra --param-x509-organization Huawei --param-x509-locality ShenZhen --param-x509-province-name GuangDong --param-x509-country-name CN --param-x509-organizational-unit "Infra ICA" --digest-algorithm sha2_256 --param-x509-parent-name default-x509ca --visibility public
 }
 
 function create_default_x509_ee {
   echo "start to create default x509 EE certificate identified with default-x509"
   RUST_LOG=info ./target/debug/control-admin --config ./config/server.toml generate-keys --name default-x509ee --description "used for test purpose only" --key-type x509ee --email tommylikehu@gmail.com --param-key-type rsa --param-key-size 2048 \
-  --param-x509-common-name Infra --param-x509-organization Huawei --param-x509-locality ShenZhen --param-x509-province-name GuangDong --param-x509-country-name CN --param-x509-organizational-unit Infra --digest-algorithm sha2_256 --param-x509-parent-name default-x509ica --visibility public
+  --param-x509-common-name Infra --param-x509-organization Huawei --param-x509-locality ShenZhen --param-x509-province-name GuangDong --param-x509-country-name CN --param-x509-organizational-unit "Infra EE" --digest-algorithm sha2_256 --param-x509-parent-name default-x509ica --visibility public
 }
 
 function create_default_openpgp_rsa {
