@@ -72,7 +72,7 @@ url = "2.3.1"
 futures = "0.3.26"
 utoipa = { version = "3", features = ["actix_extras"] }
 utoipa-swagger-ui = { version ="3.1.3", features = ["actix-web"]}
-efi_signer = "0.2.4"
+efi_signer = "0.2.5"
 regex = "1"
 csrf= "0.4.1"
 data-encoding= "2.4.0"
