@@ -126,7 +126,7 @@ pub enum Error {
     BincodeError(String),
     #[error("failed to sign some of the files")]
     PartialSuccessError,
-    #[error("Error in sign or parse EFI image")]
+    #[error("Error in sign or parse EFI image: {0}")]
     EFIError(String),
     #[error("file content is empty")]
     FileContentEmpty,
