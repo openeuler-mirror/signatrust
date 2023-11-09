@@ -1,4 +1,4 @@
-FROM tommylike/signatrust-builder:0.0.1 as builder
+FROM tommylike/signatrust-builder:0.0.2 as builder
 ARG BINARY
 LABEL Author=TommyLike<tommylikehu@gmail.com>
 WORKDIR /app
