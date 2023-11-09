@@ -2,7 +2,7 @@ FROM openeuler/openeuler:22.03
 LABEL Author=TommyLike<tommylikehu@gmail.com>
 
 # Install requirements
-RUN yum -y update && yum install -y openssl-devel openssl protobuf-compiler gcc
+RUN yum -y update && yum install -y openssl-devel openssl protobuf-compiler gcc perl make
 RUN curl -sSL https://mirrors.ustc.edu.cn/misc/rustup-install.sh -sSf | sh -s -- -y --default-toolchain nightly -c rust-std -c rust-src
 RUN echo $'\n\
 [source.crates-io] \n\
@@ -10,5 +10,6 @@ replace-with = "mirror" \n\
 [source.mirror] \n\
 registry = "sparse+https://mirrors.tuna.tsinghua.edu.cn/crates.io-index/"' >> /root/.cargo/config
 
+RUN mkdir /app
 ENV PATH="/root/.cargo/bin:$PATH"
 ENTRYPOINT ["/usr/bin/bash"]
