@@ -5,8 +5,8 @@ buffer_size = 20480
 max_concurrency = 100
 [server]
 domain_name = "signatrust.test.osinfra.cn"
-tls_cert = "/Users/tommylike/Work/codes/rust-projects/signatrust/.data/certs/client/server.crt"
-tls_key = "/Users/tommylike/Work/codes/rust-projects/signatrust/.data/certs/client/server.key"
+tls_cert = "/Users/tommylike/Work/codes/rust-projects/gitee-signatrust/signatrust/.data/certs/client/server.crt"
+tls_key = "/Users/tommylike/Work/codes/rust-projects/gitee-signatrust/signatrust/.data/certs/client/server.key"
 type = "single"
 server_address = "0.0.0.0"
 server_port = "8088"
@@ -18,8 +18,8 @@ server_port = "8088"
 # ==============================================
 # configuration to use signatrust test server
 # domain_name = "signatrust-data-server.test.osinfra.cn"
-# tls_cert = "/Users/tommylike/Work/codes/rust-projects/signatrust/.data/certs/client/server.crt"
-# tls_key = "/Users/tommylike/Work/codes/rust-projects/signatrust/.data/certs/client/server.key"
+# tls_cert = "/Users/tommylike/Work/codes/rust-projects/gitee-signatrust/signatrust/.data/certs/client/server.crt"
+# tls_key = "/Users/tommylike/Work/codes/rust-projects/gitee-signatrust/signatrust/.data/certs/client/server.key"
 # type = "single"
 # server_address = "signatrust-data-server.test.osinfra.cn"
 # server_port = "443"
