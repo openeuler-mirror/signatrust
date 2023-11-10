@@ -124,16 +124,30 @@ RUST_BACKTRACE=1 RUST_LOG=debug ./target/debug/client -c client.toml add --file-
 ```
 
 # Verify the EFI file
+## Using sbsigntools
 - first we should compile `sbsigntools`
 ```
+sudo dnf in gcc automake autoconf make binutils-devel gnu-efi gnu-efi-devel help2man # buildrequires on openEuler 22.03
 git clone https://git.kernel.org/pub/scm/linux/kernel/git/jejb/sbsigntools.git
 cd sbsigntools
 git submodule init && git submodule update
-make
+./autogen.sh && ./configure && make
 ```
 - verify the signed EFI image using the certificate we exported
 ```
 $ src/sbverify `pwd`/shimx64.efi --cert certificate
 warning: data remaining[827688 vs 953240]: gaps between PE/COFF sections?
 Signature verification OK
+```
+
+## Using pesign
+- Install pesign
+```
+sudo dnf in -y pesign nss-utils openssl
+```
+- verify the signed EFI image using pesign
+```
+openssl x509 -in certificate -inform PEM -out cert.der -outform DER
+pesigcheck -i `pwd`/shimx64.efi -c cert.der
+pesigcheck: "shimx64.efi" is valid.
 ```
