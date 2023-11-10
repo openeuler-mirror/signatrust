@@ -555,6 +555,8 @@ impl SignPlugins for X509Plugin {
                 .unwrap_or(&SignType::Cms.to_string()),
         )? {
             SignType::Authenticode => {
+                debug!("cert info: {:#?}", certificate);
+
                 let p7b = efi_signer::EfiImage::pem_to_p7(self.certificate.unsecure())?;
                 Ok(efi_signer::EfiImage::do_sign_signature(
                     content,
