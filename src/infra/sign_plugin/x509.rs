@@ -222,7 +222,6 @@ impl X509Plugin {
         generator.append_extension(
             AuthorityKeyIdentifier::new()
                 .keyid(true)
-                .issuer(true)
                 .build(&generator.x509v3_context(None, None))?,
         )?;
         generator.append_extension(
@@ -318,7 +317,6 @@ impl X509Plugin {
         generator.append_extension(
             AuthorityKeyIdentifier::new()
                 .keyid(true)
-                .issuer(true)
                 .build(&generator.x509v3_context(Some(ca_cert.as_ref()), None))?,
         )?;
         generator.append_extension(
@@ -422,7 +420,6 @@ impl X509Plugin {
         generator.append_extension(
             AuthorityKeyIdentifier::new()
                 .keyid(true)
-                .issuer(true)
                 .build(&generator.x509v3_context(Some(ca_cert.as_ref()), None))?,
         )?;
         generator.append_extension(
