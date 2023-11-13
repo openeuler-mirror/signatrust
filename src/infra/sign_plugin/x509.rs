@@ -422,15 +422,16 @@ impl X509Plugin {
                 .keyid(true)
                 .build(&generator.x509v3_context(Some(ca_cert.as_ref()), None))?,
         )?;
-        generator.append_extension(
-            KeyUsage::new()
-                .crl_sign()
-                .digital_signature()
-                .key_cert_sign()
-                .critical()
-                .build()?,
-        )?;
         generator.append_extension(ExtendedKeyUsage::new().code_signing().build()?)?;
+        //NOTE: then signing cert should not contain any key usage extension
+        //generator.append_extension(
+        //    KeyUsage::new()
+        //        .crl_sign()
+        //        .digital_signature()
+        //        .key_cert_sign()
+        //        .critical()
+        //        .build()?,
+        //)?;
         //NOTE: sbverify for EFI file will fail, enable when fixed
         // generator.append_extension(X509Extension::new_nid(
         //     None,
@@ -555,9 +556,20 @@ impl SignPlugins for X509Plugin {
                 .unwrap_or(&SignType::Cms.to_string()),
         )? {
             SignType::Authenticode => {
-                debug!("cert info: {:#?}", certificate);
+                let mut bufs: Vec<Vec<u8>> = vec![];
+                if self.parent_key.is_some() {
+                    bufs.push(
+                        self.parent_key
+                            .clone()
+                            .unwrap()
+                            .certificate
+                            .unsecure()
+                            .to_vec(),
+                    );
+                }
+                bufs.push(self.certificate.unsecure().to_vec());
 
-                let p7b = efi_signer::EfiImage::pem_to_p7(self.certificate.unsecure())?;
+                let p7b = efi_signer::EfiImage::pems_to_p7(bufs)?;
                 Ok(efi_signer::EfiImage::do_sign_signature(
                     content,
                     p7b,
