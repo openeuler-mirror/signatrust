@@ -236,11 +236,11 @@ impl SignPlugins for OpenPGPPlugin {
 
     fn sign(&self, content: Vec<u8>, options: HashMap<String, String>) -> Result<Vec<u8>> {
         let mut digest = HashAlgorithm::SHA2_256;
-        if let Some(digest_str) = options.get("digest_algorithm") {
+        if let Some(digest_str) = self.attributes.get("digest_algorithm") {
             digest = OpenPGPDigestAlgorithm::from_str(digest_str)?.get_real_algorithm();
         }
         let passwd_fn = || {
-            return match options.get("passphrase") {
+            return match self.attributes.get("passphrase") {
                 None => String::new(),
                 Some(password) => password.to_string(),
             };
