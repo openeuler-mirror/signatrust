@@ -19,12 +19,17 @@ builder-image:
 client-image:
 	docker build -t tommylike/signatrust-client:$(GIT_COMMIT) --build-arg BINARY=client -f docker/Dockerfile .
 
-client-publish: client-publish-x86-64 client-publish-aarch64
+client-publish: client-publish-glibc-x86-64 client-publish-glibc-aarch64 client-publish-musl-x86-64 client-publish-musl-aarch64
 
-client-publish-x86-64:
-	docker build -t tommylike/signatrust-client-linux-x86-64:$(GIT_COMMIT) --build-arg BINARY=client --build-arg PLATFORM=x86_64-unknown-linux-gnu -f docker/Dockerfile.client_multiple_platform .
-client-publish-aarch64:
-	docker build -t tommylike/signatrust-client-linux-aarch64:$(GIT_COMMIT) --build-arg BINARY=client --build-arg PLATFORM=aarch64-unknown-linux-gnu -f docker/Dockerfile.client_multiple_platform .
+client-publish-glibc-x86-64:
+	docker build -t tommylike/signatrust-client-linux-glibc-x86-64:$(GIT_COMMIT) --build-arg BINARY=client --build-arg PLATFORM=x86_64-unknown-linux-gnu -f docker/Dockerfile.client_glibc .
+client-publish-glibc-aarch64:
+	docker build -t tommylike/signatrust-client-linux-glibc-aarch64:$(GIT_COMMIT) --build-arg BINARY=client --build-arg PLATFORM=aarch64-unknown-linux-gnu -f docker/Dockerfile.client_glibc .
+
+client-publish-musl-x86-64:
+	docker build -t tommylike/signatrust-client-linux-musl-x86-64:$(GIT_COMMIT) --build-arg BINARY=client -f docker/Dockerfile.client_musl_x86_64 .
+client-publish-musl-aarch64:
+	docker build -t tommylike/signatrust-client-linux-musl-aarch64:$(GIT_COMMIT) --build-arg BINARY=client -f docker/Dockerfile.client_musl_aarch64 .
 
 data-server-image:
 	docker build -t tommylike/signatrust-data-server:$(GIT_COMMIT) --build-arg BINARY=data-server -f docker/Dockerfile.data-server .

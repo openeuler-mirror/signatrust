@@ -1,0 +1,9 @@
+FROM messense/rust-musl-cross:x86_64-musl
+LABEL Author=TommyLike<tommylikehu@gmail.com>
+ARG BINARY
+WORKDIR /app
+COPY .. /app
+
+RUN apt update -y && apt install libssl-dev protobuf-compiler -y
+RUN rustup target add x86_64-unknown-linux-musl
+RUN cargo build --release --bin $BINARY --target x86_64-unknown-linux-musl

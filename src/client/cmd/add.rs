@@ -47,7 +47,8 @@ lazy_static! {
         //Generic file can be used for any file
         (FileType::Generic, vec![".*"]),
         (FileType::KernelModule, vec!["ko"]),
-        (FileType::EfiImage, vec!["efi"]),
+        //efi file could be a file without extension
+        (FileType::EfiImage, vec![".*"]),
     ]);
 }
 
