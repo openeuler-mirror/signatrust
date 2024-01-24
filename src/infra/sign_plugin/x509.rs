@@ -278,7 +278,7 @@ impl X509Plugin {
     #[allow(deprecated)]
     fn generate_x509ica_keys(
         &self,
-        infra_config: &HashMap<String, String>,
+        _infra_config: &HashMap<String, String>,
     ) -> Result<DataKeyContent> {
         let parameter = attributes_validate::<X509KeyGenerationParameter>(&self.attributes)?;
         //load the ca certificate and private key
@@ -381,7 +381,7 @@ impl X509Plugin {
     #[allow(deprecated)]
     fn generate_x509ee_keys(
         &self,
-        infra_config: &HashMap<String, String>,
+        _infra_config: &HashMap<String, String>,
     ) -> Result<DataKeyContent> {
         let parameter = attributes_validate::<X509KeyGenerationParameter>(&self.attributes)?;
         //load the ca certificate and private key
