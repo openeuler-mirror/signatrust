@@ -142,14 +142,31 @@ impl CommandAddHandler {
                 }
             }
             return Ok(container);
-        } else if self.file_candidates(self.path.extension().unwrap().to_str().unwrap())? {
-            return Ok(vec![sign_identity::SignIdentity::new(
-                self.file_type.clone(),
-                self.path.clone(),
-                self.key_type.clone(),
-                self.key_name.clone(),
-                self.get_sign_options(),
-            )]);
+        } else {
+            match self.path.extension() {
+                Some(extension) => {
+                    if self.file_candidates(extension.to_str().unwrap()).is_ok() {
+                        return Ok(vec![sign_identity::SignIdentity::new(
+                            self.file_type.clone(),
+                            self.path.clone(),
+                            self.key_type.clone(),
+                            self.key_name.clone(),
+                            self.get_sign_options(),
+                        )]);
+                    }
+                }
+                None => {
+                    if self.file_candidates("").is_ok() {
+                        return Ok(vec![sign_identity::SignIdentity::new(
+                            self.file_type.clone(),
+                            self.path.clone(),
+                            self.key_type.clone(),
+                            self.key_name.clone(),
+                            self.get_sign_options(),
+                        )]);
+                    }
+                }
+            }
         }
         Err(error::Error::NoFileCandidateError)
     }
