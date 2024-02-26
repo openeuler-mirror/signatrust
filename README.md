@@ -103,15 +103,13 @@ This project consists of several binaries:
 
 # Quick Start Guide
 ## Local development
-There are two ways to setup a local development enviroment:
+There are two ways to setup a local development environment:
 - Build and run binary directly:
 
-   Run these commands correspondingly to build or run project executable binary:
+   Run these commands correspondingly to build service binary:
    ```shell
    # build binary
-   cargo build --bin control-server/data-server/client/control-admin
-   # running command
-   RUST_BACKTRACE=full RUST_LOG=debug ./target/debug/<binary> --config <config-file-path>
+   cargo build --bin control-server/data-server/client/control-admin   
    ```
 
    Additionally, we have developed a script to set up the MySQL database in a Docker environment. To use the script, you will
@@ -120,10 +118,28 @@ There are two ways to setup a local development enviroment:
    ```shell
    make db
    ```
-
+  
+    Finally, use the command below to generate the default user and token for test environment, including:
+    1.  generate default admin and it's token, used for API test
+    2.  generate default keys, `1default-x509-ca`, `default-x509-ica`, `default-x509-ee`, `default-pgp-rsa` and `default-pgp-eddsa`
+   ```shell
+   make init
+   ```
+    Then we can start the control-server and data-server with default config file in config folder:
+    ```shell
+    # running command
+    RUST_BACKTRACE=full RUST_LOG=debug ./target/debug/control-server --config <path-to-default-sever-config-file>
+    # running command
+    RUST_BACKTRACE=full RUST_LOG=debug ./target/debug/data-server --config <path-to-default-server-config-file>
+    ```
+    The control-server will start at `localhost:8080` and the data-server will start at `localhost:8088` and both start without ssl enabled.
+    For the last step, use client to sign a generic file
+    ```shell
+    RUST_BACKTRACE=FULL RUST_LOG=info ./target/debug/client --config <path-to-default-client-config-file> add  --key-name default-pgp-rsa --file-type generic  --key-type pgp .data/test --detached
+    ```
 - Using docker compose:
 
-   Alternately, you can using `docker compose` to setup a develop environment easily:
+   Alternately, you can use `docker compose` to setup a develop environment easily:
    ```bash
    docker compose up
    ```
