@@ -420,18 +420,17 @@ impl X509Plugin {
         generator.append_extension(
             AuthorityKeyIdentifier::new()
                 .keyid(true)
+                .issuer(true)
                 .build(&generator.x509v3_context(Some(ca_cert.as_ref()), None))?,
         )?;
         generator.append_extension(ExtendedKeyUsage::new().code_signing().build()?)?;
         //NOTE: then signing cert should not contain any key usage extension
-        //generator.append_extension(
-        //    KeyUsage::new()
-        //        .crl_sign()
-        //        .digital_signature()
-        //        .key_cert_sign()
-        //        .critical()
-        //        .build()?,
-        //)?;
+        generator.append_extension(
+           KeyUsage::new()
+               .digital_signature()
+               .non_repudiation()
+               .build()?,
+        )?;
         //NOTE: sbverify for EFI file will fail, enable when fixed
         // generator.append_extension(X509Extension::new_nid(
         //     None,
