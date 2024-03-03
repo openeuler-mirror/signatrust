@@ -47,7 +47,7 @@ use crate::domain::datakey::entity::{
     INFRA_CONFIG_DOMAIN_NAME,
 };
 use crate::domain::datakey::plugins::x509::{
-    X509DigestAlgorithm, X509KeyType, X509_VALID_KEY_SIZE, X509EEUsage
+    X509DigestAlgorithm, X509EEUsage, X509KeyType, X509_VALID_KEY_SIZE,
 };
 use crate::domain::sign_plugin::SignPlugins;
 use crate::util::error::{Error, Result};
@@ -220,6 +220,8 @@ impl X509Plugin {
         generator.append_extension(
             SubjectKeyIdentifier::new().build(&generator.x509v3_context(None, None))?,
         )?;
+        //NOTE: for efi certificate the authority key identifier should only be the keyid
+        //TODO: need to confirm whether issuer should be included for other cases.
         generator.append_extension(
             AuthorityKeyIdentifier::new()
                 .keyid(true)
@@ -267,7 +269,7 @@ impl X509Plugin {
         })
     }
 
-    //The openssl config for ca would be like:
+    //The openssl config for ica would be like:
     // [ v3_ica ]
     // basicConstraints        = critical, CA:TRUE, pathlen:0
     // subjectKeyIdentifier    = hash
@@ -315,6 +317,8 @@ impl X509Plugin {
             SubjectKeyIdentifier::new()
                 .build(&generator.x509v3_context(Some(ca_cert.as_ref()), None))?,
         )?;
+        //NOTE: for efi certificate the authority key identifier should only be the keyid
+        //TODO: need to confirm whether issuer should be included for other cases.
         generator.append_extension(
             AuthorityKeyIdentifier::new()
                 .keyid(true)
@@ -391,11 +395,10 @@ impl X509Plugin {
                 "parent key is not provided".to_string(),
             ));
         }
-        let ca_key =
+        let ica_key =
             PKey::private_key_from_pem(self.parent_key.clone().unwrap().private_key.unsecure())?;
         let ca_cert =
             x509::X509::from_pem(self.parent_key.clone().unwrap().certificate.unsecure())?;
-        //generate self signed certificate
         let keys = parameter
             .key_type
             .get_real_key_type(parameter.key_length.parse()?)?;
@@ -419,6 +422,7 @@ impl X509Plugin {
                 .build(&generator.x509v3_context(Some(ca_cert.as_ref()), None))?,
         )?;
         //NOTE: for efi certificate the authority key identifier should only be the keyid
+        //TODO: need to confirm whether issuer should be included for other cases.
         if parameter.x509_ee_usage == X509EEUsage::Efi {
             generator.append_extension(
                 AuthorityKeyIdentifier::new()
@@ -464,7 +468,7 @@ impl X509Plugin {
             "objsign",
         )?)?;
         generator.sign(
-            ca_key.as_ref(),
+            ica_key.as_ref(),
             parameter.digest_algorithm.get_real_algorithm(),
         )?;
         let cert = generator.build();
