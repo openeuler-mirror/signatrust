@@ -47,7 +47,7 @@ use crate::domain::datakey::entity::{
     INFRA_CONFIG_DOMAIN_NAME,
 };
 use crate::domain::datakey::plugins::x509::{
-    X509DigestAlgorithm, X509KeyType, X509_VALID_KEY_SIZE,
+    X509DigestAlgorithm, X509KeyType, X509_VALID_KEY_SIZE, X509EEUsage
 };
 use crate::domain::sign_plugin::SignPlugins;
 use crate::util::error::{Error, Result};
@@ -97,6 +97,7 @@ pub struct X509KeyGenerationParameter {
         message = "invalid x509 attribute 'expire_at'"
     ))]
     expire_at: String,
+    x509_ee_usage: X509EEUsage,
 }
 
 #[derive(Debug, Validate, Deserialize)]
@@ -417,20 +418,32 @@ impl X509Plugin {
             SubjectKeyIdentifier::new()
                 .build(&generator.x509v3_context(Some(ca_cert.as_ref()), None))?,
         )?;
-        generator.append_extension(
-            AuthorityKeyIdentifier::new()
-                .keyid(true)
-                .issuer(true)
-                .build(&generator.x509v3_context(Some(ca_cert.as_ref()), None))?,
-        )?;
+        //NOTE: for efi certificate the authority key identifier should only be the keyid
+        if parameter.x509_ee_usage == X509EEUsage::Efi {
+            generator.append_extension(
+                AuthorityKeyIdentifier::new()
+                    .keyid(true)
+                    .build(&generator.x509v3_context(Some(ca_cert.as_ref()), None))?,
+            )?;
+        } else {
+            generator.append_extension(
+                AuthorityKeyIdentifier::new()
+                    .keyid(true)
+                    .issuer(true)
+                    .build(&generator.x509v3_context(Some(ca_cert.as_ref()), None))?,
+            )?;
+        }
+
         generator.append_extension(ExtendedKeyUsage::new().code_signing().build()?)?;
-        //NOTE: then signing cert should not contain any key usage extension
-        generator.append_extension(
-           KeyUsage::new()
-               .digital_signature()
-               .non_repudiation()
-               .build()?,
-        )?;
+        //NOTE: then signing cert for efi should not contain any key usage extension
+        if parameter.x509_ee_usage == X509EEUsage::Ko {
+            generator.append_extension(
+                KeyUsage::new()
+                    .digital_signature()
+                    .non_repudiation()
+                    .build()?,
+            )?;
+        }
         //NOTE: sbverify for EFI file will fail, enable when fixed
         // generator.append_extension(X509Extension::new_nid(
         //     None,

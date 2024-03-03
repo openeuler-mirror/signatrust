@@ -137,6 +137,9 @@ pub struct CreateDataKeyDTO {
     /// Expire utc time, format: 2023-04-08 13:36:35.328324 UTC
     #[validate(custom = "validate_utc_time")]
     pub expire_at: String,
+    /// Expire utc time, format: 2023-04-08 13:36:35.328324 UTC
+    #[validate(custom = "validate_utc_time")]
+    pub key_: String,
 }
 
 #[derive(Debug, Validate, Deserialize, ToSchema)]
