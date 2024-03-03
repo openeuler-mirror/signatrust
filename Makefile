@@ -1,4 +1,5 @@
 GIT_COMMIT=$(shell git rev-parse --verify HEAD)
+REGISTRY_NAME = ${REGISTRY_NAME_ENV}
 
 ## Prepare the redis database
 redis:
@@ -14,34 +15,42 @@ init:
 	./scripts/initialize-user-and-keys.sh
 
 builder-image:
-	docker build -t tommylike/signatrust-builder:$(GIT_COMMIT) -f docker/Dockerfile.openeuler .
+	docker build -t $(REGISTRY_NAME)/signatrust-builder:$(GIT_COMMIT) -f docker/Dockerfile.openeuler .
 
 client-image:
-	docker build -t tommylike/signatrust-client:$(GIT_COMMIT) --build-arg BINARY=client -f docker/Dockerfile .
+	docker build -t $(REGISTRY_NAME)/signatrust-client:$(GIT_COMMIT) --build-arg BINARY=client -f docker/Dockerfile .
 
 client-publish: client-publish-glibc-x86-64 client-publish-glibc-aarch64 client-publish-musl-x86-64 client-publish-musl-aarch64
 
 client-publish-glibc-x86-64:
-	docker build -t tommylike/signatrust-client-linux-glibc-x86-64:$(GIT_COMMIT) --build-arg BINARY=client --build-arg PLATFORM=x86_64-unknown-linux-gnu -f docker/Dockerfile.client_glibc .
+	docker build -t $(REGISTRY_NAME)/signatrust-client-linux-glibc-x86-64:$(GIT_COMMIT) --build-arg BINARY=client --build-arg PLATFORM=x86_64-unknown-linux-gnu -f docker/Dockerfile.client_glibc .
 client-publish-glibc-aarch64:
-	docker build -t tommylike/signatrust-client-linux-glibc-aarch64:$(GIT_COMMIT) --build-arg BINARY=client --build-arg PLATFORM=aarch64-unknown-linux-gnu -f docker/Dockerfile.client_glibc .
+	docker build -t $(REGISTRY_NAME)/signatrust-client-linux-glibc-aarch64:$(GIT_COMMIT) --build-arg BINARY=client --build-arg PLATFORM=aarch64-unknown-linux-gnu -f docker/Dockerfile.client_glibc .
 
 client-publish-musl-x86-64:
-	docker build -t tommylike/signatrust-client-linux-musl-x86-64:$(GIT_COMMIT) --build-arg BINARY=client -f docker/Dockerfile.client_musl_x86_64 .
+	docker build -t $(REGISTRY_NAME)/signatrust-client-linux-musl-x86-64:$(GIT_COMMIT) --build-arg BINARY=client -f docker/Dockerfile.client_musl_x86_64 .
 client-publish-musl-aarch64:
-	docker build -t tommylike/signatrust-client-linux-musl-aarch64:$(GIT_COMMIT) --build-arg BINARY=client -f docker/Dockerfile.client_musl_aarch64 .
+	docker build -t $(REGISTRY_NAME)/signatrust-client-linux-musl-aarch64:$(GIT_COMMIT) --build-arg BINARY=client -f docker/Dockerfile.client_musl_aarch64 .
 
-data-server-image:
-	docker build -t tommylike/signatrust-data-server:$(GIT_COMMIT) --build-arg BINARY=data-server -f docker/Dockerfile.data-server .
+build-data-server-image:
+	docker build -t $(REGISTRY_NAME)/signatrust-data-server:$(GIT_COMMIT) --build-arg BINARY=data-server -f docker/Dockerfile.data-server .
+push-data-server-image:
+	docker push $(REGISTRY_NAME)/signatrust-data-server:$(GIT_COMMIT)
 
-control-server-image:
-	docker build -t tommylike/signatrust-control-server:$(GIT_COMMIT) --build-arg BINARY=control-server -f docker/Dockerfile.control-server .
+build-control-server-image:
+	docker build -t $(REGISTRY_NAME)/signatrust-control-server:$(GIT_COMMIT) --build-arg BINARY=control-server -f docker/Dockerfile.control-server .
+push-control-server-image:
+	docker push $(REGISTRY_NAME)/signatrust-control-server:$(GIT_COMMIT)
 
 control-admin-image:
-	docker build -t tommylike/signatrust-control-admin:$(GIT_COMMIT) --build-arg BINARY=control-admin -f docker/Dockerfile .
+	docker build -t $(REGISTRY_NAME)/signatrust-control-admin:$(GIT_COMMIT) --build-arg BINARY=control-admin -f docker/Dockerfile .
+push-control-admin-image:
+	docker push $(REGISTRY_NAME)/signatrust-control-admin:$(GIT_COMMIT)
 
 app-image:
-	docker build -t tommylike/signatrust-app:$(GIT_COMMIT) -f app/Dockerfile ./app
+	docker build -t $(REGISTRY_NAME)/signatrust-app:$(GIT_COMMIT) -f app/Dockerfile ./app
+push-app-image:
+	docker push $(REGISTRY_NAME)/signatrust-app:$(GIT_COMMIT)
 
 deploy-local:
 	kustomize build ./deploy | kubectl apply -f -
