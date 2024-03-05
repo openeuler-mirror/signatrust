@@ -22,7 +22,7 @@ use tokio::fs;
 
 #[async_trait]
 pub trait FileHandler: Send + Sync {
-    fn validate_options(&self, _sign_options: &HashMap<String, String>) -> Result<()>;
+    fn validate_options(&self, _sign_options: &mut HashMap<String, String>) -> Result<()>;
     async fn split_data(
         &self,
         path: &PathBuf,

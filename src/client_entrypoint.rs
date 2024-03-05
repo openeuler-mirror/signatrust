@@ -83,7 +83,7 @@ fn main() -> Result<()> {
         None => None,
     };
     //handler and quit
-    if let Some(handler) = command {
+    if let Some(mut handler) = command {
         if let Err(err) = handler.validate() {
             error!("failed to validate command: {}", err);
             return Err(err);

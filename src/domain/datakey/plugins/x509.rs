@@ -32,6 +32,11 @@ pub enum X509EEUsage {
     Ko,
 }
 
+impl Default for X509EEUsage {
+    fn default() -> Self {
+        X509EEUsage::Efi
+    }
+}
 impl FromStr for X509EEUsage {
     type Err = Error;
     fn from_str(s: &str) -> Result<Self> {

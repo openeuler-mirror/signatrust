@@ -25,6 +25,6 @@ pub trait SignCommand: Clone {
         config: Arc<RwLock<Config>>,
         command: Self::CommandValue,
     ) -> Result<Self>;
-    fn validate(&self) -> Result<()>;
+    fn validate(&mut self) -> Result<()>;
     fn handle(&self) -> Result<bool>;
 }

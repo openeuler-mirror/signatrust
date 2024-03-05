@@ -157,7 +157,7 @@ impl KernelModuleFileHandler {
 
 #[async_trait]
 impl FileHandler for KernelModuleFileHandler {
-    fn validate_options(&self, sign_options: &HashMap<String, String>) -> Result<()> {
+    fn validate_options(&self, sign_options: &mut HashMap<String, String>) -> Result<()> {
         if let Some(key_type) = sign_options.get(options::KEY_TYPE) {
             if key_type != KeyType::X509EE.to_string().as_str() {
                 return Err(Error::InvalidArgumentError(
@@ -175,6 +175,7 @@ impl FileHandler for KernelModuleFileHandler {
                 ));
             }
         }
+        sign_options.insert(options::INCLUDE_PARENT_CERT.to_string(), "false".to_string());
         Ok(())
     }
 

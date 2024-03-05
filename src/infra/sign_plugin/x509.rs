@@ -97,7 +97,8 @@ pub struct X509KeyGenerationParameter {
         message = "invalid x509 attribute 'expire_at'"
     ))]
     expire_at: String,
-    x509_ee_usage: X509EEUsage,
+    #[serde(skip_serializing_if = "Option::is_None")]
+    x509_ee_usage: Option<X509EEUsage>,
 }
 
 #[derive(Debug, Validate, Deserialize)]
@@ -423,24 +424,24 @@ impl X509Plugin {
         )?;
         //NOTE: for efi certificate the authority key identifier should only be the keyid
         //TODO: need to confirm whether issuer should be included for other cases.
-        if parameter.x509_ee_usage == X509EEUsage::Efi {
-            generator.append_extension(
-                AuthorityKeyIdentifier::new()
-                    .keyid(true)
-                    .build(&generator.x509v3_context(Some(ca_cert.as_ref()), None))?,
-            )?;
-        } else {
+        if let Some(X509EEUsage::Ko) = parameter.x509_ee_usage {
             generator.append_extension(
                 AuthorityKeyIdentifier::new()
                     .keyid(true)
                     .issuer(true)
                     .build(&generator.x509v3_context(Some(ca_cert.as_ref()), None))?,
             )?;
+        } else {
+            generator.append_extension(
+                AuthorityKeyIdentifier::new()
+                    .keyid(true)
+                    .build(&generator.x509v3_context(Some(ca_cert.as_ref()), None))?,
+            )?;
         }
 
         generator.append_extension(ExtendedKeyUsage::new().code_signing().build()?)?;
         //NOTE: then signing cert for efi should not contain any key usage extension
-        if parameter.x509_ee_usage == X509EEUsage::Ko {
+        if let Some(X509EEUsage::Ko) = parameter.x509_ee_usage {
             generator.append_extension(
                 KeyUsage::new()
                     .digital_signature()
@@ -561,7 +562,7 @@ impl SignPlugins for X509Plugin {
         let certificate = x509::X509::from_pem(self.certificate.unsecure())?;
         let mut cert_stack = Stack::new()?;
         cert_stack.push(certificate.clone())?;
-        if self.parent_key.is_some() {
+        if options.get(options::INCLUDE_PARENT_CERT).unwrap_or(&"true".to_string()) == "true" && self.parent_key.is_some() {
             cert_stack.push(x509::X509::from_pem(
                 self.parent_key.clone().unwrap().certificate.unsecure(),
             )?)?;
@@ -573,7 +574,7 @@ impl SignPlugins for X509Plugin {
         )? {
             SignType::Authenticode => {
                 let mut bufs: Vec<Vec<u8>> = vec![];
-                if self.parent_key.is_some() {
+                if options.get(options::INCLUDE_PARENT_CERT).unwrap_or(&"true".to_string()) == "true" && self.parent_key.is_some() {
                     bufs.push(
                         self.parent_key
                             .clone()
