@@ -40,7 +40,7 @@ impl GenericFileHandler {
 
 #[async_trait]
 impl FileHandler for GenericFileHandler {
-    fn validate_options(&self, sign_options: &HashMap<String, String>) -> Result<()> {
+    fn validate_options(&self, sign_options: &mut HashMap<String, String>) -> Result<()> {
         if let Some(detached) = sign_options.get(options::DETACHED) {
             if detached == "false" {
                 return Err(Error::InvalidArgumentError(

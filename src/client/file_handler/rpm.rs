@@ -77,7 +77,7 @@ impl RpmFileHandler {
 //todo: figure our why is much slower when async read & write with tokio is enabled.
 #[async_trait]
 impl FileHandler for RpmFileHandler {
-    fn validate_options(&self, sign_options: &HashMap<String, String>) -> Result<()> {
+    fn validate_options(&self, sign_options:&mut HashMap<String, String>) -> Result<()> {
         if let Some(detached) = sign_options.get(options::DETACHED) {
             if detached == "true" {
                 return Err(Error::InvalidArgumentError(

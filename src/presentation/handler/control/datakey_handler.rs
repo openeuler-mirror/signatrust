@@ -71,6 +71,7 @@ use validator::Validate;
 /// 7. **organization**: organization (organizationName, O), used for certificate.
 /// 8. **organizational_unit**: organizational unit (organizationalUnitName, OU), used for certificate.
 /// 9. **province_name**: state or province name (stateOrProvinceName, ST), used for certificate.
+/// 10. **x509_ee_usage**: the usage of end entity certificate, for example: ko or efi, the AuthorityKeyIdentifier and KeyUsage differs between them.
 ///
 /// There are three different keys regarding X509, they are:
 ///     1. X509CA: Root CA key, used for issue intermediate CA certificate.
@@ -95,6 +96,7 @@ use validator::Validate;
 ///     "locality": "locality",
 ///     "province_name": "province_name",
 ///     "country_name": "country_name"
+///     "x509_ee_usage": "efi"
 ///   },
 ///   "expire_at": "2024-05-12 22:10:57+08:00"
 /// }

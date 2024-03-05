@@ -19,7 +19,7 @@ impl EfiFileHandler {
 
 #[async_trait]
 impl FileHandler for EfiFileHandler {
-    fn validate_options(&self, sign_options: &HashMap<String, String>) -> Result<()> {
+    fn validate_options(&self, sign_options: &mut HashMap<String, String>) -> Result<()> {
         if let Some(detach) = sign_options.get(options::DETACHED) {
             if detach == "true" {
                 return Err(Error::InvalidArgumentError(
@@ -43,6 +43,7 @@ impl FileHandler for EfiFileHandler {
                 ));
             }
         }
+        sign_options.insert(options::INCLUDE_PARENT_CERT.to_string(), "true".to_string());
         Ok(())
     }
 

@@ -101,19 +101,24 @@ pub struct CommandAddHandler {
     sign_type: SignType,
     token: Option<String>,
     rpm_v3: bool,
+    sign_options: Option<HashMap<String, String>>
 }
 
 impl CommandAddHandler {
     fn get_sign_options(&self) -> HashMap<String, String> {
-        HashMap::from([
-            (options::DETACHED.to_string(), self.detached.to_string()),
-            (options::KEY_TYPE.to_string(), self.key_type.to_string()),
-            (options::SIGN_TYPE.to_string(), self.sign_type.to_string()),
-            (
-                options::RPM_V3_SIGNATURE.to_string(),
-                self.rpm_v3.to_string(),
-            ),
-        ])
+        if self.sign_options.is_none() {
+            HashMap::from([
+                (options::DETACHED.to_string(), self.detached.to_string()),
+                (options::KEY_TYPE.to_string(), self.key_type.to_string()),
+                (options::SIGN_TYPE.to_string(), self.sign_type.to_string()),
+                (
+                    options::RPM_V3_SIGNATURE.to_string(),
+                    self.rpm_v3.to_string(),
+                ),
+            ])
+        } else {
+            self.sign_options.clone().unwrap()
+        }
     }
     fn collect_file_candidates(&self) -> Result<Vec<sign_identity::SignIdentity>> {
         if self.path.is_dir() {
@@ -228,11 +233,15 @@ impl SignCommand for CommandAddHandler {
             sign_type: command.sign_type,
             token,
             rpm_v3: command.rpm_v3,
+            sign_options: None,
         })
     }
 
-    fn validate(&self) -> Result<()> {
-        FileHandlerFactory::get_handler(&self.file_type).validate_options(&self.get_sign_options())
+    fn validate(&mut self) -> Result<()> {
+        let mut options = self.get_sign_options();
+        FileHandlerFactory::get_handler(&self.file_type).validate_options(&mut options).expect("failed to validate add signature command options");
+        self.sign_options = Some(options);
+        Ok(())
     }
 
     //Signing process are described below.
