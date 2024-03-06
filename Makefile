@@ -17,8 +17,10 @@ init:
 builder-image:
 	docker build -t $(REGISTRY_NAME)/signatrust-builder:$(GIT_COMMIT) -f docker/Dockerfile.openeuler .
 
-client-image:
+build-client-image:
 	docker build -t $(REGISTRY_NAME)/signatrust-client:$(GIT_COMMIT) --build-arg BINARY=client -f docker/Dockerfile .
+push-client-image:
+	docker push $(REGISTRY_NAME)/signatrust-client:$(GIT_COMMIT)
 
 client-publish: client-publish-glibc-x86-64 client-publish-glibc-aarch64 client-publish-musl-x86-64 client-publish-musl-aarch64
 
