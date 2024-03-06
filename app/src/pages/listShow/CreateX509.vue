@@ -70,6 +70,20 @@
           >
         </el-radio-group>
       </el-form-item>
+      <el-form-item label="Key usage" v-if="formLabelAlign.type === 'x509ee'">
+        <el-select
+          v-model="formLabelAlign.x509_ee_usage"
+          class="m-2"
+          size="small"
+        >
+          <el-option
+            v-for="item in usageKey"
+            :key="item.value"
+            :label="item.value.toUpperCase()"
+            :value="item.value"
+          />
+        </el-select>
+      </el-form-item>
     </div>
     <div class="detail">
       <span class="sp">Details</span>
@@ -193,6 +207,7 @@ const formLabelAlign = reactive<any>({
   province_name: '',
   country_name: '',
   parentKey: '',
+  x509_ee_usage: 'ko',
 });
 const param = ref({
   name: 'test-x509',
@@ -210,6 +225,7 @@ const param = ref({
     locality: 'locality',
     province_name: 'province_name',
     country_name: 'country_name',
+    x509_ee_usage: String,
   },
   create_at: originalDate(new Date()),
   expire_at: '2024-05-12 22:10:57+08:00',
@@ -256,6 +272,14 @@ const typeKey = [
   },
   {
     value: 'x509ee',
+  },
+];
+const usageKey = [
+  {
+    value: 'ko',
+  },
+  {
+    value: 'efi',
   },
 ];
 const optionsSize = [
@@ -310,6 +334,7 @@ const cleanForm = () => {
   formLabelAlign.key_type = 'rsa';
   formLabelAlign.visibility = 'public';
   formLabelAlign.type = 'x509ca';
+  formLabelAlign.x509_ee_usage = 'ko';
 };
 // 表单校验规则
 /* 姓名 */
@@ -448,6 +473,8 @@ const getData = () => {
   param.value.attributes.country_name = formLabelAlign.country_name;
   param.value.parent_id =
     formLabelAlign.type === 'x509ca' ? Number : formLabelAlign.parentKey;
+  param.value.attributes.x509_ee_usage =
+    formLabelAlign.type === 'x509ee' ? formLabelAlign.x509_ee_usage : String;
 };
 //提交表单
 const submitForm = async (formEl: FormInstance | undefined) => {
