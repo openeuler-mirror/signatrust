@@ -56,3 +56,10 @@ push-app-image:
 
 deploy-local:
 	kustomize build ./deploy | kubectl apply -f -
+
+remove-images:
+	- docker rmi $(REGISTRY_NAME)/signatrust-app:$(GIT_COMMIT)
+	- docker rmi $(REGISTRY_NAME)/signatrust-client:$(GIT_COMMIT)
+	- docker rmi $(REGISTRY_NAME)/signatrust-data-server:$(GIT_COMMIT)
+	- docker rmi $(REGISTRY_NAME)/signatrust-control-server:$(GIT_COMMIT)
+	- docker rmi $(REGISTRY_NAME)/signatrust-control-admin:$(GIT_COMMIT)
