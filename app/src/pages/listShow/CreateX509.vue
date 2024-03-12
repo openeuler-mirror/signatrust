@@ -373,15 +373,15 @@ const isDesc = (rule: any, value: any, callback: any) => {
     }
   }
 };
-/* 公共校验 */
+/* 公共校验*/
 const isCommon = (rule: any, value: any, callback: any) => {
   if (!value) {
     callback();
   } else {
-    const reg = /^[a-zA-Z]{1,30}$/;
+    const reg = /^[a-zA-Z0-9][a-zA-Z0-9\s]{0,28}[a-zA-Z0-9]$/;
     const desc = reg.test(value);
     if (!desc) {
-      callback(new Error('The value contains 1 to 30 English characters'));
+      callback(new Error('The value contains 2 to 30 characters,the beginning and end cannot be spaces'));
     } else {
       callback();
     }
