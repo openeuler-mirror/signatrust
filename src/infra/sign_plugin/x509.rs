@@ -885,8 +885,8 @@ mod test {
         parameter.insert("digest_algorithm".to_string(), "".to_string());
         attributes_validate::<X509KeyGenerationParameter>(&parameter)
             .expect_err("invalid empty digest algorithm");
-        for key_length in all::<X509DigestAlgorithm>().collect::<Vec<_>>() {
-            parameter.insert("digest_algorithm".to_string(), key_length.to_string());
+        for digest_algo in all::<X509DigestAlgorithm>().collect::<Vec<_>>() {
+            parameter.insert("digest_algorithm".to_string(), digest_algo.to_string());
             attributes_validate::<X509KeyGenerationParameter>(&parameter)
                 .expect("valid digest algorithm");
         }
@@ -934,6 +934,10 @@ mod test {
         let dummy_engine = get_encryption_engine();
         let infra_config = get_infra_config();
         for hash in all::<X509DigestAlgorithm>().collect::<Vec<_>>() {
+            if hash == X509DigestAlgorithm::SM3 {
+                //RSA does not support SM3
+                continue;
+            }
             parameter.insert("digest_algorithm".to_string(), hash.to_string());
             let sec_datakey = SecDataKey::load(
                 &get_default_datakey(None, Some(parameter.clone()), Some(KeyType::X509CA)),

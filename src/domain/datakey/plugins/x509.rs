@@ -111,6 +111,8 @@ pub enum X509DigestAlgorithm {
     SHA2_384,
     #[serde(rename = "sha2_512")]
     SHA2_512,
+    #[serde(rename = "sm3")]
+    SM3,
 }
 
 impl Display for X509DigestAlgorithm {
@@ -122,6 +124,7 @@ impl Display for X509DigestAlgorithm {
             X509DigestAlgorithm::SHA2_256 => write!(f, "sha2_256"),
             X509DigestAlgorithm::SHA2_384 => write!(f, "sha2_384"),
             X509DigestAlgorithm::SHA2_512 => write!(f, "sha2_512"),
+            X509DigestAlgorithm::SM3 => write!(f, "sm3"),
         }
     }
 }
@@ -154,6 +157,7 @@ impl X509DigestAlgorithm {
             X509DigestAlgorithm::SHA2_256 => MessageDigest::sha256(),
             X509DigestAlgorithm::SHA2_384 => MessageDigest::sha384(),
             X509DigestAlgorithm::SHA2_512 => MessageDigest::sha512(),
+            X509DigestAlgorithm::SM3 => MessageDigest::sm3(),
         }
     }
 }
