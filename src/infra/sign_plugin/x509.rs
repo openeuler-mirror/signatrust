@@ -282,7 +282,7 @@ impl X509Plugin {
     #[allow(deprecated)]
     fn generate_x509ica_keys(
         &self,
-        infra_config: &HashMap<String, String>,
+        _infra_config: &HashMap<String, String>,
     ) -> Result<DataKeyContent> {
         let parameter = attributes_validate::<X509KeyGenerationParameter>(&self.attributes)?;
         //load the ca certificate and private key
@@ -387,7 +387,7 @@ impl X509Plugin {
     #[allow(deprecated)]
     fn generate_x509ee_keys(
         &self,
-        infra_config: &HashMap<String, String>,
+        _infra_config: &HashMap<String, String>,
     ) -> Result<DataKeyContent> {
         let parameter = attributes_validate::<X509KeyGenerationParameter>(&self.attributes)?;
         //load the ca certificate and private key
@@ -648,13 +648,13 @@ impl SignPlugins for X509Plugin {
         unsafe {
             X509_CRL_set1_lastUpdate(
                 crl,
-                Asn1Time::from_unix(last_update.naive_utc().timestamp())?.as_ptr(),
+                Asn1Time::from_unix(last_update.timestamp())?.as_ptr(),
             )
         };
         unsafe {
             X509_CRL_set1_nextUpdate(
                 crl,
-                Asn1Time::from_unix(next_update.naive_utc().timestamp())?.as_ptr(),
+                Asn1Time::from_unix(next_update.timestamp())?.as_ptr(),
             )
         };
         for revoked_key in revoked_keys {
@@ -671,7 +671,7 @@ impl SignPlugins for X509Plugin {
                 unsafe {
                     X509_REVOKED_set_revocationDate(
                         revoked,
-                        Asn1Time::from_unix(revoked_key.create_at.naive_utc().timestamp())?
+                        Asn1Time::from_unix(revoked_key.create_at.timestamp())?
                             .as_ptr(),
                     )
                 };
@@ -1149,13 +1149,13 @@ X5BboR/QJakEK+H+EUQAiDs=
         let crl = X509Crl::from_pem(&content).expect("load generated crl successfully");
         assert_eq!(
             crl.last_update()
-                == Asn1Time::from_unix(last_update.naive_utc().timestamp())
+                == Asn1Time::from_unix(last_update.timestamp())
                     .expect("convert to asn1 time successfully"),
             true
         );
         assert_eq!(
             crl.next_update().expect("next update is set")
-                == Asn1Time::from_unix(next_update.naive_utc().timestamp())
+                == Asn1Time::from_unix(next_update.timestamp())
                     .expect("convert to asn1 time successfully"),
             true
         );
@@ -1176,7 +1176,7 @@ X5BboR/QJakEK+H+EUQAiDs=
         );
         assert_eq!(
             revoked.revocation_date().to_owned()
-                == Asn1Time::from_unix(revoke_time.naive_utc().timestamp())
+                == Asn1Time::from_unix(revoke_time.timestamp())
                     .expect("convert to asn1 time successfully"),
             true
         );

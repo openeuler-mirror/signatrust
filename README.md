@@ -108,8 +108,12 @@ There are two ways to setup a local development environment:
 
    Run these commands correspondingly to build service binary:
    ```shell
+   # set nightly toolchain
+   rustup override set nightly-2023-08-08
    # build binary
    cargo build --bin control-server/data-server/client/control-admin   
+   # running command
+   RUST_BACKTRACE=full RUST_LOG=debug ./target/debug/<binary> --config <config-file-path>
    ```
 
    Additionally, we have developed a script to set up the MySQL database in a Docker environment. To use the script, you will
