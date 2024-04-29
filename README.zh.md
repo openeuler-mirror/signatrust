@@ -99,6 +99,8 @@ algorithm = "aes256gsm"
   相应地运行这些命令来构建或运行项目可执行二进制文件：
 
   ```
+  # set nightly toolchain
+  rustup override set nightly-2023-08-08
   # build binary
   cargo build --bin control-server/data-server/client/control-admin
   # running command
