@@ -175,7 +175,10 @@ impl FileHandler for KernelModuleFileHandler {
                 ));
             }
         }
-        sign_options.insert(options::INCLUDE_PARENT_CERT.to_string(), "false".to_string());
+        sign_options.insert(
+            options::INCLUDE_PARENT_CERT.to_string(),
+            "false".to_string(),
+        );
         Ok(())
     }
 
@@ -321,7 +324,7 @@ mod test {
         let mut options = HashMap::new();
         options.insert(options::KEY_TYPE.to_string(), KeyType::Pgp.to_string());
         let handler = KernelModuleFileHandler::new();
-        let result = handler.validate_options(&options);
+        let result = handler.validate_options(&mut options);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -333,7 +336,7 @@ mod test {
             options::SIGN_TYPE.to_string(),
             SignType::Authenticode.to_string(),
         );
-        let result = handler.validate_options(&options);
+        let result = handler.validate_options(&mut options);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -341,11 +344,11 @@ mod test {
         );
 
         options.insert(options::SIGN_TYPE.to_string(), SignType::Cms.to_string());
-        let result = handler.validate_options(&options);
+        let result = handler.validate_options(&mut options);
         assert!(result.is_ok());
 
         options.insert(options::SIGN_TYPE.to_string(), SignType::PKCS7.to_string());
-        let result = handler.validate_options(&options);
+        let result = handler.validate_options(&mut options);
         assert!(result.is_ok());
     }
 

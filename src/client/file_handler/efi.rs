@@ -107,7 +107,7 @@ mod test {
         let mut options = HashMap::new();
         options.insert(options::DETACHED.to_string(), "true".to_string());
         let handler: EfiFileHandler = EfiFileHandler::new();
-        let result = handler.validate_options(&options);
+        let result = handler.validate_options(&mut options);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -122,13 +122,13 @@ mod test {
             options::SIGN_TYPE.to_string(),
             SignType::Authenticode.to_string(),
         );
-        let result = handler.validate_options(&options);
+        let result = handler.validate_options(&mut options);
         assert!(result.is_ok());
 
         *options
             .get_mut(options::KEY_TYPE.to_string().as_str())
             .unwrap() = KeyType::Pgp.to_string();
-        let result = handler.validate_options(&options);
+        let result = handler.validate_options(&mut options);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -142,7 +142,7 @@ mod test {
         *options
             .get_mut(options::SIGN_TYPE.to_string().as_str())
             .unwrap() = SignType::PKCS7.to_string();
-        let result = handler.validate_options(&options);
+        let result = handler.validate_options(&mut options);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),

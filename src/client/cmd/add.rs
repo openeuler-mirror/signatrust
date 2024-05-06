@@ -101,7 +101,7 @@ pub struct CommandAddHandler {
     sign_type: SignType,
     token: Option<String>,
     rpm_v3: bool,
-    sign_options: Option<HashMap<String, String>>
+    sign_options: Option<HashMap<String, String>>,
 }
 
 impl CommandAddHandler {
@@ -239,7 +239,9 @@ impl SignCommand for CommandAddHandler {
 
     fn validate(&mut self) -> Result<()> {
         let mut options = self.get_sign_options();
-        FileHandlerFactory::get_handler(&self.file_type).validate_options(&mut options).expect("failed to validate add signature command options");
+        FileHandlerFactory::get_handler(&self.file_type)
+            .validate_options(&mut options)
+            .expect("failed to validate add signature command options");
         self.sign_options = Some(options);
         Ok(())
     }

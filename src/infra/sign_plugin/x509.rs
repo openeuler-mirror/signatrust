@@ -562,7 +562,12 @@ impl SignPlugins for X509Plugin {
         let certificate = x509::X509::from_pem(self.certificate.unsecure())?;
         let mut cert_stack = Stack::new()?;
         cert_stack.push(certificate.clone())?;
-        if options.get(options::INCLUDE_PARENT_CERT).unwrap_or(&"true".to_string()) == "true" && self.parent_key.is_some() {
+        if options
+            .get(options::INCLUDE_PARENT_CERT)
+            .unwrap_or(&"true".to_string())
+            == "true"
+            && self.parent_key.is_some()
+        {
             cert_stack.push(x509::X509::from_pem(
                 self.parent_key.clone().unwrap().certificate.unsecure(),
             )?)?;
@@ -574,7 +579,12 @@ impl SignPlugins for X509Plugin {
         )? {
             SignType::Authenticode => {
                 let mut bufs: Vec<Vec<u8>> = vec![];
-                if options.get(options::INCLUDE_PARENT_CERT).unwrap_or(&"true".to_string()) == "true" && self.parent_key.is_some() {
+                if options
+                    .get(options::INCLUDE_PARENT_CERT)
+                    .unwrap_or(&"true".to_string())
+                    == "true"
+                    && self.parent_key.is_some()
+                {
                     bufs.push(
                         self.parent_key
                             .clone()
