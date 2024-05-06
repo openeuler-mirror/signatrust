@@ -656,16 +656,10 @@ impl SignPlugins for X509Plugin {
             X509_CRL_set_issuer_name(crl, x509_name);
         };
         unsafe {
-            X509_CRL_set1_lastUpdate(
-                crl,
-                Asn1Time::from_unix(last_update.timestamp())?.as_ptr(),
-            )
+            X509_CRL_set1_lastUpdate(crl, Asn1Time::from_unix(last_update.timestamp())?.as_ptr())
         };
         unsafe {
-            X509_CRL_set1_nextUpdate(
-                crl,
-                Asn1Time::from_unix(next_update.timestamp())?.as_ptr(),
-            )
+            X509_CRL_set1_nextUpdate(crl, Asn1Time::from_unix(next_update.timestamp())?.as_ptr())
         };
         for revoked_key in revoked_keys {
             //TODO: Add revoke reason here.
@@ -681,8 +675,7 @@ impl SignPlugins for X509Plugin {
                 unsafe {
                     X509_REVOKED_set_revocationDate(
                         revoked,
-                        Asn1Time::from_unix(revoked_key.create_at.timestamp())?
-                            .as_ptr(),
+                        Asn1Time::from_unix(revoked_key.create_at.timestamp())?.as_ptr(),
                     )
                 };
                 unsafe { X509_CRL_add0_revoked(crl, revoked) };

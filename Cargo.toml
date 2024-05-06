@@ -79,7 +79,7 @@ data-encoding= "~2.4.0"
 enum-iterator= "~1.4.1"
 sea-orm = { version = "~0.12.2", features = [ "sqlx-mysql", "runtime-tokio-rustls", "macros", "with-chrono"] }
 curve25519-dalek = "~4.0.0"
-hyper = "=0.14.27"
+hyper = "~0.14.27"
 
 [build-dependencies]
 tonic-build = "0.8.4"

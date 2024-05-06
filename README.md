@@ -170,7 +170,7 @@ Pay attention to the command output:
 ```
 Now you can use this token to debug the control service API or use the pgp keys for signing rpm packages with client.
 ```shell
-curl -k --header "Authorization:XmUICsVV48EjfkWYv3ch1eutRJOQh7mp3bRfmQDL" -v http(s)://localhost:8080/api/v1/keys/
+curl -k --header "Authorization:XmUICsVV48EjfkWYv3ch1eutRJOQh7mp3bRfmQDL" -v http://localhost:8080/api/v1/keys/\?page_size\=100\&page_number\=1
 ```
 ```shell
 RUST_BACKTRACE=full RUST_LOG=info ./target/debug/client --config <client-config-file-path> add --key-name default-pgp  --file-type rpm --key-type pgp .data/simple.rpm
