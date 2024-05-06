@@ -175,10 +175,7 @@ fn generate_keys_parameters(command: &CommandGenerateKeys) -> HashMap<String, St
             "organizational_unit".to_string(),
             command.param_x509_organizational_unit.clone().unwrap(),
         );
-        attributes.insert(
-            "x509_ee_usage".to_string(),
-            "efi".to_string(),
-        );
+        attributes.insert("x509_ee_usage".to_string(), "efi".to_string());
     }
     attributes
 }

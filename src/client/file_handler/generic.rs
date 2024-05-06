@@ -89,7 +89,7 @@ mod test {
         let mut options = HashMap::new();
         options.insert(options::DETACHED.to_string(), "false".to_string());
         let handler = GenericFileHandler::new();
-        let result = handler.validate_options(&options);
+        let result = handler.validate_options(&mut options);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -97,16 +97,16 @@ mod test {
         );
 
         options.remove(options::DETACHED);
-        let result = handler.validate_options(&options);
+        let result = handler.validate_options(&mut options);
         assert!(result.is_ok());
 
         options.insert(options::DETACHED.to_string(), "true".to_string());
         options.insert(options::KEY_TYPE.to_string(), KeyType::Pgp.to_string());
-        let result = handler.validate_options(&options);
+        let result = handler.validate_options(&mut options);
         assert!(result.is_ok());
 
         options.insert(options::KEY_TYPE.to_string(), KeyType::X509EE.to_string());
-        let result = handler.validate_options(&options);
+        let result = handler.validate_options(&mut options);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
