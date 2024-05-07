@@ -108,8 +108,12 @@ There are two ways to setup a local development environment:
 
    Run these commands correspondingly to build service binary:
    ```shell
+   # set nightly toolchain
+   rustup override set nightly-2023-08-08
    # build binary
    cargo build --bin control-server/data-server/client/control-admin   
+   # running command
+   RUST_BACKTRACE=full RUST_LOG=debug ./target/debug/<binary> --config <config-file-path>
    ```
 
    Additionally, we have developed a script to set up the MySQL database in a Docker environment. To use the script, you will
@@ -166,7 +170,7 @@ Pay attention to the command output:
 ```
 Now you can use this token to debug the control service API or use the pgp keys for signing rpm packages with client.
 ```shell
-curl -k --header "Authorization:XmUICsVV48EjfkWYv3ch1eutRJOQh7mp3bRfmQDL" -v http(s)://localhost:8080/api/v1/keys/
+curl -k --header "Authorization:XmUICsVV48EjfkWYv3ch1eutRJOQh7mp3bRfmQDL" -v http://localhost:8080/api/v1/keys/\?page_size\=100\&page_number\=1
 ```
 ```shell
 RUST_BACKTRACE=full RUST_LOG=info ./target/debug/client --config <client-config-file-path> add --key-name default-pgp  --file-type rpm --key-type pgp .data/simple.rpm

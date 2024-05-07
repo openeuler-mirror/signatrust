@@ -99,6 +99,8 @@ algorithm = "aes256gsm"
   相应地运行这些命令来构建或运行项目可执行二进制文件：
 
   ```
+  # set nightly toolchain
+  rustup override set nightly-2023-08-08
   # build binary
   cargo build --bin control-server/data-server/client/control-admin
   # running command
@@ -134,7 +136,7 @@ type = "dummy"
 make init
 ```
 
-注意命令输出：
+注意命令输出(`created with token`的后面就是curl需要的 Authorization header)：
 
 ```
 ...skipped output
@@ -147,7 +149,7 @@ make init
 现在您可以使用此令牌来调试控制服务 API 或使用 pgp 密钥与客户端签署 rpm 包。
 
 ```
-curl -k --header "Authorization:XmUICsVV48EjfkWYv3ch1eutRJOQh7mp3bRfmQDL" -v http(s)://localhost:8080/api/v1/keys/
+curl -k --header "Authorization:XmUICsVV48EjfkWYv3ch1eutRJOQh7mp3bRfmQDL" -v http://localhost:8080/api/v1/keys/\?page_size\=100\&page_number\=1
 ```
 
 ```
