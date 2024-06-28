@@ -82,6 +82,7 @@ curve25519-dalek = "~4.0.0"
 hyper = "~0.14.27"
 rustls = "~0.21.11"
 mio = "~0.8.11"
+tempfile = "3.3.0"
 
 
 [build-dependencies]

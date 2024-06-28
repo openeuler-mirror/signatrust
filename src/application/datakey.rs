@@ -43,6 +43,7 @@ pub trait KeyService: Send + Sync {
     async fn get_one(&self, user: Option<UserIdentity>, id_or_name: String) -> Result<DataKey>;
     //get keys content
     async fn export_one(&self, user: Option<UserIdentity>, id_or_name: String) -> Result<DataKey>;
+    async fn get_inner_one(&self, id_name: String) -> Result<DataKey>;
     async fn export_cert_crl(
         &self,
         user: Option<UserIdentity>,
@@ -402,6 +403,35 @@ where
         Ok(key)
     }
 
+    async fn get_inner_one(&self, id_name: String) -> Result<DataKey> {
+        //NOTE: since the public key or certificate basically will not change at all, we will cache the key here.
+        if let Some(datakey) = self.container.get_read_datakey(&id_name).await {
+            return Ok(datakey);
+        }
+        let id_or_name = id_name.parse::<i32>();
+        let mut key: DataKey = match id_or_name {
+            Ok(id_or_name) => {
+                self.repository
+                    .get_by_id_or_name(Some(id_or_name), None, false)
+                    .await?
+            }
+            Err(_) => {
+                self.repository
+                    .get_by_id_or_name(None, Some(id_name.clone()), false)
+                    .await?
+            }
+        };
+        self.sign_service
+            .read()
+            .await
+            .decode_public_keys(&mut key)
+            .await?;
+        self.container
+            .update_read_datakey(&id_name, key.clone())
+            .await?;
+        Ok(key)
+    }
+
     async fn export_cert_crl(
         &self,
         user: Option<UserIdentity>,
@@ -529,6 +559,7 @@ where
             .await?;
         Ok(key)
     }
+
     fn start_key_rotate_loop(&self, cancel_token: CancellationToken) -> Result<()> {
         let sign_service = self.sign_service.clone();
         let mut interval = time::interval(Duration::seconds(60 * 60 * 2).to_std()?);

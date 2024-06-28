@@ -14,8 +14,6 @@
  *
  */
 
-use std::collections::HashMap;
-
 pub mod signatrust {
     tonic::include_proto!("signatrust");
 }
@@ -30,6 +28,11 @@ use signatrust::{
     GetKeyInfoResponse, SignStreamRequest, SignStreamResponse,
 };
 use tonic::{Request, Response, Status, Streaming};
+use openssl::x509::X509;
+use crate::domain::datakey::entity::KeyType::X509EE;
+use std::collections::HashMap;
+
+const SUBJECT_KEY_ID: &str = "subject_key";
 
 pub struct SignHandler<K, U>
 where
@@ -95,21 +98,40 @@ where
                 error: err.to_string(),
             }));
         }
+        let key_id_or_name = request.key_id.to_string();
         return match self
             .key_service
             .get_by_type_and_name(request.key_type, request.key_id)
             .await
         {
-            Ok(datakey) => Ok(Response::new(GetKeyInfoResponse {
-                attributes: datakey.attributes,
-                error: "".to_string(),
-            })),
+            Ok(datakey) => {
+                let mut new_info = datakey.attributes.clone();
+                if datakey.key_type == X509EE {
+                    // need get decode datakey
+                    let public_datakey = match self.key_service.get_inner_one(key_id_or_name).await {
+                        Ok(public) => public,
+                        Err(err) => return Ok(Response::new(GetKeyInfoResponse {
+                            attributes: HashMap::new(),
+                            error: err.to_string(),
+                        })),
+                    };
+                    let x509 = X509::from_pem(&public_datakey.certificate).expect("can not get certificate from PEM");
+                    let skid_pem = x509.subject_key_id().expect("get subject key id failed");
+                    let skid_vec = skid_pem.as_slice();
+                    new_info.insert(SUBJECT_KEY_ID.to_string(), hex::encode(skid_vec));
+                    debug!("SKID (hex): {}", hex::encode(skid_vec));
+                }
+                Ok(Response::new(GetKeyInfoResponse {
+                attributes: new_info,
+                error: "".to_string(),}))
+            },
             Err(err) => Ok(Response::new(GetKeyInfoResponse {
                 attributes: HashMap::new(),
                 error: err.to_string(),
             })),
         };
     }
+
     async fn sign_stream(
         &self,
         request: Request<Streaming<SignStreamRequest>>,
@@ -136,8 +158,8 @@ where
             }));
         }
         debug!(
-            "begin to sign key_type :{} key_name: {}",
-            key_type, key_name
+            "begin to sign key_type :{} key_name: {} data hex: {}",
+            key_type, key_name, hex::encode(&data)
         );
         match self
             .key_service

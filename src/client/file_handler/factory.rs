@@ -17,6 +17,7 @@
 use super::efi::EfiFileHandler;
 use super::generic::GenericFileHandler;
 use super::kernel_module::KernelModuleFileHandler;
+use super::ima::ImaFileHandler;
 use super::rpm::RpmFileHandler;
 use super::traits::FileHandler;
 use crate::util::sign::FileType;
@@ -30,6 +31,7 @@ impl FileHandlerFactory {
             FileType::Generic => Box::new(GenericFileHandler::new()),
             FileType::KernelModule => Box::new(KernelModuleFileHandler::new()),
             FileType::EfiImage => Box::new(EfiFileHandler::new()),
+            FileType::ImaEvm => Box::new(ImaFileHandler::new()),
         }
     }
 }

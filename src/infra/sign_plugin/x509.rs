@@ -53,6 +53,7 @@ use crate::domain::sign_plugin::SignPlugins;
 use crate::util::error::{Error, Result};
 use crate::util::key::{decode_hex_string_to_u8, encode_u8_to_hex_string};
 use crate::util::options;
+use crate::util::attributes;
 use crate::util::sign::SignType;
 #[allow(unused_imports)]
 use enum_iterator::all;
@@ -572,6 +573,7 @@ impl SignPlugins for X509Plugin {
                 self.parent_key.clone().unwrap().certificate.unsecure(),
             )?)?;
         }
+        info!("options: {:?} options::SIGN_TYPE: {:?} ", options, options.get(options::SIGN_TYPE));
         match SignType::from_str(
             options
                 .get(options::SIGN_TYPE)
@@ -634,6 +636,13 @@ impl SignPlugins for X509Plugin {
                         | CMSOptions::NOATTR,
                 )?;
                 Ok(cms_signature.to_der()?)
+            }
+            SignType::RsaHash => {
+                // https://github.com/sfackler/rust-openssl/blob/1b4c9b0e47aaefb8fb512d97d68a091b4f624812/openssl/src/pkey_ctx.rs#L863
+                let mut signature = vec![];
+                attributes::do_sign_rsahash(self.private_key.unsecure(), &content,
+                                &self.attributes, &mut signature).unwrap();
+                Ok(signature)
             }
         }
     }

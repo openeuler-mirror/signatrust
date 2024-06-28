@@ -395,9 +395,9 @@ async fn export_public_key(
     let data_key = key_service
         .export_one(user, id_or_name.into_inner())
         .await?;
-    if data_key.key_type != KeyType::OpenPGP {
-        return Ok(HttpResponse::Forbidden().finish());
-    }
+    // if data_key.key_type != KeyType::OpenPGP {
+    //     return Ok(HttpResponse::Forbidden().finish());
+    // }
     Ok(HttpResponse::Ok()
         .content_type("text/plain")
         .body(PublicKeyContent::try_from(data_key)?.content))
@@ -426,6 +426,7 @@ async fn export_public_key(
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
+
 async fn export_certificate(
     user: Option<UserIdentity>,
     key_service: web::Data<dyn KeyService>,
@@ -437,6 +438,7 @@ async fn export_certificate(
     if data_key.key_type == KeyType::OpenPGP {
         return Ok(HttpResponse::Forbidden().finish());
     }
+    info!("certificate: {}", String::from_utf8_lossy(&data_key.certificate));
     Ok(HttpResponse::Ok()
         .content_type("text/plain")
         .body(CertificateContent::try_from(data_key)?.content))

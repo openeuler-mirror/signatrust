@@ -44,8 +44,8 @@ impl SignHandler for Splitter {
                 *item.raw_content.borrow_mut() = content;
                 *item.sign_options.borrow_mut() = sign_options;
                 debug!(
-                    "successfully split file {}",
-                    item.file_path.as_path().display()
+                    "successfully split file {} {:?}",
+                    item.file_path.as_path().display(), item.raw_content.as_ref()
                 );
             }
             Err(err) => {

@@ -7,6 +7,7 @@ pub enum SignType {
     Cms,          // signed method for a CMS signed data
     Authenticode, // signed method for signing EFI image using authenticode spec
     PKCS7,        // signed method for a pkcs7 signed data
+    RsaHash,      // signed method for a ima eam using rsa hash
 }
 
 impl Display for SignType {
@@ -15,6 +16,7 @@ impl Display for SignType {
             SignType::Cms => write!(f, "cms"),
             SignType::Authenticode => write!(f, "authenticode"),
             SignType::PKCS7 => write!(f, "pkcs7"),
+            SignType::RsaHash => write!(f, "rsahash"),
         }
     }
 }
@@ -27,6 +29,7 @@ impl FromStr for SignType {
             "cms" => Ok(SignType::Cms),
             "authenticode" => Ok(SignType::Authenticode),
             "pkcs7" => Ok(SignType::PKCS7),
+            "rsahash" => Ok(SignType::RsaHash),
             _ => Err(Error::ParameterError("Invalid sign_type param".to_string())),
         }
     }
@@ -38,6 +41,7 @@ pub enum FileType {
     Generic,
     KernelModule,
     EfiImage,
+    ImaEvm,
 }
 
 impl Display for FileType {
@@ -47,6 +51,7 @@ impl Display for FileType {
             FileType::Generic => write!(f, "generic"),
             FileType::KernelModule => write!(f, "ko"),
             FileType::EfiImage => write!(f, "efi"),
+            FileType::ImaEvm => write!(f, "ima"),
         }
     }
 }
