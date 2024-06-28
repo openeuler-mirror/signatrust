@@ -18,16 +18,16 @@ use super::traits::FileHandler;
 use crate::util::error::Result;
 use crate::util::sign::{KeyType, SignType};
 use async_trait::async_trait;
+use std::io::Write;
 use std::path::PathBuf;
 use tokio::fs;
-use std::io::Write;
 use uuid::Uuid;
 
+use crate::util::attributes::PkeyHashAlgo;
 use crate::util::error::Error;
 use crate::util::options;
-use crate::util::attributes::PkeyHashAlgo;
-use std::collections::HashMap;
 use openssl::hash::hash;
+use std::collections::HashMap;
 
 const FILE_EXTENSION: &str = "sig";
 const SUBJECT_KEY_ID: &str = "subject_key";
@@ -111,11 +111,9 @@ impl FileHandler for ImaFileHandler {
         _key_attributes: &HashMap<String, String>,
     ) -> Result<Vec<Vec<u8>>> {
         let content = fs::read(path).await?;
-        // info!("_sign_options: {:?}", _sign_options);
-        info!("key_attributes: {:?}", _key_attributes);
+        debug!("key_attributes: {:?}", _key_attributes);
         let digest_algo = PkeyHashAlgo::get_digest_algo_from_attributes(_key_attributes);
         let digest = hash(digest_algo, &content)?; // 完成哈希计算并获取结果
-        info!("digest: {:?} hex::encode: {:?}", digest, hex::encode(digest));
 
         Ok(vec![digest.to_vec()])
     }
@@ -129,17 +127,24 @@ impl FileHandler for ImaFileHandler {
         _key_attributes: &HashMap<String, String>,
     ) -> Result<(String, String)> {
         let temp_file = temp_dir.join(Uuid::new_v4().to_string());
-        info!("data: {:?}， len {}", data, data[0].len());
-
-        let skid = _key_attributes.get(SUBJECT_KEY_ID).expect("get skid failed");
+        let skid = _key_attributes
+            .get(SUBJECT_KEY_ID)
+            .expect("get skid failed");
         let key_id = match hex::decode(skid) {
             Ok(subject_id) => subject_id[subject_id.len() - KEY_ID_LEN..].to_vec(),
             Err(e) => return Err(Error::ConvertError(format!("{:?}", e))),
         };
-        info!("skid: {:?}， key_id {:x?}", skid.clone(), key_id);
-        let hash_algo = PkeyHashAlgo::get_hash_algo_from_attributes(&_key_attributes);
-        let hdr = ImaV2Hdr::new(hash_algo.to_u8(), u32::from_le_bytes(
-            key_id.try_into().unwrap_or_else(|_| panic!("Expected a vector of length 4"))), &data[0]);
+        debug!("skid: {:?}， key_id {:x?}", skid.clone(), key_id);
+        let hash_algo = PkeyHashAlgo::get_hash_algo_from_attributes(_key_attributes);
+        let hdr = ImaV2Hdr::new(
+            hash_algo.to_u8(),
+            u32::from_le_bytes(
+                key_id
+                    .try_into()
+                    .unwrap_or_else(|_| panic!("Expected a vector of length 4")),
+            ),
+            &data[0],
+        );
 
         //convert bytes into string
         let mut signed = std::fs::File::create(&temp_file)?;
@@ -158,8 +163,8 @@ mod tests {
 
     use super::*;
     use std::collections::HashMap;
-    use tempfile::TempDir;
     use std::panic;
+    use tempfile::TempDir;
 
     #[tokio::test]
     async fn test_ima_validate_options() {
@@ -167,7 +172,10 @@ mod tests {
         let mut options = HashMap::new();
         options.insert(String::from(options::DETACHED), String::from("true"));
         options.insert(String::from(options::KEY_TYPE), KeyType::X509EE.to_string());
-        options.insert(String::from(options::SIGN_TYPE), SignType::RsaHash.to_string());
+        options.insert(
+            String::from(options::SIGN_TYPE),
+            SignType::RsaHash.to_string(),
+        );
 
         assert!(handler.validate_options(&mut options).is_ok());
 
@@ -182,19 +190,25 @@ mod tests {
         let path = temp_file.path().join("test_file");
         fs::write(&path, b"test data").await.unwrap();
 
-        
         let result = panic::catch_unwind(|| async {
-            let inner_result = handler.split_data(&path, &mut HashMap::new(), &HashMap::new()).await;
+            let inner_result = handler
+                .split_data(&path, &mut HashMap::new(), &HashMap::new())
+                .await;
             print!("attribute_: {:?}\n", inner_result);
         });
-        
+
         assert!(result.is_ok());
-        
+
         let mut attribute_ = HashMap::new();
-        attribute_.insert(String::from(attributes::DIGEST_ALGO), X509DigestAlgorithm::SHA2_256.to_string());
+        attribute_.insert(
+            String::from(attributes::DIGEST_ALGO),
+            X509DigestAlgorithm::SHA2_256.to_string(),
+        );
         print!("attribute_: {:?}\n", attribute_);
 
-        let result = handler.split_data(&path, &mut HashMap::new(), &attribute_).await;
+        let result = handler
+            .split_data(&path, &mut HashMap::new(), &attribute_)
+            .await;
         assert!(result.is_ok());
     }
 
@@ -205,25 +219,58 @@ mod tests {
         let path = PathBuf::from("/tmp/test");
         let data = vec![vec![1, 2, 3, 4, 5]];
         let result = panic::catch_unwind(|| async {
-            let inner_result = handler.assemble_data(&path, data, &temp_dir.path().to_path_buf(), &HashMap::new(), &HashMap::new()).await;
+            let inner_result = handler
+                .assemble_data(
+                    &path,
+                    data,
+                    &temp_dir.path().to_path_buf(),
+                    &HashMap::new(),
+                    &HashMap::new(),
+                )
+                .await;
             print!("attribute_: {:?}\n", inner_result);
         });
         assert!(result.is_ok());
-        
+
         let data = vec![vec![1, 2, 3, 4, 5]];
         let mut attribute_ = HashMap::new();
         attribute_.insert(String::from(SUBJECT_KEY_ID), "0982347ddcf4323d".to_string());
-        attribute_.insert(String::from(attributes::DIGEST_ALGO), X509DigestAlgorithm::SHA2_256.to_string());
-        let result = handler.assemble_data(&path, data, &temp_dir.path().to_path_buf(), &HashMap::new(), &attribute_).await;
+        attribute_.insert(
+            String::from(attributes::DIGEST_ALGO),
+            X509DigestAlgorithm::SHA2_256.to_string(),
+        );
+        let result = handler
+            .assemble_data(
+                &path,
+                data,
+                &temp_dir.path().to_path_buf(),
+                &HashMap::new(),
+                &attribute_,
+            )
+            .await;
         print!("result: {:?}\n", result);
         assert!(result.is_ok());
 
         let data = vec![vec![1, 2, 3, 4, 5]];
         let mut attribute_ = HashMap::new();
         // error subject key id data
-        attribute_.insert(String::from(SUBJECT_KEY_ID), "0982347ddcf4323dnn".to_string());
-        attribute_.insert(String::from(attributes::DIGEST_ALGO), X509DigestAlgorithm::SHA2_256.to_string());
-        let result = handler.assemble_data(&path, data, &temp_dir.path().to_path_buf(), &HashMap::new(), &attribute_).await;
+        attribute_.insert(
+            String::from(SUBJECT_KEY_ID),
+            "0982347ddcf4323dnn".to_string(),
+        );
+        attribute_.insert(
+            String::from(attributes::DIGEST_ALGO),
+            X509DigestAlgorithm::SHA2_256.to_string(),
+        );
+        let result = handler
+            .assemble_data(
+                &path,
+                data,
+                &temp_dir.path().to_path_buf(),
+                &HashMap::new(),
+                &attribute_,
+            )
+            .await;
         print!("result: {:?}\n", result);
         assert!(result.is_err());
     }

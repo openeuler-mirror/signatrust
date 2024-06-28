@@ -16,8 +16,8 @@
 
 use super::efi::EfiFileHandler;
 use super::generic::GenericFileHandler;
-use super::kernel_module::KernelModuleFileHandler;
 use super::ima::ImaFileHandler;
+use super::kernel_module::KernelModuleFileHandler;
 use super::rpm::RpmFileHandler;
 use super::traits::FileHandler;
 use crate::util::sign::FileType;

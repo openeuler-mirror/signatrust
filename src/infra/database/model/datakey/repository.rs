@@ -336,10 +336,10 @@ impl<'a> Repository for DataKeyRepository<'a> {
     async fn get_revoked_serial_number_by_parent_id(&self, id: i32) -> Result<Vec<RevokedKey>> {
         match revoked_key_dto::Entity::find()
             .select_only()
-            .columns(revoked_key_dto::Column::iter().filter(|col| match col {
-                revoked_key_dto::Column::SerialNumber => false,
-                _ => true,
-            }))
+            .columns(
+                revoked_key_dto::Column::iter()
+                    .filter(|col| !matches!(col, revoked_key_dto::Column::SerialNumber)),
+            )
             .column_as(
                 Expr::col((
                     Alias::new("datakey_table"),

@@ -21,16 +21,16 @@ use tokio_stream::StreamExt;
 
 use crate::application::datakey::KeyService;
 use crate::application::user::UserService;
+use crate::domain::datakey::entity::KeyType::X509EE;
 use crate::util::error::Error;
 use crate::util::error::Result as SignatrustResult;
+use openssl::x509::X509;
 use signatrust::{
     signatrust_server::Signatrust, signatrust_server::SignatrustServer, GetKeyInfoRequest,
     GetKeyInfoResponse, SignStreamRequest, SignStreamResponse,
 };
-use tonic::{Request, Response, Status, Streaming};
-use openssl::x509::X509;
-use crate::domain::datakey::entity::KeyType::X509EE;
 use std::collections::HashMap;
+use tonic::{Request, Response, Status, Streaming};
 
 const SUBJECT_KEY_ID: &str = "subject_key";
 
@@ -108,23 +108,28 @@ where
                 let mut new_info = datakey.attributes.clone();
                 if datakey.key_type == X509EE {
                     // need get decode datakey
-                    let public_datakey = match self.key_service.get_inner_one(key_id_or_name).await {
+                    let public_datakey = match self.key_service.get_inner_one(key_id_or_name).await
+                    {
                         Ok(public) => public,
-                        Err(err) => return Ok(Response::new(GetKeyInfoResponse {
-                            attributes: HashMap::new(),
-                            error: err.to_string(),
-                        })),
+                        Err(err) => {
+                            return Ok(Response::new(GetKeyInfoResponse {
+                                attributes: HashMap::new(),
+                                error: err.to_string(),
+                            }))
+                        }
                     };
-                    let x509 = X509::from_pem(&public_datakey.certificate).expect("can not get certificate from PEM");
+                    let x509 = X509::from_pem(&public_datakey.certificate)
+                        .expect("can not get certificate from PEM");
                     let skid_pem = x509.subject_key_id().expect("get subject key id failed");
                     let skid_vec = skid_pem.as_slice();
                     new_info.insert(SUBJECT_KEY_ID.to_string(), hex::encode(skid_vec));
                     debug!("SKID (hex): {}", hex::encode(skid_vec));
                 }
                 Ok(Response::new(GetKeyInfoResponse {
-                attributes: new_info,
-                error: "".to_string(),}))
-            },
+                    attributes: new_info,
+                    error: "".to_string(),
+                }))
+            }
             Err(err) => Ok(Response::new(GetKeyInfoResponse {
                 attributes: HashMap::new(),
                 error: err.to_string(),
@@ -158,8 +163,8 @@ where
             }));
         }
         debug!(
-            "begin to sign key_type :{} key_name: {} data hex: {}",
-            key_type, key_name, hex::encode(&data)
+            "begin to sign key_type :{} key_name: {}",
+            key_type, key_name
         );
         match self
             .key_service

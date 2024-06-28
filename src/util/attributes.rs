@@ -16,11 +16,11 @@
 
 use std::collections::HashMap;
 
-use openssl::pkey::PKey;
-use openssl::rsa::Rsa;
-use openssl::md::Md;
-use openssl::pkey_ctx::PkeyCtx;
 use openssl::hash::MessageDigest;
+use openssl::md::Md;
+use openssl::pkey::PKey;
+use openssl::pkey_ctx::PkeyCtx;
+use openssl::rsa::Rsa;
 
 pub const DIGEST_ALGO: &str = "digest_algorithm";
 
@@ -51,12 +51,16 @@ pub enum PkeyHashAlgo {
 
 impl PkeyHashAlgo {
     pub fn get_hash_algo_from_attributes(attributes: &HashMap<String, String>) -> PkeyHashAlgo {
-        let hash_algo = match attributes.get(DIGEST_ALGO).expect("get algo failed").as_str() {
+        let hash_algo = match attributes
+            .get(DIGEST_ALGO)
+            .expect("get algo failed")
+            .as_str()
+        {
             "md5" => PkeyHashAlgo::Md5,
             "sha1" => PkeyHashAlgo::Sha1,
             "sha2_224" => PkeyHashAlgo::Sha224,
             "sha2_256" => PkeyHashAlgo::Sha256,
-            "sha2_384"=> PkeyHashAlgo::Sha384,
+            "sha2_384" => PkeyHashAlgo::Sha384,
             "sha2_512" => PkeyHashAlgo::Sha512,
             _ => PkeyHashAlgo::Sha256,
         };
@@ -64,30 +68,43 @@ impl PkeyHashAlgo {
     }
 
     pub fn get_digest_algo_from_attributes(attributes: &HashMap<String, String>) -> MessageDigest {
-        let digest_algo = match attributes.get(DIGEST_ALGO).expect("get algo failed").as_str() {
+        let digest_algo = match attributes
+            .get(DIGEST_ALGO)
+            .expect("get algo failed")
+            .as_str()
+        {
             "md5" => MessageDigest::md5(),
             "sha1" => MessageDigest::sha1(),
             "sha2_224" => MessageDigest::sha224(),
             "sha2_256" => MessageDigest::sha256(),
-            "sha2_384"=> MessageDigest::sha384(),
+            "sha2_384" => MessageDigest::sha384(),
             "sha2_512" => MessageDigest::sha512(),
             _ => MessageDigest::sha256(),
         };
         digest_algo
     }
 
-    pub fn to_u8(&self) -> u8 {
-        *self as u8
+    pub fn to_u8(self) -> u8 {
+        self as u8
     }
 }
 
-pub fn do_sign_rsahash(pkey_input: &[u8], data: &[u8], attributes: &HashMap<String, String>, signature: &mut Vec<u8>) -> Result<(), Box<dyn std::error::Error>> {
-    let digest_algo = match attributes.get(DIGEST_ALGO).expect("get algo failed").as_str() {
+pub fn do_sign_rsahash(
+    pkey_input: &[u8],
+    data: &[u8],
+    attributes: &HashMap<String, String>,
+    signature: &mut Vec<u8>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let digest_algo = match attributes
+        .get(DIGEST_ALGO)
+        .expect("get algo failed")
+        .as_str()
+    {
         "md5" => Md::md5(),
         "sha1" => Md::sha1(),
         "sha2_224" => Md::sha224(),
         "sha2_256" => Md::sha256(),
-        "sha2_384"=> Md::sha384(),
+        "sha2_384" => Md::sha384(),
         "sha2_512" => Md::sha512(),
         _ => Md::sha256(),
     };
@@ -98,8 +115,12 @@ pub fn do_sign_rsahash(pkey_input: &[u8], data: &[u8], attributes: &HashMap<Stri
     ctx.sign_init().unwrap();
     ctx.set_signature_md(digest_algo).unwrap();
 
-    ctx.sign_to_vec(&data, signature).unwrap();
-    debug!("Signature: {:?} hex::encode(): {:?}", signature, hex::encode(&signature));
+    ctx.sign_to_vec(data, signature).unwrap();
+    debug!(
+        "Signature: {:?} hex::encode(): {:?}",
+        signature,
+        hex::encode(&signature)
+    );
 
     Ok(())
 }
@@ -117,16 +138,15 @@ mod tests {
 
     #[tokio::test]
     async fn test_attributes_do_sign_rsahash() {
-        let attributes = HashMap::from([
-            (DIGEST_ALGO.to_string(), "sha2_256".to_string()),
-        ]);
+        let attributes = HashMap::from([(DIGEST_ALGO.to_string(), "sha2_256".to_string())]);
 
         let result = panic::catch_unwind(|| async {
             let current_dir = env::current_dir().expect("get current dir failed");
             let signature_buf = read(current_dir.join("test_assets").join("private.pem")).unwrap();
             let mut signature = Vec::new();
             // 使用私钥进行签名
-            let inner_result = do_sign_rsahash(&signature_buf, TEST_DATA, &attributes, &mut signature);
+            let inner_result =
+                do_sign_rsahash(&signature_buf, TEST_DATA, &attributes, &mut signature);
             print!("attribute_: {:?}\n", inner_result);
         });
         assert!(result.is_ok());
@@ -138,9 +158,7 @@ mod tests {
 
     #[test]
     fn test_attributes_pkey_hash_algo_methods() {
-        let attributes = HashMap::from([
-            (DIGEST_ALGO.to_string(), "sha1".to_string()),
-        ]);
+        let attributes = HashMap::from([(DIGEST_ALGO.to_string(), "sha1".to_string())]);
 
         // 测试 get_hash_algo_from_attributes
         let hash_algo = PkeyHashAlgo::get_hash_algo_from_attributes(&attributes);
