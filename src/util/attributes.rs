@@ -1,6 +1,6 @@
 /*
  *
- *  * // Copyright (c) 2023 Huawei Technologies Co.,Ltd. All rights reserved.
+ *  * // Copyright (c) 2024 Huawei Technologies Co.,Ltd. All rights reserved.
  *  * //
  *  * // signatrust is licensed under Mulan PSL v2.
  *  * // You can use this software according to the terms and conditions of the Mulan
@@ -150,10 +150,6 @@ mod tests {
             print!("attribute_: {:?}\n", inner_result);
         });
         assert!(result.is_ok());
-
-        // 验证签名的正确性（这部分需要额外的代码来验证签名，这里仅示例）
-        // 假设有一个验证签名的函数 verify_signature
-        // assert!(verify_signature(PRIVATE_KEY_PEM, TEST_DATA, &signature));
     }
 
     #[test]

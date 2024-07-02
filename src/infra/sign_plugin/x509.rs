@@ -638,7 +638,7 @@ impl SignPlugins for X509Plugin {
                 Ok(cms_signature.to_der()?)
             }
             SignType::RsaHash => {
-                // https://github.com/sfackler/rust-openssl/blob/1b4c9b0e47aaefb8fb512d97d68a091b4f624812/openssl/src/pkey_ctx.rs#L863
+                // rust-openssl/openssl/src/pkey_ctx.rs
                 let mut signature = vec![];
                 attributes::do_sign_rsahash(
                     self.private_key.unsecure(),

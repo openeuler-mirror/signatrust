@@ -1,6 +1,6 @@
 /*
  *
- *  * // Copyright (c) 2023 Huawei Technologies Co.,Ltd. All rights reserved.
+ *  * // Copyright (c) 2024 Huawei Technologies Co.,Ltd. All rights reserved.
  *  * //
  *  * // signatrust is licensed under Mulan PSL v2.
  *  * // You can use this software according to the terms and conditions of the Mulan
