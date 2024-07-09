@@ -426,6 +426,7 @@ async fn export_public_key(
         (status = 500, description = "Server internal error", body = ErrorMessage)
     )
 )]
+
 async fn export_certificate(
     user: Option<UserIdentity>,
     key_service: web::Data<dyn KeyService>,

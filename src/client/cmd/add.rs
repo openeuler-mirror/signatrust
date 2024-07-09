@@ -49,6 +49,8 @@ lazy_static! {
         (FileType::KernelModule, vec!["ko"]),
         //efi file could be a file without extension
         (FileType::EfiImage, vec![".*"]),
+        // ima can be used for any file
+        (FileType::ImaEvm, vec![".*"]),
     ]);
 }
 
@@ -75,7 +77,9 @@ pub struct CommandAdd {
     #[arg(long)]
     #[arg(value_enum, default_value_t=SignType::Cms)]
     #[arg(
-        help = "specify the signature type, meaningful when key type is x509, EFI file supports `authenticode` only and KO file supports `cms` and `pkcs7`"
+        help = r#"specify the signature type, meaningful when key type is x509,  
+        EFI file supports `authenticode` only and KO file supports `cms` and `pkcs7`
+        ima evm file supports `rsa-hash` only"#
     )]
     sign_type: SignType,
     #[arg(long)]

@@ -147,7 +147,7 @@ impl FileHandler for RpmFileHandler {
             header_and_content_digest,
         } = Package::create_sig_header_digests(
             header_bytes.as_slice(),
-            &package.content.as_slice(),
+            package.content.as_slice(),
         )?;
 
         let key_type = self.get_key_type(key_attributes);

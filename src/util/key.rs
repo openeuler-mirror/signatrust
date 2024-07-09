@@ -38,7 +38,7 @@ pub fn get_datakey_full_name(
     visibility: &Visibility,
 ) -> LibraryResult<String> {
     let names: Vec<_> = name.split(':').collect();
-    if visibility.to_owned() == Visibility::Public {
+    if *visibility == Visibility::Public {
         return if names.len() <= 1 {
             Ok(name.to_owned())
         } else {

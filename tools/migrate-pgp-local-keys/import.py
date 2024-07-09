@@ -62,11 +62,11 @@ class KeyImport:
                         "digest_algorithm": "sha2_256",
                         "key_type": "rsa",
                         "passphrase": self.passphrase,
-                        "key_length": "3072",
+                        "key_length": "2048",
                         "expire_at": "2050-12-30 00:00:57+08:00",
                     },
                     'name': self.name,
-                    'key_type': 'pgp',
+                    'key_type': 'x509ee',
                     'visibility': 'public',
                     'email': self.email,
                     "description": "imported from EUR server",
@@ -91,7 +91,7 @@ class KeyImport:
 
 if __name__ == "__main__":
     if len(sys.argv) != 7:
-        print("please use file as following:  python migrate.py <signatrust-url> <token> <name> <email> <private-key> <public-key> <passphrase>")
+        print("please use file as following:  python import.py <signatrust-url> <token> <name> <email> <private-key> <public-key> <passphrase>")
     else:
         worker = KeyImport(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7])
         worker.import_key()

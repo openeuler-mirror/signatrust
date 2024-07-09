@@ -24,19 +24,15 @@ use std::str::FromStr;
 
 pub const X509_VALID_KEY_SIZE: [&str; 3] = ["2048", "3072", "4096"];
 
-#[derive(Debug, Clone, PartialEq, Sequence, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Sequence, Deserialize, Default)]
 pub enum X509EEUsage {
     #[serde(rename = "efi")]
+    #[default]
     Efi,
     #[serde(rename = "ko")]
     Ko,
 }
 
-impl Default for X509EEUsage {
-    fn default() -> Self {
-        X509EEUsage::Efi
-    }
-}
 impl FromStr for X509EEUsage {
     type Err = Error;
     fn from_str(s: &str) -> Result<Self> {

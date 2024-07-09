@@ -50,6 +50,7 @@ use crate::domain::datakey::plugins::x509::{
     X509DigestAlgorithm, X509EEUsage, X509KeyType, X509_VALID_KEY_SIZE,
 };
 use crate::domain::sign_plugin::SignPlugins;
+use crate::util::attributes;
 use crate::util::error::{Error, Result};
 use crate::util::key::{decode_hex_string_to_u8, encode_u8_to_hex_string};
 use crate::util::options;
@@ -572,6 +573,7 @@ impl SignPlugins for X509Plugin {
                 self.parent_key.clone().unwrap().certificate.unsecure(),
             )?)?;
         }
+
         match SignType::from_str(
             options
                 .get(options::SIGN_TYPE)
@@ -634,6 +636,18 @@ impl SignPlugins for X509Plugin {
                         | CMSOptions::NOATTR,
                 )?;
                 Ok(cms_signature.to_der()?)
+            }
+            SignType::RsaHash => {
+                // rust-openssl/openssl/src/pkey_ctx.rs
+                let mut signature = vec![];
+                attributes::do_sign_rsahash(
+                    self.private_key.unsecure(),
+                    &content,
+                    &self.attributes,
+                    &mut signature,
+                )
+                .unwrap();
+                Ok(signature)
             }
         }
     }

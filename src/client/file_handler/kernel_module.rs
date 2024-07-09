@@ -86,7 +86,7 @@ impl KernelModuleFileHandler {
         signature: &[u8],
     ) -> Result<()> {
         let mut signed = fs::File::create(tempfile)?;
-        signed.write_all(&self.get_raw_content(module, &mut HashMap::new())?)?;
+        signed.write_all(&self.get_raw_content(module, &HashMap::new())?)?;
         signed.write_all(signature)?;
         let sig_struct = ModuleSignature::new(signature.len() as c_uint);
         signed.write_all(&bincode::encode_to_vec(
@@ -102,7 +102,7 @@ impl KernelModuleFileHandler {
     pub fn get_raw_content(
         &self,
         path: &PathBuf,
-        sign_options: &mut HashMap<String, String>,
+        sign_options: &HashMap<String, String>,
     ) -> Result<Vec<u8>> {
         let raw_content = fs::read(path)?;
         let mut file = fs::File::open(path)?;
@@ -271,7 +271,7 @@ mod test {
             .expect("generate unsigned kernel module failed");
         let path = PathBuf::from(name);
         let raw_content = file_handler
-            .get_raw_content(&path, &mut sign_options)
+            .get_raw_content(&path, &sign_options)
             .expect("get raw content failed");
         assert_eq!(raw_content.len(), SIGNATURE_SIZE - 1);
         assert_eq!(original_content, raw_content);
@@ -285,7 +285,7 @@ mod test {
             .expect("generate unsigned kernel module failed");
         let path = PathBuf::from(name);
         let raw_content = file_handler
-            .get_raw_content(&path, &mut sign_options)
+            .get_raw_content(&path, &sign_options)
             .expect("get raw content failed");
         assert_eq!(raw_content.len(), SIGNATURE_SIZE + 100);
         assert_eq!(original_content, raw_content);
@@ -299,7 +299,7 @@ mod test {
             .expect("generate signed kernel module failed");
         let path = PathBuf::from(name);
         let raw_content = file_handler
-            .get_raw_content(&path, &mut sign_options)
+            .get_raw_content(&path, &sign_options)
             .expect("get raw content failed");
         assert_eq!(raw_content.len(), 100);
         assert_eq!(original_content, raw_content);
@@ -312,7 +312,7 @@ mod test {
         let (name, _) =
             generate_signed_kernel_module(100, true).expect("generate signed kernel module failed");
         let path = PathBuf::from(name);
-        let result = file_handler.get_raw_content(&path, &mut sign_options);
+        let result = file_handler.get_raw_content(&path, &sign_options);
         assert_eq!(
             result.unwrap_err().to_string(),
             "failed to split file: invalid kernel module signature size found"
@@ -389,7 +389,7 @@ mod test {
         assert_eq!(temp_file.starts_with(temp_dir.to_str().unwrap()), true);
         assert_eq!(file_name, name);
         let result = handler
-            .get_raw_content(&PathBuf::from(temp_file), &mut options)
+            .get_raw_content(&PathBuf::from(temp_file), &options)
             .expect("get raw content failed");
         assert_eq!(result, raw_content);
     }
