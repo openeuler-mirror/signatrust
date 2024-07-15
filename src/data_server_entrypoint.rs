@@ -19,6 +19,7 @@ use crate::util::error::Result;
 use clap::Parser;
 use config::Config;
 use std::env;
+use std::fs;
 use std::sync::{Arc, RwLock};
 use tokio::{
     select,
@@ -50,6 +51,9 @@ pub struct App {
         help = "path of configuration file, 'config/server.toml' relative to working directory be used in default"
     )]
     config: Option<String>,
+    #[arg(short, long)]
+    #[arg(help = "whether to remove config file when server started")]
+    remove_config: Option<bool>,
 }
 
 lazy_static! {
@@ -75,9 +79,12 @@ lazy_static! {
         let app = App::parse();
         let path = app.config.unwrap_or(format!("{}/{}", env::current_dir().expect("current dir not found").display(),
             "config/server.toml"));
-        let server_config = util::config::ServerConfig::new(path);
+        let server_config = util::config::ServerConfig::new(path.clone());
         //TODO: Enable watch configure file will lead to 100 percent cpu consumption, fix it later
         //server_config.watch(CANCEL_TOKEN.clone()).expect("failed to watch configure file");
+        if app.remove_config.unwrap_or(false) {
+            fs::remove_file(path).expect("failed to remove config file");
+        }
         server_config.config
     };
 }
