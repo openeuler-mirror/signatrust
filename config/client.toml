@@ -1,4 +1,4 @@
-working_dir = "/Users/tommylike/Work/codes/rust-projects/gitee-signatrust/signatrust/.data/tempdir"
+working_dir = "/home/workspace/signatrust/.data/tempdir"
 worker_threads = 8
 buffer_size = 20480
 # consider the memory consumption if number bumped since all binaries will be stored in memory
