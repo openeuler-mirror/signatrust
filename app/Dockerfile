@@ -3,7 +3,7 @@ FROM node:18.12.1 as Builder
 RUN mkdir -p /home/signatrust/app
 WORKDIR /home/signatrust/app
 COPY . /home/signatrust/app
-RUN npm install pnpm -g
+RUN npm install pnpm@9 -g
 RUN pnpm install
 RUN pnpm build
 
