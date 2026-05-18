@@ -8,11 +8,12 @@ use openssl::pkey;
 use openssl::x509;
 use openssl_sys::{
     ASN1_INTEGER_free, ASN1_OBJECT_free, BIO_free_all, BIO_get_mem_data, BIO_new, BIO_new_mem_buf,
-    BIO_s_mem, CMS_ContentInfo, CMS_ContentInfo_free, CMS_sign, EVP_MD_type,
-    EVP_PKEY_CTX_set_rsa_padding, OBJ_nid2obj, OBJ_txt2obj, X509_ALGOR_free, ASN1_BOOLEAN,
-    ASN1_GENERALIZEDTIME, ASN1_INTEGER, ASN1_OBJECT, ASN1_OCTET_STRING, BIO, CMS_BINARY,
-    CMS_DETACHED, CMS_KEY_PARAM, CMS_NOSMIMECAP, CMS_PARTIAL, EVP_MD, EVP_PKEY, EVP_PKEY_CTX,
-    GENERAL_NAME, RSA_PKCS1_PSS_PADDING, V_ASN1_NULL, V_ASN1_SEQUENCE, X509, X509_ALGOR, X509_CRL,
+    BIO_s_mem, CMS_ContentInfo, CMS_ContentInfo_free, CMS_sign, ERR_clear_error,
+    ERR_peek_last_error, EVP_MD_type, EVP_PKEY_CTX_set_rsa_padding, OBJ_nid2obj, OBJ_txt2obj,
+    X509_ALGOR_free, ASN1_BOOLEAN, ASN1_GENERALIZEDTIME, ASN1_INTEGER, ASN1_OBJECT,
+    ASN1_OCTET_STRING, BIO, CMS_BINARY, CMS_DETACHED, CMS_KEY_PARAM, CMS_NOSMIMECAP, CMS_PARTIAL,
+    EVP_MD, EVP_PKEY, EVP_PKEY_CTX, GENERAL_NAME, RSA_PKCS1_PSS_PADDING, V_ASN1_NULL,
+    V_ASN1_SEQUENCE, X509, X509_ALGOR, X509_CRL,
 };
 use rand::rngs::OsRng;
 use rand::Rng;
@@ -24,7 +25,13 @@ use std::slice;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 const TIMESTAMP_OID: &str = "1.2.840.113549.1.9.16.1.4";
+const SM2_DEFAULT_ID: &[u8] = b"1234567812345678";
 const USER_DEFINE_OID: &str = "1.2.3.4.1";
+// GM/T 0010: outer ContentInfo.contentType for all SM2 signed messages
+const SM2_CONTENT_TYPE_OID: &str = "1.2.156.10197.6.1.4.2.2";
+// GM/T 0010: inner encapContentInfo.eContentType for SM2 signed data (not used for timestamp)
+const SM2_ECONTENT_TYPE_OID: &str = "1.2.156.10197.6.1.4.2.1";
+
 #[repr(C)]
 pub struct CMS_SignerInfo {
     cert: *mut X509,
@@ -109,10 +116,16 @@ extern "C" {
     pub fn CMS_set1_eContentType(cms: *mut CMS_ContentInfo, oid: *mut ASN1_OBJECT) -> i32;
     pub fn i2d_CMS_bio(out: *mut BIO, cms: *mut CMS_ContentInfo) -> c_int;
     pub fn i2d_CMS_ContentInfo(cms: *mut CMS_ContentInfo, out: *mut *mut u8) -> c_int;
+    pub fn d2i_CMS_ContentInfo(
+        out: *mut *mut CMS_ContentInfo,
+        pp: *mut *const u8,
+        length: c_int,
+    ) -> *mut CMS_ContentInfo;
     pub fn OPENSSL_sk_num(stack: *const c_void) -> i32;
     pub fn OPENSSL_sk_value(stack: *const c_void, idx: i32) -> *mut c_void;
     pub fn free(ptr: *mut c_void);
     pub fn EVP_PKEY_is_a(key: *const EVP_PKEY, name: *const c_char) -> c_int;
+    pub fn EVP_PKEY_CTX_set1_id(ctx: *mut EVP_PKEY_CTX, id: *const c_void, id_len: c_int) -> c_int;
 
     pub fn TS_REQ_new() -> *mut TS_REQ;
     pub fn TS_REQ_free(req: *mut TS_REQ);
@@ -144,6 +157,13 @@ extern "C" {
         algo_type: i32,
         val: *mut c_void,
     ) -> i32;
+    pub fn PEM_read_bio_X509_CRL(
+        bp: *mut BIO,
+        x: *mut *mut X509_CRL,
+        cb: *mut c_void,
+        u: *mut c_void,
+    ) -> *mut X509_CRL;
+    pub fn X509_CRL_free(crl: *mut X509_CRL);
 }
 
 struct BioGuard(*mut BIO);
@@ -236,12 +256,197 @@ impl Drop for GenTimeGuard {
     }
 }
 
+trait CmsSignHandler {
+    // 签名前调用：设置 padding 或主签名 eContentType
+    unsafe fn pre_sign_main(
+        &self,
+        cms: *mut CMS_ContentInfo,
+        pk_ctx: *mut EVP_PKEY_CTX,
+    ) -> Result<()>;
+    // 签名前调用：设置 padding（时间戳，eContentType 固定为 TIMESTAMP_OID，不在此设置）
+    unsafe fn pre_sign_timestamp(&self, pk_ctx: *mut EVP_PKEY_CTX) -> Result<()>;
+    // 签名序列化后调用：对 DER 字节做 OID 替换（仅替换外层 contentType）
+    fn patch_der(&self, der: Vec<u8>) -> Result<Vec<u8>>;
+}
+
+struct RsaSignHandler;
+impl CmsSignHandler for RsaSignHandler {
+    unsafe fn pre_sign_main(
+        &self,
+        _cms: *mut CMS_ContentInfo,
+        pk_ctx: *mut EVP_PKEY_CTX,
+    ) -> Result<()> {
+        EVP_PKEY_CTX_set_rsa_padding(pk_ctx, RSA_PKCS1_PSS_PADDING);
+        Ok(())
+    }
+    unsafe fn pre_sign_timestamp(&self, pk_ctx: *mut EVP_PKEY_CTX) -> Result<()> {
+        EVP_PKEY_CTX_set_rsa_padding(pk_ctx, RSA_PKCS1_PSS_PADDING);
+        Ok(())
+    }
+    fn patch_der(&self, der: Vec<u8>) -> Result<Vec<u8>> {
+        Ok(der)
+    }
+}
+
+struct Sm2SignHandler;
+impl CmsSignHandler for Sm2SignHandler {
+    unsafe fn pre_sign_main(
+        &self,
+        cms: *mut CMS_ContentInfo,
+        pk_ctx: *mut EVP_PKEY_CTX,
+    ) -> Result<()> {
+        if EVP_PKEY_CTX_set1_id(
+            pk_ctx,
+            SM2_DEFAULT_ID.as_ptr() as *const c_void,
+            SM2_DEFAULT_ID.len() as c_int,
+        ) != 1
+        {
+            return Err(Error::InvalidArgumentError(
+                "EVP_PKEY_CTX_set1_id failed".to_string(),
+            ));
+        }
+        // 设置内层 eContentType（参与签名，必须在 CMS_final_digest 之前）
+        let oid_cstr = CString::new(SM2_ECONTENT_TYPE_OID)
+            .map_err(|_| Error::InvalidArgumentError("invalid SM2 eContentType OID".to_string()))?;
+        let oid = OBJ_txt2obj(oid_cstr.as_ptr(), 1);
+        if oid.is_null() {
+            return Err(Error::InvalidArgumentError(
+                "OBJ_txt2obj for SM2 eContentType OID failed".to_string(),
+            ));
+        }
+        let _oid_guard = Asn1ObjGuard(oid);
+        if CMS_set1_eContentType(cms, oid) != 1 {
+            return Err(Error::InvalidArgumentError(
+                "CMS_set1_eContentType failed".to_string(),
+            ));
+        }
+        Ok(())
+    }
+    unsafe fn pre_sign_timestamp(&self, pk_ctx: *mut EVP_PKEY_CTX) -> Result<()> {
+        if EVP_PKEY_CTX_set1_id(
+            pk_ctx,
+            SM2_DEFAULT_ID.as_ptr() as *const c_void,
+            SM2_DEFAULT_ID.len() as c_int,
+        ) != 1
+        {
+            return Err(Error::InvalidArgumentError(
+                "EVP_PKEY_CTX_set1_id failed".to_string(),
+            ));
+        }
+        Ok(())
+    }
+    fn patch_der(&self, der: Vec<u8>) -> Result<Vec<u8>> {
+        patch_outer_content_type(der)
+    }
+}
+
+fn cms_sign_handler(key_type: &str) -> Box<dyn CmsSignHandler> {
+    match key_type {
+        "sm2" => Box::new(Sm2SignHandler),
+        "rsa" => Box::new(RsaSignHandler),
+        other => {
+            log::warn!(
+                "unknown key_type '{}', falling back to RsaSignHandler",
+                other
+            );
+            Box::new(RsaSignHandler)
+        }
+    }
+}
+
+// Returns the byte offset of the first child element inside a DER SEQUENCE,
+// i.e. 1 (tag) + length-of-length-field bytes.
+fn der_seq_header_len(buf: &[u8]) -> Result<usize> {
+    if buf.len() < 2 {
+        return Err(Error::InvalidArgumentError(
+            "DER buffer too short".to_string(),
+        ));
+    }
+    Ok(match buf[1] {
+        n if n < 0x80 => 2,
+        0x81 => 3,
+        0x82 => 4,
+        0x83 => 5,
+        other => {
+            return Err(Error::InvalidArgumentError(format!(
+                "Unsupported DER length byte: 0x{:02X}",
+                other
+            )))
+        }
+    })
+}
+
+// Encodes a DER length value into bytes (supports up to 3-byte length, i.e. <= 0xFFFFFF).
+fn der_encode_length(len: usize) -> Vec<u8> {
+    if len < 0x80 {
+        vec![len as u8]
+    } else if len <= 0xFF {
+        vec![0x81, len as u8]
+    } else if len <= 0xFFFF {
+        vec![0x82, (len >> 8) as u8, (len & 0xFF) as u8]
+    } else if len <= 0xFF_FFFF {
+        vec![
+            0x83,
+            (len >> 16) as u8,
+            ((len >> 8) & 0xFF) as u8,
+            (len & 0xFF) as u8,
+        ]
+    } else {
+        panic!(
+            "DER length {} exceeds 3-byte encoding limit (0xFFFFFF)",
+            len
+        );
+    }
+}
+
+// Replaces the outer ContentInfo.contentType OID (pkcs7-signedData) with SM2_CONTENT_TYPE_OID
+// and rebuilds the root SEQUENCE header with a correctly re-encoded length field.
+// The inner eContentType was already set correctly via CMS_set1_eContentType before signing.
+fn patch_outer_content_type(der: Vec<u8>) -> Result<Vec<u8>> {
+    const OLD_OID: &[u8] = &[
+        0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x07, 0x02,
+    ];
+    const NEW_OID: &[u8] = &[
+        0x06, 0x0A, 0x2A, 0x81, 0x1C, 0xCF, 0x55, 0x06, 0x01, 0x04, 0x02, 0x02,
+    ];
+
+    if der.is_empty() || der[0] != 0x30 {
+        return Err(Error::InvalidArgumentError(
+            "DER does not start with SEQUENCE tag".to_string(),
+        ));
+    }
+    let oid_start = der_seq_header_len(&der)?;
+
+    // If the OID at the expected position is not pkcs7-signedData, it is unexpected.
+    if der.len() < oid_start + OLD_OID.len()
+        || &der[oid_start..oid_start + OLD_OID.len()] != OLD_OID
+    {
+        return Err(Error::InvalidArgumentError(
+            "patch_outer_content_type: expected pkcs7-signedData OID not found".to_string(),
+        ));
+    }
+
+    // Everything after the old OID (the rest of the SEQUENCE contents).
+    let tail = &der[oid_start + OLD_OID.len()..];
+
+    // Rebuild: 0x30 + correctly encoded length + NEW_OID + tail.
+    let inner_len = NEW_OID.len() + tail.len();
+    let len_bytes = der_encode_length(inner_len);
+    let mut out = Vec::with_capacity(1 + len_bytes.len() + inner_len);
+    out.push(0x30);
+    out.extend_from_slice(&len_bytes);
+    out.extend_from_slice(NEW_OID);
+    out.extend_from_slice(tail);
+    Ok(out)
+}
+
 fn generate_cms_with_hash(
     cert: &x509::X509Ref,
     pkey: &pkey::PKey<pkey::Private>,
     digest: &[u8],
-    options: HashMap<String, String>,
-    attributes: HashMap<String, String>,
+    options: &HashMap<String, String>,
+    attributes: &HashMap<String, String>,
+    handler: &dyn CmsSignHandler,
 ) -> Result<*mut CMS_ContentInfo> {
     unsafe {
         // step1. generate cms structure
@@ -279,8 +484,37 @@ fn generate_cms_with_hash(
             ));
         }
         if let Some(crl_data) = options.get(options::CRL).filter(|s| !s.is_empty()) {
-            let crl = x509::X509Crl::from_pem(crl_data.as_bytes())?;
-            CMS_add1_crl(cms, crl.as_ptr());
+            let crl_bio = BIO_new_mem_buf(
+                crl_data.as_ptr() as *const c_void,
+                crl_data
+                    .len()
+                    .try_into()
+                    .map_err(|_| Error::InvalidArgumentError("crl data too large".to_string()))?,
+            );
+            if crl_bio.is_null() {
+                return Err(Error::InvalidArgumentError(
+                    "BIO_new_mem_buf for CRL failed".to_string(),
+                ));
+            }
+            let _crl_bio_guard = BioGuard(crl_bio);
+            loop {
+                let crl = PEM_read_bio_X509_CRL(
+                    crl_bio,
+                    ptr::null_mut(),
+                    ptr::null_mut(),
+                    ptr::null_mut(),
+                );
+                if crl.is_null() {
+                    break;
+                }
+                let add_ret = CMS_add1_crl(cms, crl);
+                X509_CRL_free(crl);
+                if add_ret != 1 {
+                    return Err(Error::InvalidArgumentError(
+                        "CMS_add1_crl failed".to_string(),
+                    ));
+                }
+            }
         }
         let pk_ctx = CMS_SignerInfo_get0_pkey_ctx(si);
         if pk_ctx.is_null() {
@@ -288,7 +522,7 @@ fn generate_cms_with_hash(
                 "CMS_SignerInfo_get0_pkey_ctx failed".to_string(),
             ));
         }
-        EVP_PKEY_CTX_set_rsa_padding(pk_ctx, RSA_PKCS1_PSS_PADDING);
+        handler.pre_sign_main(cms, pk_ctx)?;
         // step3. generate signature
         let ret = CMS_final_digest(
             cms,
@@ -310,7 +544,7 @@ fn generate_cms_with_hash(
 
 fn generate_timestamp_req(
     cms: *mut CMS_ContentInfo,
-    attributes: HashMap<String, String>,
+    attributes: &HashMap<String, String>,
 ) -> Result<*mut TS_REQ> {
     unsafe {
         // step1. get signature from cms
@@ -505,7 +739,8 @@ fn generate_timestamp_signature(
     tsa_cert: &x509::X509Ref,
     tsa_key: &pkey::PKey<pkey::Private>,
     tst_info: *mut TS_TST_INFO,
-    attributes: HashMap<String, String>,
+    attributes: &HashMap<String, String>,
+    handler: &dyn CmsSignHandler,
 ) -> Result<*mut CMS_ContentInfo> {
     if tst_info.is_null() {
         return Err(Error::InvalidArgumentError(
@@ -566,8 +801,8 @@ fn generate_timestamp_signature(
                 "CMS_SignerInfo_get0_pkey_ctx failed".to_string(),
             ));
         }
-        EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PSS_PADDING);
-        // step4. specify the eContentType
+        handler.pre_sign_timestamp(pctx)?;
+        // step4. specify the eContentType (always TIMESTAMP_OID, regardless of key type)
         let oid_str = CString::new(TIMESTAMP_OID)
             .map_err(|_| Error::RemoteSignError("invalid OID".to_string()))?;
         let tst_oid: *mut ASN1_OBJECT = OBJ_txt2obj(oid_str.as_ptr(), 1);
@@ -582,11 +817,10 @@ fn generate_timestamp_signature(
                 "CMS_set1_eContentType failed".to_string(),
             ));
         }
-        // step4. generate cms signature
+        // step5. generate cms signature
         if CMS_final(cms, content, ptr::null_mut(), flags) != 1 {
             return Err(Error::InvalidArgumentError("CMS_final failed".to_string()));
         }
-
         let cms_ptr = cms_guard.0;
         cms_guard.0 = ptr::null_mut();
         Ok(cms_ptr)
@@ -596,6 +830,7 @@ fn generate_timestamp_signature(
 fn attach_timestamp_to_cms(
     cms: *mut CMS_ContentInfo,
     ts_token: *mut CMS_ContentInfo,
+    key_type: &str,
 ) -> Result<()> {
     unsafe {
         // step1. get cms signer info
@@ -606,23 +841,16 @@ fn attach_timestamp_to_cms(
                 "Failed to get SignerInfo from CMS.".to_string(),
             ));
         }
-        // step2. convert to der format
-        let mut ts_der: *mut u8 = ptr::null_mut();
-        let ts_len = i2d_CMS_ContentInfo(ts_token, &mut ts_der);
-        if ts_len <= 0 || ts_der.is_null() {
-            return Err(Error::InvalidArgumentError(
-                "Failed to convert TS token to DER format.".to_string(),
-            ));
-        }
-        // step3. attch timestamp to cms
-        let _der_guard = DerGuard(ts_der);
+        // step2. serialize timestamp token with OID patching applied
+        let ts_der = CmsPlugin::cms_to_vec(ts_token, key_type)?;
+        // step3. attach timestamp to cms
         let nid = 225;
         let result = CMS_unsigned_add1_attr_by_NID(
             signer_info as *mut CMS_SignerInfo,
             nid,
             V_ASN1_SEQUENCE,
-            ts_der as *mut _,
-            ts_len,
+            ts_der.as_ptr() as *mut _,
+            ts_der.len() as c_int,
         );
 
         if result != 1 {
@@ -639,7 +867,7 @@ pub struct CmsContext<'a> {
     private_key: &'a pkey::PKey<pkey::Private>,
     content: &'a [u8],
     options: &'a HashMap<String, String>,
-    sign_key_attributes: &'a HashMap<String, String>,
+    pub sign_key_attributes: &'a HashMap<String, String>,
     pub cms: *mut CMS_ContentInfo,
 
     // timpstamp
@@ -694,19 +922,26 @@ impl CmsPlugin {
     }
 
     pub fn step_generate_cms(ctx: &mut CmsContext) -> Result<()> {
+        let key_type = ctx
+            .sign_key_attributes
+            .get("key_type")
+            .map(|s| s.as_str())
+            .unwrap_or("");
+        let handler = cms_sign_handler(key_type);
         let cms = generate_cms_with_hash(
             ctx.certificate,
             ctx.private_key,
             ctx.content,
-            ctx.options.clone(),
-            ctx.sign_key_attributes.clone(),
+            ctx.options,
+            ctx.sign_key_attributes,
+            handler.as_ref(),
         )?;
         ctx.cms = cms;
         Ok(())
     }
 
     pub fn step_generate_ts_req(ctx: &mut CmsContext) -> Result<()> {
-        let ts_req = generate_timestamp_req(ctx.cms, ctx.sign_key_attributes.clone())?;
+        let ts_req = generate_timestamp_req(ctx.cms, ctx.sign_key_attributes)?;
         ctx.ts_req = ts_req;
         Ok(())
     }
@@ -741,23 +976,34 @@ impl CmsPlugin {
             .tsa_key
             .as_ref()
             .ok_or_else(|| Error::RemoteSignError("tsa_key not loaded".to_string()))?;
-
+        let tsa_key_type = ctx
+            .timestamp_key_attributes
+            .get("key_type")
+            .map(|s| s.as_str())
+            .unwrap_or("");
+        let handler = cms_sign_handler(tsa_key_type);
         let timestamp = generate_timestamp_signature(
             tsa_cert,
             tsa_key,
             ctx.tst_info,
-            ctx.timestamp_key_attributes.clone(),
+            ctx.timestamp_key_attributes,
+            handler.as_ref(),
         )?;
         ctx.timestamp = timestamp;
         Ok(())
     }
 
     pub fn step_attach_timestamp(ctx: &mut CmsContext) -> Result<()> {
-        attach_timestamp_to_cms(ctx.cms, ctx.timestamp)?;
+        let key_type = ctx
+            .timestamp_key_attributes
+            .get("key_type")
+            .map(|s| s.as_str())
+            .unwrap_or("");
+        attach_timestamp_to_cms(ctx.cms, ctx.timestamp, key_type)?;
         Ok(())
     }
 
-    pub fn cms_to_vec(cms: *mut CMS_ContentInfo) -> Result<Vec<u8>> {
+    pub fn cms_to_vec(cms: *mut CMS_ContentInfo, key_type: &str) -> Result<Vec<u8>> {
         struct BioGuard(*mut openssl_sys::BIO);
         impl Drop for BioGuard {
             fn drop(&mut self) {
@@ -766,7 +1012,7 @@ impl CmsPlugin {
                 }
             }
         }
-        unsafe {
+        let buf = unsafe {
             let out_bio = BIO_new(BIO_s_mem());
             let _guard = BioGuard(out_bio);
             if i2d_CMS_bio(out_bio, cms) != 1 {
@@ -784,9 +1030,9 @@ impl CmsPlugin {
             }
 
             let data_ptr = ptr as *const u8;
-            let buf = slice::from_raw_parts(data_ptr, len).to_vec();
-            Ok(buf)
-        }
+            slice::from_raw_parts(data_ptr, len).to_vec()
+        };
+        cms_sign_handler(key_type).patch_der(buf)
     }
 }
 
@@ -872,7 +1118,14 @@ fn test_generate_cms_with_rsa() {
     attributes.insert(attributes::DIGEST_ALGO.to_string(), "sha256".to_string());
     let options = HashMap::new();
 
-    let result = generate_cms_with_hash(&cert, &pkey, content, options, attributes);
+    let result = generate_cms_with_hash(
+        &cert,
+        &pkey,
+        content,
+        &options,
+        &attributes,
+        &RsaSignHandler,
+    );
     assert!(result.is_ok(), "CMS generation failed: {:?}", result.err());
 }
 #[test]
@@ -886,7 +1139,14 @@ fn test_generate_cms_with_sm2_cert() {
     attributes.insert(attributes::DIGEST_ALGO.to_string(), "sm3".to_string());
     let options = HashMap::new();
 
-    let result = generate_cms_with_hash(&cert, &pkey, content, options, attributes);
+    let result = generate_cms_with_hash(
+        &cert,
+        &pkey,
+        content,
+        &options,
+        &attributes,
+        &Sm2SignHandler,
+    );
     assert!(result.is_ok(), "CMS generation failed: {:?}", result.err());
 }
 #[test]
@@ -900,7 +1160,14 @@ fn test_generate_cms_with_incorret_alg() {
     attributes.insert(attributes::DIGEST_ALGO.to_string(), "sha256".to_string());
     let options = HashMap::new();
 
-    let result = generate_cms_with_hash(&cert, &pkey, content, options, attributes);
+    let result = generate_cms_with_hash(
+        &cert,
+        &pkey,
+        content,
+        &options,
+        &attributes,
+        &Sm2SignHandler,
+    );
     assert!(
         result.is_err(),
         "Expected error due to use incorret digest algorithm"
@@ -917,9 +1184,16 @@ fn test_generate_timestamp_req() {
     attributes.insert(attributes::DIGEST_ALGO.to_string(), "sha256".to_string());
     let options = HashMap::new();
 
-    let cms = generate_cms_with_hash(&cert, &pkey, content, options, attributes.clone())
-        .expect("CMS generation failed");
-    let ts_req = generate_timestamp_req(cms, attributes.clone());
+    let cms = generate_cms_with_hash(
+        &cert,
+        &pkey,
+        content,
+        &options,
+        &attributes,
+        &RsaSignHandler,
+    )
+    .expect("CMS generation failed");
+    let ts_req = generate_timestamp_req(cms, &attributes);
     assert!(
         ts_req.is_ok(),
         "Timestamp request generation failed: {:?}",
@@ -938,10 +1212,16 @@ fn test_generate_timestamp_tst() {
     attributes.insert(attributes::DIGEST_ALGO.to_string(), "sha256".to_string());
     let options = HashMap::new();
 
-    let cms = generate_cms_with_hash(&cert, &pkey, content, options, attributes.clone())
-        .expect("CMS generation failed");
-    let ts_req =
-        generate_timestamp_req(cms, attributes.clone()).expect("Failed to generate TS request");
+    let cms = generate_cms_with_hash(
+        &cert,
+        &pkey,
+        content,
+        &options,
+        &attributes,
+        &RsaSignHandler,
+    )
+    .expect("CMS generation failed");
+    let ts_req = generate_timestamp_req(cms, &attributes).expect("Failed to generate TS request");
     let tst_info = generate_timestamp_tst(ts_req, &cert).expect("TST info generation failed");
     assert!(!tst_info.is_null(), "TST info is null");
 }
@@ -957,10 +1237,16 @@ fn test_generate_timestamp_signature() {
     attributes.insert(attributes::DIGEST_ALGO.to_string(), "sha256".to_string());
     let options = HashMap::new();
 
-    let cms = generate_cms_with_hash(&cert, &pkey, content, options, attributes.clone())
-        .expect("CMS generation failed");
-    let ts_req =
-        generate_timestamp_req(cms, attributes.clone()).expect("Failed to generate TS request");
+    let cms = generate_cms_with_hash(
+        &cert,
+        &pkey,
+        content,
+        &options,
+        &attributes,
+        &RsaSignHandler,
+    )
+    .expect("CMS generation failed");
+    let ts_req = generate_timestamp_req(cms, &attributes).expect("Failed to generate TS request");
     let tst_info = generate_timestamp_tst(ts_req, &cert).expect("TST info generation failed");
 
     let tsa_cert = x509::X509::from_pem(SM2_CRT.as_bytes()).expect("Failed to load certificate");
@@ -969,8 +1255,14 @@ fn test_generate_timestamp_signature() {
     let mut tsa_pattributes = HashMap::new();
     tsa_pattributes.insert(attributes::DIGEST_ALGO.to_string(), "sm3".to_string());
 
-    let tst = generate_timestamp_signature(&tsa_cert, &tsa_pkey, tst_info, tsa_pattributes)
-        .expect("TST generation failed");
+    let tst = generate_timestamp_signature(
+        &tsa_cert,
+        &tsa_pkey,
+        tst_info,
+        &tsa_pattributes,
+        &Sm2SignHandler,
+    )
+    .expect("TST generation failed");
     assert!(!tst.is_null(), "TST is null");
 }
 
@@ -985,10 +1277,16 @@ fn test_attach_timestamp_to_cms() {
     attributes.insert(attributes::DIGEST_ALGO.to_string(), "sm3".to_string());
     let options = HashMap::new();
 
-    let cms = generate_cms_with_hash(&cert, &pkey, content, options, attributes.clone())
-        .expect("CMS generation failed");
-    let ts_req =
-        generate_timestamp_req(cms, attributes.clone()).expect("Failed to generate TS request");
+    let cms = generate_cms_with_hash(
+        &cert,
+        &pkey,
+        content,
+        &options,
+        &attributes,
+        &Sm2SignHandler,
+    )
+    .expect("CMS generation failed");
+    let ts_req = generate_timestamp_req(cms, &attributes).expect("Failed to generate TS request");
     let tst_info = generate_timestamp_tst(ts_req, &cert).expect("TST info generation failed");
 
     let tsa_cert = x509::X509::from_pem(RSA_CRT.as_bytes()).expect("Failed to load certificate");
@@ -997,7 +1295,351 @@ fn test_attach_timestamp_to_cms() {
     let mut tsa_pattributes = HashMap::new();
     tsa_pattributes.insert(attributes::DIGEST_ALGO.to_string(), "sha256".to_string());
 
-    let tst = generate_timestamp_signature(&tsa_cert, &tsa_pkey, tst_info, tsa_pattributes)
-        .expect("TST generation failed");
-    attach_timestamp_to_cms(cms, tst).expect("CMS Attach Timestamp failed");
+    let tst = generate_timestamp_signature(
+        &tsa_cert,
+        &tsa_pkey,
+        tst_info,
+        &tsa_pattributes,
+        &RsaSignHandler,
+    )
+    .expect("TST generation failed");
+    attach_timestamp_to_cms(cms, tst, "rsa").expect("CMS Attach Timestamp failed");
+}
+
+#[cfg(test)]
+const TEST_CRL1: &str = "-----BEGIN X509 CRL-----
+MIIBaTBTAgEBMA0GCSqGSIb3DQEBCwUAMBExDzANBgNVBAMMBlRlc3RDQRcNMjYw
+NTE1MDc0OTUyWhcNMjcwNTE1MDc0OTUyWqAOMAwwCgYDVR0UBAMCAQEwDQYJKoZI
+hvcNAQELBQADggEBAJYVYGbT5pEx7kNCVxpf2m78Ds5TmfiwhvgvExb8Urb4yXxN
+DhPmIKRCX9cOx5yIuF71b5xHMGauB8LNnn3b075pKIvCEbO/wiiAoenuZett471B
+A7fQjVXa6Oq+MSC08Lit+5v18jGgYsViNU1nn4R3JcgbTqinZ1vgdVn+gPvwveFG
+vhnR2+rGROGJSHKdC7+oEZgES3hnOk7KWF9NFx9a4MFg2t7l71YVJfDs6i2cIqbO
+59uv05k5pneLJKbwcBihyqbs9HwSl8/E8J5o1x+oA0XM5Go+iyo4hlWTW3UOFhsW
+YwpEaeUO3QmduMOpB+O6ww7f2QekWHDhyaohJik=
+-----END X509 CRL-----";
+
+#[cfg(test)]
+const TEST_CRL2: &str = "-----BEGIN X509 CRL-----
+MIIBajBUAgEBMA0GCSqGSIb3DQEBCwUAMBIxEDAOBgNVBAMMB1Rlc3RDQTIXDTI2
+MDUxNTA3NTAwNVoXDTI3MDUxNTA3NTAwNVqgDjAMMAoGA1UdFAQDAgEBMA0GCSqG
+SIb3DQEBCwUAA4IBAQC7smj0pZd0wErMIGsshL5trDZhGS1UhJojxOk39xkcMG/x
+Vj3bziMSvJz0pP348Z0GgnCjYtYSM6GeTeX14i4CL72gu33B8foMtFAoiwc3+z+7
+MaUnjHrtO71zuVYaaLt6CsNHLHQrR0tPShN5hGkXXDOO2vIAEuczlRzbb+QYYO2u
+JsUUuil2N3FxqUWrFCdHTfOYqitSrwQ2CPumVrz4HVNdJsM5yKjGGC4oPhCG/wSQ
+QwU3GfIi4LQjqPxKQtjotKlIG2Bqzqz2vQZYZinJQhiRk5GB2kgBDiBtjqhDE9U3
+M0tldIMcAm/bwR3ahmMr8FFYnStbdcZhLPdt80FU
+-----END X509 CRL-----";
+
+#[test]
+fn test_generate_cms_with_single_crl() {
+    let cert = x509::X509::from_pem(RSA_CRT.as_bytes()).expect("Failed to load certificate");
+    let pkey =
+        pkey::PKey::private_key_from_pem(RSA_KEY.as_bytes()).expect("Failed to load private key");
+    let content = b"test content";
+
+    let mut attributes = HashMap::new();
+    attributes.insert(attributes::DIGEST_ALGO.to_string(), "sha256".to_string());
+    let mut options = HashMap::new();
+    options.insert(options::CRL.to_string(), TEST_CRL1.to_string());
+
+    let result = generate_cms_with_hash(
+        &cert,
+        &pkey,
+        content,
+        &options,
+        &attributes,
+        &RsaSignHandler,
+    );
+    assert!(
+        result.is_ok(),
+        "CMS with single CRL failed: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_generate_cms_with_multiple_crls() {
+    let cert = x509::X509::from_pem(RSA_CRT.as_bytes()).expect("Failed to load certificate");
+    let pkey =
+        pkey::PKey::private_key_from_pem(RSA_KEY.as_bytes()).expect("Failed to load private key");
+    let content = b"test content";
+
+    let mut attributes = HashMap::new();
+    attributes.insert(attributes::DIGEST_ALGO.to_string(), "sha256".to_string());
+    let mut options = HashMap::new();
+    // 两个 CRL 块拼接在同一个字符串中
+    let multi_crl = format!("{}\n{}", TEST_CRL1, TEST_CRL2);
+    options.insert(options::CRL.to_string(), multi_crl);
+
+    let result = generate_cms_with_hash(
+        &cert,
+        &pkey,
+        content,
+        &options,
+        &attributes,
+        &RsaSignHandler,
+    );
+    assert!(
+        result.is_ok(),
+        "CMS with multiple CRLs failed: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_generate_cms_with_empty_crl() {
+    let cert = x509::X509::from_pem(RSA_CRT.as_bytes()).expect("Failed to load certificate");
+    let pkey =
+        pkey::PKey::private_key_from_pem(RSA_KEY.as_bytes()).expect("Failed to load private key");
+    let content = b"test content";
+
+    let mut attributes = HashMap::new();
+    attributes.insert(attributes::DIGEST_ALGO.to_string(), "sha256".to_string());
+    let mut options = HashMap::new();
+    options.insert(options::CRL.to_string(), String::new());
+
+    let result = generate_cms_with_hash(
+        &cert,
+        &pkey,
+        content,
+        &options,
+        &attributes,
+        &RsaSignHandler,
+    );
+    assert!(
+        result.is_ok(),
+        "CMS with empty CRL option failed: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_sm2_cms_der_oids() {
+    // SM2_CONTENT_TYPE_OID (1.2.156.10197.6.1.4.2.2) - outer contentType
+    const SM2_CONTENT_TYPE_BYTES: &[u8] = &[
+        0x06, 0x0A, 0x2A, 0x81, 0x1C, 0xCF, 0x55, 0x06, 0x01, 0x04, 0x02, 0x02,
+    ];
+    // SM2_ECONTENT_TYPE_OID (1.2.156.10197.6.1.4.2.1) - inner eContentType
+    const SM2_ECONTENT_TYPE_BYTES: &[u8] = &[
+        0x06, 0x0A, 0x2A, 0x81, 0x1C, 0xCF, 0x55, 0x06, 0x01, 0x04, 0x02, 0x01,
+    ];
+    // pkcs7-signedData OID - must NOT appear in SM2 output
+    const PKCS7_SIGNED_DATA_BYTES: &[u8] = &[
+        0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x07, 0x02,
+    ];
+
+    let cert = x509::X509::from_pem(SM2_CRT.as_bytes()).expect("Failed to load certificate");
+    let pkey =
+        pkey::PKey::private_key_from_pem(SM2_KEY.as_bytes()).expect("Failed to load private key");
+    let content = b"test content";
+
+    let mut attributes = HashMap::new();
+    attributes.insert(attributes::DIGEST_ALGO.to_string(), "sm3".to_string());
+
+    let cms_ptr = generate_cms_with_hash(
+        &cert,
+        &pkey,
+        content,
+        &HashMap::new(),
+        &attributes,
+        &Sm2SignHandler,
+    )
+    .expect("SM2 CMS generation failed");
+
+    let der = CmsPlugin::cms_to_vec(cms_ptr, "sm2").expect("cms_to_vec failed");
+
+    // Outer contentType must be SM2_CONTENT_TYPE_OID at the start of the DER
+    assert_eq!(der[0], 0x30, "DER must start with SEQUENCE tag");
+    let oid_start = der_seq_header_len(&der).expect("unexpected length encoding");
+    assert_eq!(
+        &der[oid_start..oid_start + SM2_CONTENT_TYPE_BYTES.len()],
+        SM2_CONTENT_TYPE_BYTES,
+        "outer contentType must be SM2_CONTENT_TYPE_OID"
+    );
+
+    // Inner eContentType must be SM2_ECONTENT_TYPE_OID somewhere in the DER
+    let has_econtent = der
+        .windows(SM2_ECONTENT_TYPE_BYTES.len())
+        .any(|w| w == SM2_ECONTENT_TYPE_BYTES);
+    assert!(
+        has_econtent,
+        "inner eContentType must be SM2_ECONTENT_TYPE_OID"
+    );
+
+    // pkcs7-signedData OID must NOT appear anywhere in the SM2 DER output
+    let has_pkcs7 = der
+        .windows(PKCS7_SIGNED_DATA_BYTES.len())
+        .any(|w| w == PKCS7_SIGNED_DATA_BYTES);
+    assert!(
+        !has_pkcs7,
+        "pkcs7-signedData OID must not appear in SM2 CMS output"
+    );
+
+    unsafe { CMS_ContentInfo_free(cms_ptr) };
+}
+
+#[test]
+fn test_sm2_cms_timestamp_der_oids() {
+    // SM2_CONTENT_TYPE_OID - must appear as outer contentType of both main CMS and embedded timestamp
+    const SM2_CONTENT_TYPE_BYTES: &[u8] = &[
+        0x06, 0x0A, 0x2A, 0x81, 0x1C, 0xCF, 0x55, 0x06, 0x01, 0x04, 0x02, 0x02,
+    ];
+    const PKCS7_SIGNED_DATA_BYTES: &[u8] = &[
+        0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x07, 0x02,
+    ];
+
+    let cert = x509::X509::from_pem(SM2_CRT.as_bytes()).expect("load SM2 cert");
+    let pkey = pkey::PKey::private_key_from_pem(SM2_KEY.as_bytes()).expect("load SM2 key");
+    let tsa_cert = x509::X509::from_pem(SM2_CRT.as_bytes()).expect("load SM2 (TSA) cert");
+    let tsa_pkey =
+        pkey::PKey::private_key_from_pem(SM2_KEY.as_bytes()).expect("load SM2 (TSA) key");
+    let content = b"test content";
+
+    let mut attributes = HashMap::new();
+    attributes.insert(attributes::DIGEST_ALGO.to_string(), "sm3".to_string());
+    let mut tsa_attributes = HashMap::new();
+    tsa_attributes.insert(attributes::DIGEST_ALGO.to_string(), "sm3".to_string());
+
+    // Build main SM2 CMS
+    let cms = generate_cms_with_hash(
+        &cert,
+        &pkey,
+        content,
+        &HashMap::new(),
+        &attributes,
+        &Sm2SignHandler,
+    )
+    .expect("SM2 CMS generation failed");
+
+    // Build timestamp token (outer contentType must still be SM2_CONTENT_TYPE_OID)
+    let ts_req = generate_timestamp_req(cms, &attributes).expect("ts_req failed");
+    let tst_info = generate_timestamp_tst(ts_req, &tsa_cert).expect("tst_info failed");
+    let ts_token = generate_timestamp_signature(
+        &tsa_cert,
+        &tsa_pkey,
+        tst_info,
+        &tsa_attributes,
+        &Sm2SignHandler,
+    )
+    .expect("timestamp signature failed");
+
+    attach_timestamp_to_cms(cms, ts_token, "sm2").expect("attach timestamp failed");
+
+    let der = CmsPlugin::cms_to_vec(cms, "sm2").expect("cms_to_vec failed");
+
+    // Outer contentType of main CMS must be SM2_CONTENT_TYPE_OID
+    assert_eq!(der[0], 0x30, "DER must start with SEQUENCE");
+    let oid_start = der_seq_header_len(&der).expect("unexpected length encoding");
+    assert_eq!(
+        &der[oid_start..oid_start + SM2_CONTENT_TYPE_BYTES.len()],
+        SM2_CONTENT_TYPE_BYTES,
+        "main CMS outer contentType must be SM2_CONTENT_TYPE_OID"
+    );
+
+    // pkcs7-signedData OID must not appear anywhere (main CMS or embedded timestamp)
+    let has_pkcs7 = der
+        .windows(PKCS7_SIGNED_DATA_BYTES.len())
+        .any(|w| w == PKCS7_SIGNED_DATA_BYTES);
+    assert!(
+        !has_pkcs7,
+        "pkcs7-signedData OID must not appear in SM2 CMS+timestamp output"
+    );
+
+    // SM2_CONTENT_TYPE_OID must appear at least twice: once for main CMS, once for timestamp token
+    let count = der
+        .windows(SM2_CONTENT_TYPE_BYTES.len())
+        .filter(|w| *w == SM2_CONTENT_TYPE_BYTES)
+        .count();
+    assert!(
+        count >= 2,
+        "SM2_CONTENT_TYPE_OID should appear at least twice (main + timestamp), found {}",
+        count
+    );
+
+    // round-trip: re-parse the patched DER to verify structural correctness
+    unsafe {
+        let ptr = der.as_ptr();
+        let reparsed = d2i_CMS_ContentInfo(
+            std::ptr::null_mut(),
+            &mut (ptr as *const u8),
+            der.len() as c_int,
+        );
+        assert!(
+            !reparsed.is_null(),
+            "d2i_CMS_ContentInfo failed on patched SM2 DER"
+        );
+        CMS_ContentInfo_free(reparsed);
+    }
+
+    unsafe { CMS_ContentInfo_free(cms) };
+}
+
+// Builds a minimal fake DER SEQUENCE whose inner content is exactly `inner_len` bytes of zeros,
+// preceded by the pkcs7-signedData OID, so patch_outer_content_type has something to replace.
+#[cfg(test)]
+fn make_fake_der(inner_len: usize) -> Vec<u8> {
+    const OLD_OID: &[u8] = &[
+        0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x07, 0x02,
+    ];
+    let payload_len = OLD_OID.len() + inner_len;
+    let len_bytes = der_encode_length(payload_len);
+    let mut buf = Vec::with_capacity(1 + len_bytes.len() + payload_len);
+    buf.push(0x30);
+    buf.extend_from_slice(&len_bytes);
+    buf.extend_from_slice(OLD_OID);
+    buf.extend_from_slice(&vec![0u8; inner_len]);
+    buf
+}
+
+#[test]
+fn test_patch_outer_content_type_length_boundaries() {
+    const OLD_OID_LEN: usize = 11;
+    const NEW_OID_LEN: usize = 12;
+    // delta = NEW_OID_LEN - OLD_OID_LEN = 1; after patch inner_len grows by 1.
+    // We pick inner_len values so the total SEQUENCE content crosses length-encoding boundaries:
+    //   short form top: content == 0x7F  → after patch: 0x80 (needs 0x81 prefix)
+    //   0xFF boundary:  content == 0xFF  → after patch: 0x100 (needs 0x82 prefix)
+    let cases: &[usize] = &[
+        0x7F - OLD_OID_LEN,  // total content before patch = 0x7F, after = 0x80
+        0xFF - OLD_OID_LEN,  // total content before patch = 0xFF, after = 0x100
+        0x80 - OLD_OID_LEN,  // already in 0x81 range before patch
+        0x100 - OLD_OID_LEN, // already in 0x82 range before patch
+    ];
+
+    for &inner_len in cases {
+        let fake = make_fake_der(inner_len);
+        let patched = patch_outer_content_type(fake).expect("patch failed");
+
+        // Tag must still be SEQUENCE
+        assert_eq!(patched[0], 0x30, "inner_len={}: tag not 0x30", inner_len);
+
+        // Parse the patched length field and verify it matches the actual body length.
+        let header_len = der_seq_header_len(&patched).expect("header_len failed");
+        let encoded_content_len = match patched[1] {
+            n if n < 0x80 => n as usize,
+            0x81 => patched[2] as usize,
+            0x82 => ((patched[2] as usize) << 8) | patched[3] as usize,
+            0x83 => {
+                ((patched[2] as usize) << 16) | ((patched[3] as usize) << 8) | patched[4] as usize
+            }
+            other => panic!("unexpected length byte 0x{:02X}", other),
+        };
+        let actual_body_len = patched.len() - header_len;
+        assert_eq!(
+            encoded_content_len, actual_body_len,
+            "inner_len={}: encoded length {} != actual body {}",
+            inner_len, encoded_content_len, actual_body_len
+        );
+
+        // New OID must appear right after the header.
+        const NEW_OID: &[u8] = &[
+            0x06, 0x0A, 0x2A, 0x81, 0x1C, 0xCF, 0x55, 0x06, 0x01, 0x04, 0x02, 0x02,
+        ];
+        assert_eq!(
+            &patched[header_len..header_len + NEW_OID_LEN],
+            NEW_OID,
+            "inner_len={}: new OID not at expected position",
+            inner_len
+        );
+    }
 }

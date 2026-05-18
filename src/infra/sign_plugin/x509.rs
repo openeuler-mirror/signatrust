@@ -786,7 +786,12 @@ impl SignPlugins for X509Plugin {
                     let steps: &[Step] = &[&CmsPlugin::step_generate_cms];
                     CmsPlugin::run_steps(&mut ctx, steps)?;
                 }
-                CmsPlugin::cms_to_vec(ctx.cms)
+                let key_type = ctx
+                    .sign_key_attributes
+                    .get("key_type")
+                    .map(|s| s.as_str())
+                    .unwrap_or("");
+                CmsPlugin::cms_to_vec(ctx.cms, key_type)
             }
             SignType::RsaHash => {
                 // rust-openssl/openssl/src/pkey_ctx.rs
