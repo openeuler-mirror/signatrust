@@ -81,6 +81,7 @@ impl PkeyHashAlgo {
             "sha2_256" => MessageDigest::sha256(),
             "sha2_384" => MessageDigest::sha384(),
             "sha2_512" => MessageDigest::sha512(),
+            "sm3" => MessageDigest::sm3(),
             _ => MessageDigest::sha256(),
         };
         digest_algo
