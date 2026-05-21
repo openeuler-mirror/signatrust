@@ -97,6 +97,11 @@ pub struct CommandAdd {
     #[arg(long, default_value = "")]
     #[arg(help = "Specify the timestamp key name, which is used in CMS signing")]
     timestamp_key: String,
+    #[arg(long, default_value = "")]
+    #[arg(
+        help = "specify the path to the CA certificate file, which is added to CMS signing. only PEM format is supported"
+    )]
+    ca: String,
 }
 
 #[derive(Clone)]
@@ -117,6 +122,7 @@ pub struct CommandAddHandler {
     rpm_v3: bool,
     timestamp_key: String,
     crl: String,
+    ca: String,
     sign_options: Option<HashMap<String, String>>,
 }
 
@@ -136,6 +142,7 @@ impl CommandAddHandler {
                     self.timestamp_key.to_string(),
                 ),
                 (options::CRL.to_string(), self.crl.to_string()),
+                (options::CA.to_string(), self.ca.to_string()),
             ])
         } else {
             self.sign_options.clone().unwrap()
@@ -252,6 +259,18 @@ impl SignCommand for CommandAddHandler {
                 }
             };
         }
+        let mut ca: String = String::new();
+        if !command.ca.is_empty() {
+            ca = match fs::read_to_string(command.ca.clone()) {
+                Ok(ca) => ca,
+                Err(e) => {
+                    return Err(error::Error::FileFoundError(format!(
+                        "ca file: {} read failed {}",
+                        command.ca, e
+                    )));
+                }
+            };
+        }
         Ok(CommandAddHandler {
             worker_threads,
             buffer_size: config.read()?.get_string("buffer_size")?.parse()?,
@@ -269,6 +288,7 @@ impl SignCommand for CommandAddHandler {
             rpm_v3: command.rpm_v3,
             timestamp_key: command.timestamp_key,
             crl: crl,
+            ca: ca,
             sign_options: None,
         })
     }

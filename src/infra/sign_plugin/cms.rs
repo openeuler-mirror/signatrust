@@ -164,6 +164,14 @@ extern "C" {
         u: *mut c_void,
     ) -> *mut X509_CRL;
     pub fn X509_CRL_free(crl: *mut X509_CRL);
+    pub fn PEM_read_bio_X509(
+        bp: *mut BIO,
+        x: *mut *mut X509,
+        cb: *mut c_void,
+        u: *mut c_void,
+    ) -> *mut X509;
+    pub fn X509_free(cert: *mut X509);
+    pub fn CMS_add1_cert(cms: *mut CMS_ContentInfo, cert: *mut X509) -> c_int;
 }
 
 struct BioGuard(*mut BIO);
@@ -512,6 +520,35 @@ fn generate_cms_with_hash(
                 if add_ret != 1 {
                     return Err(Error::InvalidArgumentError(
                         "CMS_add1_crl failed".to_string(),
+                    ));
+                }
+            }
+        }
+        if let Some(ca_data) = options.get(options::CA).filter(|s| !s.is_empty()) {
+            let ca_bio = BIO_new_mem_buf(
+                ca_data.as_ptr() as *const c_void,
+                ca_data
+                    .len()
+                    .try_into()
+                    .map_err(|_| Error::InvalidArgumentError("ca data too large".to_string()))?,
+            );
+            if ca_bio.is_null() {
+                return Err(Error::InvalidArgumentError(
+                    "BIO_new_mem_buf for CA failed".to_string(),
+                ));
+            }
+            let _ca_bio_guard = BioGuard(ca_bio);
+            loop {
+                let cert =
+                    PEM_read_bio_X509(ca_bio, ptr::null_mut(), ptr::null_mut(), ptr::null_mut());
+                if cert.is_null() {
+                    break;
+                }
+                let add_ret = CMS_add1_cert(cms, cert);
+                X509_free(cert);
+                if add_ret != 1 {
+                    return Err(Error::InvalidArgumentError(
+                        "CMS_add1_cert failed".to_string(),
                     ));
                 }
             }
