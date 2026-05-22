@@ -3,16 +3,17 @@ use crate::util::attributes::PkeyHashAlgo;
 use crate::util::error::{Error, Result};
 use crate::util::options;
 use foreign_types_shared::{ForeignType, ForeignTypeRef};
+use openssl::error::ErrorStack;
 use openssl::hash::hash;
 use openssl::pkey;
 use openssl::x509;
 use openssl_sys::{
     ASN1_INTEGER_free, ASN1_OBJECT_free, BIO_free_all, BIO_get_mem_data, BIO_new, BIO_new_mem_buf,
-    BIO_s_mem, CMS_ContentInfo, CMS_ContentInfo_free, CMS_sign, ERR_clear_error,
-    ERR_peek_last_error, EVP_MD_type, EVP_PKEY_CTX_set_rsa_padding, OBJ_nid2obj, OBJ_txt2obj,
-    X509_ALGOR_free, ASN1_BOOLEAN, ASN1_GENERALIZEDTIME, ASN1_INTEGER, ASN1_OBJECT,
-    ASN1_OCTET_STRING, BIO, CMS_BINARY, CMS_DETACHED, CMS_KEY_PARAM, CMS_NOSMIMECAP, CMS_PARTIAL,
-    EVP_MD, EVP_PKEY, EVP_PKEY_CTX, GENERAL_NAME, RSA_PKCS1_PSS_PADDING, V_ASN1_NULL,
+    BIO_s_mem, CMS_ContentInfo, CMS_ContentInfo_free, CMS_sign, EVP_MD_type,
+    EVP_PKEY_CTX_set_rsa_padding, OBJ_nid2obj, OBJ_txt2obj, X509_ALGOR_free, ASN1_BOOLEAN,
+    ASN1_GENERALIZEDTIME, ASN1_INTEGER, ASN1_OBJECT, ASN1_OCTET_STRING, BIO, CMS_BINARY,
+    CMS_DETACHED, CMS_KEY_PARAM, CMS_NOSMIMECAP, CMS_PARTIAL, ERR_LIB_PEM, EVP_MD, EVP_PKEY,
+    EVP_PKEY_CTX, GENERAL_NAME, PEM_R_NO_START_LINE, RSA_PKCS1_PSS_PADDING, V_ASN1_NULL,
     V_ASN1_SEQUENCE, X509, X509_ALGOR, X509_CRL,
 };
 use rand::rngs::OsRng;
@@ -164,6 +165,14 @@ extern "C" {
         u: *mut c_void,
     ) -> *mut X509_CRL;
     pub fn X509_CRL_free(crl: *mut X509_CRL);
+    pub fn PEM_read_bio_X509(
+        bp: *mut BIO,
+        x: *mut *mut X509,
+        cb: *mut c_void,
+        u: *mut c_void,
+    ) -> *mut X509;
+    pub fn X509_free(cert: *mut X509);
+    pub fn CMS_add1_cert(cms: *mut CMS_ContentInfo, cert: *mut X509) -> c_int;
 }
 
 struct BioGuard(*mut BIO);
@@ -497,6 +506,7 @@ fn generate_cms_with_hash(
                 ));
             }
             let _crl_bio_guard = BioGuard(crl_bio);
+            let mut found_crl = false;
             loop {
                 let crl = PEM_read_bio_X509_CRL(
                     crl_bio,
@@ -505,13 +515,47 @@ fn generate_cms_with_hash(
                     ptr::null_mut(),
                 );
                 if crl.is_null() {
-                    break;
+                    let e = ErrorStack::get();
+                    if let Some(err) = e.errors().last() {
+                        if err.library_code() == ERR_LIB_PEM
+                            && err.reason_code() == PEM_R_NO_START_LINE
+                        {
+                            break;
+                        }
+                    }
+                    return Err(Error::InvalidArgumentError(
+                        "PEM_read_bio_X509_CRL returned null with empty error stack".to_string(),
+                    ));
                 }
+                found_crl = true;
                 let add_ret = CMS_add1_crl(cms, crl);
                 X509_CRL_free(crl);
                 if add_ret != 1 {
                     return Err(Error::InvalidArgumentError(
                         "CMS_add1_crl failed".to_string(),
+                    ));
+                }
+            }
+            if !found_crl {
+                return Err(Error::InvalidArgumentError(
+                    "CRL PEM data contains no valid CRLs".to_string(),
+                ));
+            }
+        }
+        if let Some(ca_data) = options.get(options::CA).filter(|s| !s.is_empty()) {
+            let certs = x509::X509::stack_from_pem(ca_data.as_bytes()).map_err(|e| {
+                Error::InvalidArgumentError(format!("failed to parse CA PEM data: {}", e))
+            })?;
+            if certs.is_empty() {
+                return Err(Error::InvalidArgumentError(
+                    "CA PEM data contains no valid certificates".to_string(),
+                ));
+            }
+            for ca_cert in certs {
+                let add_ret = CMS_add1_cert(cms, ca_cert.as_ptr());
+                if add_ret != 1 {
+                    return Err(Error::InvalidArgumentError(
+                        "CMS_add1_cert failed".to_string(),
                     ));
                 }
             }
@@ -1642,4 +1686,234 @@ fn test_patch_outer_content_type_length_boundaries() {
             inner_len
         );
     }
+}
+
+#[test]
+fn test_generate_cms_with_single_ca() {
+    let cert = x509::X509::from_pem(RSA_CRT.as_bytes()).expect("Failed to load certificate");
+    let pkey =
+        pkey::PKey::private_key_from_pem(RSA_KEY.as_bytes()).expect("Failed to load private key");
+    let content = b"test content";
+
+    let mut attributes = HashMap::new();
+    attributes.insert(attributes::DIGEST_ALGO.to_string(), "sha256".to_string());
+    let mut options = HashMap::new();
+    options.insert(options::CA.to_string(), RSA_CRT.to_string());
+
+    let result = generate_cms_with_hash(
+        &cert,
+        &pkey,
+        content,
+        &options,
+        &attributes,
+        &RsaSignHandler,
+    );
+    assert!(
+        result.is_ok(),
+        "CMS with single CA cert failed: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_generate_cms_with_multiple_cas() {
+    let cert = x509::X509::from_pem(RSA_CRT.as_bytes()).expect("Failed to load certificate");
+    let pkey =
+        pkey::PKey::private_key_from_pem(RSA_KEY.as_bytes()).expect("Failed to load private key");
+    let content = b"test content";
+
+    let mut attributes = HashMap::new();
+    attributes.insert(attributes::DIGEST_ALGO.to_string(), "sha256".to_string());
+    let mut options = HashMap::new();
+    let multi_ca = format!("{}\n{}", RSA_CRT, RSA_CRT);
+    options.insert(options::CA.to_string(), multi_ca);
+
+    let result = generate_cms_with_hash(
+        &cert,
+        &pkey,
+        content,
+        &options,
+        &attributes,
+        &RsaSignHandler,
+    );
+    assert!(
+        result.is_ok(),
+        "CMS with multiple CA certs failed: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn test_generate_cms_with_invalid_ca() {
+    let cert = x509::X509::from_pem(RSA_CRT.as_bytes()).expect("Failed to load certificate");
+    let pkey =
+        pkey::PKey::private_key_from_pem(RSA_KEY.as_bytes()).expect("Failed to load private key");
+    let content = b"test content";
+
+    let mut attributes = HashMap::new();
+    attributes.insert(attributes::DIGEST_ALGO.to_string(), "sha256".to_string());
+    let mut options = HashMap::new();
+    options.insert(
+        options::CA.to_string(),
+        "-----BEGIN CERTIFICATE-----\nnot-valid-base64!!!\n-----END CERTIFICATE-----".to_string(),
+    );
+
+    let result = generate_cms_with_hash(
+        &cert,
+        &pkey,
+        content,
+        &options,
+        &attributes,
+        &RsaSignHandler,
+    );
+    assert!(result.is_err(), "expected error for invalid CA PEM, got Ok");
+}
+
+#[test]
+fn test_generate_cms_with_non_pem_ca() {
+    let cert = x509::X509::from_pem(RSA_CRT.as_bytes()).expect("Failed to load certificate");
+    let pkey =
+        pkey::PKey::private_key_from_pem(RSA_KEY.as_bytes()).expect("Failed to load private key");
+    let content = b"test content";
+
+    let mut attributes = HashMap::new();
+    attributes.insert(attributes::DIGEST_ALGO.to_string(), "sha256".to_string());
+    let mut options = HashMap::new();
+    // no PEM header — stack_from_pem returns Ok(vec![]) without this guard
+    options.insert(
+        options::CA.to_string(),
+        "this is not a pem certificate".to_string(),
+    );
+
+    let result = generate_cms_with_hash(
+        &cert,
+        &pkey,
+        content,
+        &options,
+        &attributes,
+        &RsaSignHandler,
+    );
+    assert!(
+        result.is_err(),
+        "expected error for non-PEM CA data, got Ok"
+    );
+}
+
+#[test]
+fn test_generate_cms_with_valid_then_invalid_ca() {
+    let cert = x509::X509::from_pem(RSA_CRT.as_bytes()).expect("Failed to load certificate");
+    let pkey =
+        pkey::PKey::private_key_from_pem(RSA_KEY.as_bytes()).expect("Failed to load private key");
+    let content = b"test content";
+
+    let mut attributes = HashMap::new();
+    attributes.insert(attributes::DIGEST_ALGO.to_string(), "sha256".to_string());
+    let mut options = HashMap::new();
+    let mixed = format!(
+        "{}\n-----BEGIN CERTIFICATE-----\nnot-valid-base64!!!\n-----END CERTIFICATE-----",
+        RSA_CRT
+    );
+    options.insert(options::CA.to_string(), mixed);
+
+    let result = generate_cms_with_hash(
+        &cert,
+        &pkey,
+        content,
+        &options,
+        &attributes,
+        &RsaSignHandler,
+    );
+    assert!(
+        result.is_err(),
+        "expected error when second CA cert is invalid, got Ok"
+    );
+}
+
+#[test]
+fn test_generate_cms_with_invalid_crl() {
+    let cert = x509::X509::from_pem(RSA_CRT.as_bytes()).expect("Failed to load certificate");
+    let pkey =
+        pkey::PKey::private_key_from_pem(RSA_KEY.as_bytes()).expect("Failed to load private key");
+    let content = b"test content";
+
+    let mut attributes = HashMap::new();
+    attributes.insert(attributes::DIGEST_ALGO.to_string(), "sha256".to_string());
+    let mut options = HashMap::new();
+    options.insert(
+        options::CRL.to_string(),
+        "-----BEGIN X509 CRL-----\nnot-valid-base64!!!\n-----END X509 CRL-----".to_string(),
+    );
+
+    let result = generate_cms_with_hash(
+        &cert,
+        &pkey,
+        content,
+        &options,
+        &attributes,
+        &RsaSignHandler,
+    );
+    assert!(
+        result.is_err(),
+        "expected error for invalid CRL PEM, got Ok"
+    );
+}
+
+#[test]
+fn test_generate_cms_with_non_pem_crl() {
+    let cert = x509::X509::from_pem(RSA_CRT.as_bytes()).expect("Failed to load certificate");
+    let pkey =
+        pkey::PKey::private_key_from_pem(RSA_KEY.as_bytes()).expect("Failed to load private key");
+    let content = b"test content";
+
+    let mut attributes = HashMap::new();
+    attributes.insert(attributes::DIGEST_ALGO.to_string(), "sha256".to_string());
+    let mut options = HashMap::new();
+    // no PEM header — PEM_read_bio_X509_CRL returns null with PEM_R_NO_START_LINE, loop breaks with count==0
+    options.insert(
+        options::CRL.to_string(),
+        "this is not a pem crl".to_string(),
+    );
+
+    let result = generate_cms_with_hash(
+        &cert,
+        &pkey,
+        content,
+        &options,
+        &attributes,
+        &RsaSignHandler,
+    );
+    assert!(
+        result.is_err(),
+        "expected error for non-PEM CRL data, got Ok"
+    );
+}
+
+#[test]
+fn test_generate_cms_with_valid_then_invalid_crl() {
+    let cert = x509::X509::from_pem(RSA_CRT.as_bytes()).expect("Failed to load certificate");
+    let pkey =
+        pkey::PKey::private_key_from_pem(RSA_KEY.as_bytes()).expect("Failed to load private key");
+    let content = b"test content";
+
+    let mut attributes = HashMap::new();
+    attributes.insert(attributes::DIGEST_ALGO.to_string(), "sha256".to_string());
+    let mut options = HashMap::new();
+    let mixed = format!(
+        "{}\n-----BEGIN X509 CRL-----\nnot-valid-base64!!!\n-----END X509 CRL-----",
+        TEST_CRL1
+    );
+    options.insert(options::CRL.to_string(), mixed);
+
+    let result = generate_cms_with_hash(
+        &cert,
+        &pkey,
+        content,
+        &options,
+        &attributes,
+        &RsaSignHandler,
+    );
+    assert!(
+        result.is_err(),
+        "expected error when second CRL is invalid, got Ok"
+    );
 }

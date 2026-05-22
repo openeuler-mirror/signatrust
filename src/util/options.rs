@@ -23,3 +23,4 @@ pub const TIMESTAMP_KEY: &str = "timestampe_key";
 pub const TSA_CERT: &str = "tsa_cert";
 pub const TSA_KET: &str = "tsa_key";
 pub const CRL: &str = "crl";
+pub const CA: &str = "ca";
