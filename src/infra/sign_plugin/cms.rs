@@ -26,8 +26,10 @@ use std::slice;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 const TIMESTAMP_OID: &str = "1.2.840.113549.1.9.16.1.4";
-const SM2_DEFAULT_ID: &[u8] = b"1234567812345678";
 const USER_DEFINE_OID: &str = "1.2.3.4.1";
+
+// GM/T 0010: default SM2 user id for Z value calculation
+pub const SM2_DEFAULT_ID: &[u8] = b"1234567812345678";
 // GM/T 0010: outer ContentInfo.contentType for all SM2 signed messages
 const SM2_CONTENT_TYPE_OID: &str = "1.2.156.10197.6.1.4.2.2";
 // GM/T 0010: inner encapContentInfo.eContentType for SM2 signed data (not used for timestamp)
