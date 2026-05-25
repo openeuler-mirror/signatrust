@@ -184,6 +184,15 @@ impl Drop for BioGuard {
     }
 }
 
+struct CrlGuard(*mut X509_CRL);
+impl Drop for CrlGuard {
+    fn drop(&mut self) {
+        if !self.0.is_null() {
+            unsafe { X509_CRL_free(self.0) };
+        }
+    }
+}
+
 struct CmsGuard(*mut CMS_ContentInfo);
 impl Drop for CmsGuard {
     fn drop(&mut self) {
@@ -527,9 +536,9 @@ fn generate_cms_with_hash(
                         "PEM_read_bio_X509_CRL returned null with empty error stack".to_string(),
                     ));
                 }
+                let _crl_guard = CrlGuard(crl);
                 found_crl = true;
                 let add_ret = CMS_add1_crl(cms, crl);
-                X509_CRL_free(crl);
                 if add_ret != 1 {
                     return Err(Error::InvalidArgumentError(
                         "CMS_add1_crl failed".to_string(),
@@ -580,6 +589,7 @@ fn generate_cms_with_hash(
                 "CMS_final_digest failed".to_string(),
             ));
         }
+
         let cms_ptr = cms_guard.0;
         cms_guard.0 = ptr::null_mut();
         Ok(cms_ptr)
