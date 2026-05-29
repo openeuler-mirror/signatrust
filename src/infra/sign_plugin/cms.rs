@@ -26,8 +26,10 @@ use std::slice;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 const TIMESTAMP_OID: &str = "1.2.840.113549.1.9.16.1.4";
-const SM2_DEFAULT_ID: &[u8] = b"1234567812345678";
 const USER_DEFINE_OID: &str = "1.2.3.4.1";
+
+// GM/T 0010: default SM2 user id for Z value calculation
+pub const SM2_DEFAULT_ID: &[u8] = b"1234567812345678";
 // GM/T 0010: outer ContentInfo.contentType for all SM2 signed messages
 const SM2_CONTENT_TYPE_OID: &str = "1.2.156.10197.6.1.4.2.2";
 // GM/T 0010: inner encapContentInfo.eContentType for SM2 signed data (not used for timestamp)
@@ -180,6 +182,15 @@ impl Drop for BioGuard {
     fn drop(&mut self) {
         if !self.0.is_null() {
             unsafe { BIO_free_all(self.0) };
+        }
+    }
+}
+
+struct CrlGuard(*mut X509_CRL);
+impl Drop for CrlGuard {
+    fn drop(&mut self) {
+        if !self.0.is_null() {
+            unsafe { X509_CRL_free(self.0) };
         }
     }
 }
@@ -527,9 +538,9 @@ fn generate_cms_with_hash(
                         "PEM_read_bio_X509_CRL returned null with empty error stack".to_string(),
                     ));
                 }
+                let _crl_guard = CrlGuard(crl);
                 found_crl = true;
                 let add_ret = CMS_add1_crl(cms, crl);
-                X509_CRL_free(crl);
                 if add_ret != 1 {
                     return Err(Error::InvalidArgumentError(
                         "CMS_add1_crl failed".to_string(),
@@ -580,6 +591,7 @@ fn generate_cms_with_hash(
                 "CMS_final_digest failed".to_string(),
             ));
         }
+
         let cms_ptr = cms_guard.0;
         cms_guard.0 = ptr::null_mut();
         Ok(cms_ptr)

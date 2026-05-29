@@ -31,10 +31,10 @@ use openssl::x509::extension::{
 };
 use openssl::x509::{X509Crl, X509Extension};
 use openssl_sys::{
-    NID_authority_key_identifier, X509V3_EXT_nconf_nid, X509V3_set_ctx, X509_CRL_add0_revoked,
-    X509_CRL_add_ext, X509_CRL_new, X509_CRL_set1_lastUpdate, X509_CRL_set1_nextUpdate,
-    X509_CRL_set_issuer_name, X509_CRL_set_version, X509_CRL_sign, X509_EXTENSION_free,
-    X509_REVOKED_new, X509_REVOKED_set_revocationDate, X509_REVOKED_set_serialNumber,
+    NID_authority_key_identifier, X509V3_EXT_nconf_nid, X509_CRL_add0_revoked, X509_CRL_add_ext,
+    X509_CRL_new, X509_CRL_set1_lastUpdate, X509_CRL_set1_nextUpdate, X509_CRL_set_issuer_name,
+    X509_CRL_set_version, X509_CRL_sign, X509_EXTENSION_free, X509_REVOKED_new,
+    X509_REVOKED_set_revocationDate, X509_REVOKED_set_serialNumber,
 };
 use secstr::SecVec;
 use serde::Deserialize;
@@ -52,7 +52,9 @@ use crate::domain::datakey::plugins::x509::{
     X509DigestAlgorithm, X509EEUsage, X509KeyType, X509_SM2_VALID_KEY_SIZE, X509_VALID_KEY_SIZE,
 };
 use crate::domain::sign_plugin::SignPlugins;
-use crate::infra::sign_plugin::cms::{CmsContext, CmsPlugin, EVP_PKEY_is_a, Step};
+use crate::infra::sign_plugin::cms::{
+    free, CmsContext, CmsPlugin, EVP_PKEY_CTX_set1_id, EVP_PKEY_is_a, Step,
+};
 use crate::util::attributes;
 use crate::util::error::{Error, Result};
 use crate::util::key::{decode_hex_string_to_u8, encode_u8_to_hex_string};
@@ -60,7 +62,66 @@ use crate::util::options;
 use crate::util::sign::SignType;
 #[allow(unused_imports)]
 use enum_iterator::all;
+use std::os::raw::{c_int, c_void};
+use std::ptr;
 use validator::{Validate, ValidationError};
+
+use crate::infra::sign_plugin::cms::SM2_DEFAULT_ID;
+
+// Opaque OpenSSL types for FFI.
+#[allow(non_camel_case_types)]
+enum EVP_MD_CTX {}
+
+struct MdCtxGuard(*mut EVP_MD_CTX);
+impl Drop for MdCtxGuard {
+    fn drop(&mut self) {
+        if !self.0.is_null() {
+            unsafe { EVP_MD_CTX_free(self.0) };
+        }
+    }
+}
+
+struct TbsDerGuard(*mut u8);
+impl Drop for TbsDerGuard {
+    fn drop(&mut self) {
+        if !self.0.is_null() {
+            unsafe { free(self.0 as *mut c_void) };
+        }
+    }
+}
+
+extern "C" {
+    fn EVP_MD_CTX_new() -> *mut EVP_MD_CTX;
+    fn EVP_MD_CTX_free(ctx: *mut EVP_MD_CTX);
+    fn EVP_DigestSignInit(
+        ctx: *mut EVP_MD_CTX,
+        pctx: *mut *mut openssl_sys::EVP_PKEY_CTX,
+        mdtype: *const openssl_sys::EVP_MD,
+        engine: *mut c_void,
+        pkey: *mut openssl_sys::EVP_PKEY,
+    ) -> c_int;
+    fn X509_sign_ctx(x: *mut openssl_sys::X509, ctx: *mut EVP_MD_CTX) -> c_int;
+    fn X509_sign(
+        x: *mut openssl_sys::X509,
+        pkey: *mut openssl_sys::EVP_PKEY,
+        md: *const openssl_sys::EVP_MD,
+    ) -> c_int;
+    fn i2d_re_X509_tbs(x: *const openssl_sys::X509, out: *mut *mut u8) -> c_int;
+    fn EVP_DigestVerifyInit(
+        ctx: *mut EVP_MD_CTX,
+        pctx: *mut *mut openssl_sys::EVP_PKEY_CTX,
+        mdtype: *const openssl_sys::EVP_MD,
+        engine: *mut c_void,
+        pkey: *mut openssl_sys::EVP_PKEY,
+    ) -> c_int;
+    fn EVP_DigestVerify(
+        ctx: *mut EVP_MD_CTX,
+        sig: *const u8,
+        sig_len: usize,
+        tbs: *const u8,
+        tbs_len: usize,
+    ) -> c_int;
+}
 
 #[derive(Debug, Validate, Deserialize)]
 #[validate(schema(function = "validate_x509_key_size_for_generation"))]
@@ -191,6 +252,92 @@ pub struct X509Plugin {
 }
 
 impl X509Plugin {
+    /// Sign an X.509 certificate, dispatching to the SM2 or default path
+    /// based on the configured key type.
+    fn sign_cert(
+        x509: &openssl::x509::X509,
+        pkey: &PKey<pkey::Private>,
+        digest: MessageDigest,
+        key_type: &X509KeyType,
+    ) -> Result<()> {
+        match key_type {
+            X509KeyType::Sm2 => Self::sign_cert_sm2(x509, pkey, digest),
+            _ => Self::sign_cert_default(x509, pkey, digest),
+        }
+    }
+
+    /// Sign an X.509 certificate with an SM2 key.
+    ///
+    /// Uses `EVP_DigestSignInit` + `EVP_PKEY_CTX_set1_id` + `X509_sign_ctx`
+    /// to set the SM2 distinguishing identifier so the Z value in the signature
+    /// is computed correctly per GM/T 0003.2-2012.
+    fn sign_cert_sm2(
+        x509: &openssl::x509::X509,
+        pkey: &PKey<pkey::Private>,
+        digest: MessageDigest,
+    ) -> Result<()> {
+        unsafe {
+            let md_ctx = EVP_MD_CTX_new();
+            if md_ctx.is_null() {
+                return Err(Error::GeneratingKeyError(
+                    "EVP_MD_CTX_new failed".to_string(),
+                ));
+            }
+            let _guard = MdCtxGuard(md_ctx);
+
+            let mut pctx: *mut openssl_sys::EVP_PKEY_CTX = ptr::null_mut();
+            if EVP_DigestSignInit(
+                md_ctx,
+                &mut pctx as *mut *mut openssl_sys::EVP_PKEY_CTX,
+                digest.as_ptr(),
+                ptr::null_mut(),
+                pkey.as_ptr() as *mut _,
+            ) != 1
+            {
+                return Err(Error::GeneratingKeyError(
+                    "EVP_DigestSignInit failed".to_string(),
+                ));
+            }
+
+            if EVP_PKEY_CTX_set1_id(
+                pctx,
+                SM2_DEFAULT_ID.as_ptr() as *const c_void,
+                SM2_DEFAULT_ID.len() as c_int,
+            ) != 1
+            {
+                return Err(Error::InvalidArgumentError(
+                    "EVP_PKEY_CTX_set1_id failed".to_string(),
+                ));
+            }
+            //X509_sign_ctx returns the signature length upon successful call.
+            if X509_sign_ctx(x509.as_ptr() as *mut _, md_ctx) <= 0 {
+                return Err(Error::GeneratingKeyError(
+                    "X509_sign_ctx failed".to_string(),
+                ));
+            }
+        }
+        Ok(())
+    }
+
+    /// Sign an X.509 certificate with an RSA/DSA key using standard `X509_sign`.
+    fn sign_cert_default(
+        x509: &openssl::x509::X509,
+        pkey: &PKey<pkey::Private>,
+        digest: MessageDigest,
+    ) -> Result<()> {
+        unsafe {
+            if X509_sign(
+                x509.as_ptr() as *mut _,
+                pkey.as_ptr() as *mut _,
+                digest.as_ptr(),
+            ) <= 0
+            {
+                return Err(Error::GeneratingKeyError("X509_sign failed".to_string()));
+            }
+        }
+        Ok(())
+    }
+
     fn generate_serial_number() -> Result<BigNum> {
         let mut serial_number = BigNum::new()?;
         serial_number.rand(128, MsbOption::MAYBE_ZERO, true)?;
@@ -279,11 +426,13 @@ impl X509Plugin {
             "objCA",
         )?)?;
 
-        generator.sign(
-            keys.as_ref(),
-            parameter.digest_algorithm.get_real_algorithm(),
-        )?;
         let cert = generator.build();
+        Self::sign_cert(
+            &cert,
+            &keys,
+            parameter.digest_algorithm.get_real_algorithm(),
+            &parameter.key_type,
+        )?;
         Ok(DataKeyContent {
             private_key: keys.private_key_to_pem_pkcs8()?,
             public_key: keys.public_key_to_pem()?,
@@ -382,12 +531,14 @@ impl X509Plugin {
             Nid::NETSCAPE_CERT_TYPE,
             "objCA",
         )?)?;
-        generator.sign(
-            ca_key.as_ref(),
-            parameter.digest_algorithm.get_real_algorithm(),
-        )?;
         let cert = generator.build();
-        //use parent private key to sign the certificate
+        //use parent CA private key to sign the ICA certificate
+        Self::sign_cert(
+            &cert,
+            &ca_key,
+            parameter.digest_algorithm.get_real_algorithm(),
+            &parameter.key_type,
+        )?;
         Ok(DataKeyContent {
             private_key: keys.private_key_to_pem_pkcs8()?,
             public_key: keys.public_key_to_pem()?,
@@ -542,12 +693,14 @@ impl X509Plugin {
             Nid::NETSCAPE_CERT_TYPE,
             ns_cert_type,
         )?)?;
-        generator.sign(
-            ica_key.as_ref(),
-            parameter.digest_algorithm.get_real_algorithm(),
-        )?;
         let cert = generator.build();
-        //use parent private key to sign the certificate
+        //use parent ICA private key to sign the EE certificate
+        Self::sign_cert(
+            &cert,
+            &ica_key,
+            parameter.digest_algorithm.get_real_algorithm(),
+            &parameter.key_type,
+        )?;
         Ok(DataKeyContent {
             private_key: keys.private_key_to_pem_pkcs8()?,
             public_key: keys.public_key_to_pem()?,
@@ -1171,6 +1324,66 @@ mod test {
         }
     }
 
+    /// Verify an SM2 certificate was signed by the CA certificate.
+    /// Uses FFI to set the SM2 user ID before verification so that
+    /// the Z value is computed with the same ID used during signing
+    /// (SM2_DEFAULT_ID), matching GM/T 0003.2-2012.
+    fn verify_cert_sm2(cert: &openssl::x509::X509, ca_cert: &openssl::x509::X509) {
+        unsafe {
+            let tbs_len = i2d_re_X509_tbs(cert.as_ptr(), ptr::null_mut());
+            assert!(tbs_len > 0, "i2d_re_X509_tbs (size) returned {tbs_len}");
+
+            let mut tbs_der: *mut u8 = ptr::null_mut();
+            let written = i2d_re_X509_tbs(cert.as_ptr(), &mut tbs_der);
+            assert_eq!(written, tbs_len, "i2d_re_X509_tbs (write) mismatch");
+            let _tbs_guard = TbsDerGuard(tbs_der);
+
+            let sig = cert.signature();
+            let sig_bytes = sig.as_slice();
+
+            let md_ctx = EVP_MD_CTX_new();
+            assert!(!md_ctx.is_null(), "EVP_MD_CTX_new failed");
+            let _md_guard = MdCtxGuard(md_ctx);
+
+            let pubkey = ca_cert.public_key().expect("get CA public key");
+            let sm3_md = openssl::hash::MessageDigest::sm3();
+            let mut pctx: *mut openssl_sys::EVP_PKEY_CTX = ptr::null_mut();
+            assert_eq!(
+                EVP_DigestVerifyInit(
+                    md_ctx,
+                    &mut pctx as *mut *mut openssl_sys::EVP_PKEY_CTX,
+                    sm3_md.as_ptr(),
+                    ptr::null_mut(),
+                    pubkey.as_ptr() as *mut _,
+                ),
+                1,
+                "EVP_DigestVerifyInit failed"
+            );
+
+            assert_eq!(
+                EVP_PKEY_CTX_set1_id(
+                    pctx,
+                    SM2_DEFAULT_ID.as_ptr() as *const c_void,
+                    SM2_DEFAULT_ID.len() as c_int,
+                ),
+                1,
+                "EVP_PKEY_CTX_set1_id failed during verification"
+            );
+
+            assert_eq!(
+                EVP_DigestVerify(
+                    md_ctx,
+                    sig_bytes.as_ptr(),
+                    sig_bytes.len(),
+                    tbs_der,
+                    tbs_len as usize,
+                ),
+                1,
+                "SM2 cert verification failed — signature or Z mismatch"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_generate_ca_with_sm_algo() {
         let mut parameter = get_default_parameter();
@@ -1189,6 +1402,135 @@ mod test {
         plugin
             .generate_keys(&KeyType::X509CA, &infra_config)
             .expect(format!("generate ca key with digest sm3 successfully").as_str());
+    }
+
+    #[tokio::test]
+    async fn test_generate_sm2_ica_signed_by_sm2_ca() {
+        let mut parameter = get_default_parameter();
+        let dummy_engine = get_encryption_engine();
+        let infra_config = get_infra_config();
+        parameter.insert("key_type".to_string(), "sm2".to_string());
+        parameter.insert("digest_algorithm".to_string(), "sm3".to_string());
+        parameter.insert("key_length".to_string(), "256".to_string());
+
+        // Step 1: generate SM2 CA
+        let ca_key = get_default_datakey(
+            Some("sm2-ca".to_string()),
+            Some(parameter.clone()),
+            Some(KeyType::X509CA),
+        );
+        let sec_datakey = SecDataKey::load(&ca_key, &dummy_engine)
+            .await
+            .expect("load sec datakey");
+        let plugin = X509Plugin::new(sec_datakey, None).expect("create plugin");
+        let ca_content = plugin
+            .generate_keys(&KeyType::X509CA, &infra_config)
+            .expect("generate SM2 CA");
+        let ca_cert =
+            openssl::x509::X509::from_pem(&ca_content.certificate).expect("parse SM2 CA cert");
+
+        // Step 2: generate SM2 ICA signed by SM2 CA
+        let mut ica_key = get_default_datakey(
+            Some("sm2-ica".to_string()),
+            Some(parameter.clone()),
+            Some(KeyType::X509ICA),
+        );
+        ica_key.parent_key = Some(ParentKey {
+            name: "sm2-ca".to_string(),
+            private_key: ca_content.private_key,
+            public_key: ca_content.public_key,
+            certificate: ca_content.certificate,
+            attributes: ca_key.attributes.clone(),
+        });
+        let sec_datakey = SecDataKey::load(&ica_key, &dummy_engine)
+            .await
+            .expect("load sec datakey");
+        let plugin = X509Plugin::new(sec_datakey, None).expect("create plugin");
+        let ica_content = plugin
+            .generate_keys(&KeyType::X509ICA, &infra_config)
+            .expect("generate SM2 ICA signed by SM2 CA");
+
+        let ica_cert =
+            openssl::x509::X509::from_pem(&ica_content.certificate).expect("parse SM2 ICA cert");
+        assert_eq!(ica_cert.version(), 2);
+        verify_cert_sm2(&ica_cert, &ca_cert);
+    }
+
+    #[tokio::test]
+    async fn test_generate_sm2_ee_signed_by_sm2_ica() {
+        let mut parameter = get_default_parameter();
+        let dummy_engine = get_encryption_engine();
+        let infra_config = get_infra_config();
+        parameter.insert("key_type".to_string(), "sm2".to_string());
+        parameter.insert("digest_algorithm".to_string(), "sm3".to_string());
+        parameter.insert("key_length".to_string(), "256".to_string());
+        parameter.insert("x509_ee_usage".to_string(), "cms".to_string());
+
+        // Step 1: generate SM2 CA
+        let ca_key = get_default_datakey(
+            Some("sm2-ee-ca".to_string()),
+            Some(parameter.clone()),
+            Some(KeyType::X509CA),
+        );
+        let sec_datakey = SecDataKey::load(&ca_key, &dummy_engine)
+            .await
+            .expect("load sec datakey");
+        let plugin = X509Plugin::new(sec_datakey, None).expect("create plugin");
+        let ca_content = plugin
+            .generate_keys(&KeyType::X509CA, &infra_config)
+            .expect("generate SM2 CA");
+        let ca_cert =
+            openssl::x509::X509::from_pem(&ca_content.certificate).expect("parse SM2 CA cert");
+
+        // Step 2: generate SM2 ICA
+        let mut ica_key = get_default_datakey(
+            Some("sm2-ee-ica".to_string()),
+            Some(parameter.clone()),
+            Some(KeyType::X509ICA),
+        );
+        ica_key.parent_key = Some(ParentKey {
+            name: "sm2-ee-ca".to_string(),
+            private_key: ca_content.private_key,
+            public_key: ca_content.public_key,
+            certificate: ca_content.certificate,
+            attributes: ca_key.attributes.clone(),
+        });
+        let sec_datakey = SecDataKey::load(&ica_key, &dummy_engine)
+            .await
+            .expect("load sec datakey");
+        let plugin = X509Plugin::new(sec_datakey, None).expect("create plugin");
+        let ica_content = plugin
+            .generate_keys(&KeyType::X509ICA, &infra_config)
+            .expect("generate SM2 ICA");
+        let ica_cert =
+            openssl::x509::X509::from_pem(&ica_content.certificate).expect("parse SM2 ICA cert");
+
+        // Step 3: generate SM2 EE signed by SM2 ICA
+        let mut ee_key = get_default_datakey(
+            Some("sm2-ee".to_string()),
+            Some(parameter.clone()),
+            Some(KeyType::X509EE),
+        );
+        ee_key.parent_key = Some(ParentKey {
+            name: "sm2-ee-ica".to_string(),
+            private_key: ica_content.private_key,
+            public_key: ica_content.public_key,
+            certificate: ica_content.certificate,
+            attributes: ica_key.attributes.clone(),
+        });
+        let sec_datakey = SecDataKey::load(&ee_key, &dummy_engine)
+            .await
+            .expect("load sec datakey");
+        let plugin = X509Plugin::new(sec_datakey, None).expect("create plugin");
+        let ee_content = plugin
+            .generate_keys(&KeyType::X509EE, &infra_config)
+            .expect("generate SM2 EE signed by SM2 ICA");
+
+        let ee_cert =
+            openssl::x509::X509::from_pem(&ee_content.certificate).expect("parse SM2 EE cert");
+        assert_eq!(ee_cert.version(), 2);
+        verify_cert_sm2(&ica_cert, &ca_cert);
+        verify_cert_sm2(&ee_cert, &ica_cert);
     }
 
     #[tokio::test]
