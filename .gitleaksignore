@@ -1,0 +1,33 @@
+# Test assets - private keys used for testing only (not production secrets)
+903ead3f8dfc1dc8ffd864c362d53bddb5b49f58:test_assets/private.pem:private-key:1
+
+# Test code - SM2/RSA/X509/PGP test keys in test modules (not production secrets)
+5e933c462b57a1fcbd9902fe47fbe786aca953e9:src/infra/sign_plugin/cms.rs:private-key:807
+5e933c462b57a1fcbd9902fe47fbe786aca953e9:src/infra/sign_plugin/cms.rs:private-key:835
+5e933c462b57a1fcbd9902fe47fbe786aca953e9:src/infra/sign_plugin/x509.rs:private-key:1293
+5e933c462b57a1fcbd9902fe47fbe786aca953e9:src/infra/sign_plugin/x509.rs:private-key:1337
+5e933c462b57a1fcbd9902fe47fbe786aca953e9:src/infra/sign_plugin/x509.rs:private-key:1411
+1ae864e4bae4329b25fd0d0b4f551e4f3c99cb47:src/infra/sign_plugin/x509.rs:private-key:436
+1ae864e4bae4329b25fd0d0b4f551e4f3c99cb47:src/infra/sign_plugin/openpgp.rs:private-key:468
+
+# Doc comment - private key example in API documentation (placeholder, not a real secret)
+47d3118ac864ee0aba3562ac3e3ce69654808b64:src/presentation/handler/control/datakey_handler.rs:private-key:309
+
+# Documentation examples - curl auth tokens (example values, not real secrets)
+2af473ebfc551e080569fc5ee5447d8705e99e10:README.md:generic-api-key:124
+e4799d6538895b9cd437bac681e745b9b75d0f2d:README.zh.md:curl-auth-header:150
+9010c68ba535f09bde3ca189ebd31e944c1588c7:README.zh.md:curl-auth-header:152
+9010c68ba535f09bde3ca189ebd31e944c1588c7:README.md:curl-auth-header:173
+5501ba8b9c0be4393a3afbc1f8b2c72d480fe187:README.md:curl-auth-header:131
+242ebf45fad6405fb7d28ac20af59737e2fcedbd:docs/how to sign&verify a generic file.md:curl-auth-header:44
+15eb4a79c1bc4920f92b504d51b06b3e6562d381:docs/how to sign rpm&srpm file.md:curl-auth-header:36
+028d37d777ab9ba62ec33063b0bf28231a9a0a80:docs/how to sign kernelmodule file.md:curl-auth-header:114
+2c38f0b1d169bc4c163c9c817943ffd1a04488d0:docs/how to sign&verify a EFI image.md:curl-auth-header:4
+2c38f0b1d169bc4c163c9c817943ffd1a04488d0:docs/how to sign&verify a EFI image.md:curl-auth-header:30
+2c38f0b1d169bc4c163c9c817943ffd1a04488d0:docs/how to sign&verify a EFI image.md:curl-auth-header:68
+2c38f0b1d169bc4c163c9c817943ffd1a04488d0:docs/how to sign&verify a EFI image.md:curl-auth-header:76
+
+# Deployment config - example cookie_key value, must be replaced in production
+176c4f0be66c4cf1a6a86bcdaa2d17e118752d86:docker/server.toml:generic-api-key:11
+b9752204a5467c3438af83670e402ec483141771:deploy/config.yaml:generic-api-key:31
+03f19580d72a7bbdb17e34d8c5e45b04092ca811:config/server.toml:generic-api-key:11

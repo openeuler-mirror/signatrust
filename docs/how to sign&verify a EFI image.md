@@ -6,7 +6,7 @@ For the background of EFI signature, please refer to [this](how%20to%20sign%20EF
     curl -X 'POST' \
     'http://10.0.0.139:8080/api/v1/keys/' \
     -H 'accept: application/json' \
-    -H 'Authorization: G2fmAfnLUT4R5TDaQhpCWvGznme0zaA0YQFBKJIc' \
+    -H 'Authorization: <YOUR_ADMIN_TOKEN>' \
     -H 'Content-Type: application/json' \
     -d '{
     "attributes": {
@@ -32,7 +32,7 @@ For the background of EFI signature, please refer to [this](how%20to%20sign%20EF
     curl -X 'GET' \
         'http://10.0.0.139:8080/api/v1/keys/' \
         -H 'accept: application/json' \
-        -H 'Authorization: G2fmAfnLUT4R5TDaQhpCWvGznme0zaA0YQFBKJIc'
+        -H 'Authorization: <YOUR_ADMIN_TOKEN>'
     ```
     
     ```
@@ -70,7 +70,7 @@ For the background of EFI signature, please refer to [this](how%20to%20sign%20EF
     curl -X 'POST' \
         'http://10.0.0.139:8080/api/v1/keys/5/enable' \
         -H 'accept: */*' \
-        -H 'Authorization: G2fmAfnLUT4R5TDaQhpCWvGznme0zaA0YQFBKJIc' \
+        -H 'Authorization: <YOUR_ADMIN_TOKEN>' \
         -d ''
     ```
     - get key certificate by id
@@ -78,7 +78,7 @@ For the background of EFI signature, please refer to [this](how%20to%20sign%20EF
     curl -X 'POST' \
         'http://10.0.0.139:8080/api/v1/keys/5/certificate' \
         -H 'accept: application/json' \
-        -H 'Authorization: G2fmAfnLUT4R5TDaQhpCWvGznme0zaA0YQFBKJIc' \
+        -H 'Authorization: <YOUR_ADMIN_TOKEN>' \
         -d ''
     ```
     

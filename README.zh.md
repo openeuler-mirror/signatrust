@@ -140,7 +140,7 @@ make init
 
 ```
 ...skipped output
-[Result]: Administrator tommylikehu@gmail.com has been successfully created with token XmUICsVV48EjfkWYv3ch1eutRJOQh7mp3bRfmQDL will expire 2023-09-23 11:20:33 UTC
+[Result]: Administrator tommylikehu@gmail.com has been successfully created with token <YOUR_ADMIN_TOKEN> will expire 2023-09-23 11:20:33 UTC
 ...skipped output
 [Result]: Keys 'default-pgp' type pgp has been successfully generated
 [Result]: Keys 'default-x509' type x509 has been successfully generated
@@ -149,7 +149,7 @@ make init
 现在您可以使用此令牌来调试控制服务 API 或使用 pgp 密钥与客户端签署 rpm 包。
 
 ```
-curl -k --header "Authorization:XmUICsVV48EjfkWYv3ch1eutRJOQh7mp3bRfmQDL" -v http://localhost:8080/api/v1/keys/\?page_size\=100\&page_number\=1
+curl -k --header "Authorization:<YOUR_ADMIN_TOKEN>" -v http://localhost:8080/api/v1/keys/\?page_size\=100\&page_number\=1
 ```
 
 ```
