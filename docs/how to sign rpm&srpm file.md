@@ -36,7 +36,7 @@ In order to verify the signature of rpm file, you need to download the openPGP p
 curl -X 'POST' \
   'https://localhost:8080/api/v1/keys/<key-id-or-name>/public_key' \
   -H 'accept: application/json' \
-  -H 'Authorization: cBnLPLXl1fA7fKDZnjg9fd9dSWw2RXtUH3MGFUtq' \
+  -H 'Authorization: <YOUR_ADMIN_TOKEN>' \
   -d ''
 ```
 2. Import the public key into rpm database.

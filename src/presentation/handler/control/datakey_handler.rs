@@ -632,11 +632,7 @@ async fn key_name_identical(
 /// `certificate` and `private` are required, and the content are represented in PEM format, for example:
 /// ```text
 /// -----BEGIN PRIVATE KEY-----
-/// MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDrd/0ui/bc5PJS
-/// Yo5eS9hD2M91NrJZPiF+vEdq/vOSypac9XukLjkhj1zADU2h35b1nMQoi0bG7SNr
-/// ........skipped content.......
-/// XTYUPye7CKt33tFhHYKj7EHvZmHkbmskpXdCiHpTZd4u84lwvH/acHfJ0Fqh0pV3
-/// IHehlWfHhjCxtw5Kzl3ncrHA
+/// <your-private-key-data-in-pem-format>
 /// -----END PRIVATE KEY-----
 /// ```
 /// you need to specify the `digest_algorithm`, `key_type`, `expire` and `key_length` in the `attributes` as well,

@@ -114,7 +114,7 @@ In order to verify the signature of KernelModule file, you need to extract the s
 curl -X 'POST' \
   'https://localhost:8080/api/v1/keys/<key-id-or-name>/certificate' \
   -H 'accept: application/json' \
-  -H 'Authorization: cBnLPLXl1fA7fKDZnjg9fd9dSWw2RXtUH3MGFUtq' \
+  -H 'Authorization: <YOUR_ADMIN_TOKEN>' \
   -d ''
 ```
 2. Extract the signature from the KernelModule file or use detached signature(.p7s)

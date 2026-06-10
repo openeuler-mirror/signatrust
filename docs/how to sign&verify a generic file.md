@@ -44,7 +44,7 @@ brew install gnupg
 curl -X 'POST' \
   'https://localhost:8080/api/v1/keys/<key-id-or-name>/public_key' \
   -H 'accept: application/json' \
-  -H 'Authorization: cBnLPLXl1fA7fKDZnjg9fd9dSWw2RXtUH3MGFUtq' \
+  -H 'Authorization: <YOUR_ADMIN_TOKEN>' \
   -d ''
 ```
 3. Load the public key into local pgp keyring

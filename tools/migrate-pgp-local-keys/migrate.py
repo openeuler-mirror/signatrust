@@ -1,9 +1,16 @@
 # Script to migrate keys from GPG local store to signatrust server
 
+import os
 import sys
 import gnupg
 from datetime import datetime, timezone
 import requests
+
+# Default request timeout in seconds
+_REQUEST_TIMEOUT = 30
+# Empty passphrase for exporting keys without password protection.
+# Override via GPG_EXPORT_PASSPHRASE env var if keys have a passphrase.
+_GPG_EXPORT_PASSPHRASE = os.environ.get("GPG_EXPORT_PASSPHRASE", "")
 
 
 class KeyMigration:
@@ -15,40 +22,69 @@ class KeyMigration:
         self.signatrust_url = signatrust_url.strip("/")
         self.gpg = gnupg.GPG(gnupghome=gpg_home)
         self.email = email
+        # SSL verification: set SIGNATRUST_CA_BUNDLE to specify a custom CA bundle,
+        # or set SIGNATRUST_SSL_VERIFY=0 to disable verification (not recommended)
+        self.ssl_verify = os.environ.get("SIGNATRUST_SSL_VERIFY", "1") != "0"
 
     def _check_name_exists(self, name):
-        response = requests.head("{}/api/v1/keys/name_identical?name={}&visibility=private".format(self.signatrust_url, name), headers=self.headers, verify=False)
+        response = requests.head(
+            "{}/api/v1/keys/name_identical?name={}&visibility=private".format(
+                self.signatrust_url, name),
+            headers=self.headers,
+            verify=self.ssl_verify,
+            timeout=_REQUEST_TIMEOUT,
+        )
         if response.status_code == 200:
             print("key: {} does not exist".format(name))
             return True
         if response.status_code == 409:
             print("key: {} already exists".format(name))
             return False
-        print("failed to check key name existence code {}: and response: {}".format(response.status_code, response.content))
+        print("failed to check key name existence code {}: and response: {}".format(
+            response.status_code, response.content))
         raise Exception("failed to determine key duplication")
 
     def _check_key_enabled(self, name):
-        response = requests.get("{}/api/v1/keys/{}".format(self.signatrust_url, name), headers=self.headers, verify=False)
+        response = requests.get(
+            "{}/api/v1/keys/{}".format(self.signatrust_url, name),
+            headers=self.headers,
+            verify=self.ssl_verify,
+            timeout=_REQUEST_TIMEOUT,
+        )
         if response.status_code == 200:
             key_status = response.json()
             return key_status["key_state"] == "enabled"
-        print("failed to get key status code {}: and response: {}".format(response.status_code, response.content))
+        print("failed to get key status code {}: and response: {}".format(
+            response.status_code, response.content))
         raise Exception("failed to get key")
 
     def _enable_key(self, name):
-        response = requests.post("{}/api/v1/keys/{}/actions/enable".format(self.signatrust_url, name), headers=self.headers, verify=False)
+        response = requests.post(
+            "{}/api/v1/keys/{}/actions/enable".format(self.signatrust_url, name),
+            headers=self.headers,
+            verify=self.ssl_verify,
+            timeout=_REQUEST_TIMEOUT,
+        )
         if response.status_code == 200:
             print("key: {} has been successfully enabled".format(name))
             return
-        print("failed to enable key {}: and response: {}".format(response.status_code, response.content))
+        print("failed to enable key {}: and response: {}".format(
+            response.status_code, response.content))
         raise Exception("failed to enable key")
 
     def _create_key(self, attribute):
-        response = requests.post("{}/api/v1/keys/import".format(self.signatrust_url), json=attribute, headers=self.headers, verify=False)
+        response = requests.post(
+            "{}/api/v1/keys/import".format(self.signatrust_url),
+            json=attribute,
+            headers=self.headers,
+            verify=self.ssl_verify,
+            timeout=_REQUEST_TIMEOUT,
+        )
         if response.status_code == 201:
             print("key: {} has been successfully created".format(attribute["name"]))
             return response.json()["name"]
-        raise Exception("failed to create key {} status {} and response {}".format(attribute["name"], response.status_code, response.content))
+        raise Exception("failed to create key {} status {} and response {}".format(
+            attribute["name"], response.status_code, response.content))
 
     def _collect_keys_from_pgp_local_store(self):
         results = []
@@ -60,17 +96,22 @@ class KeyMigration:
                     "digest_algorithm": "sha2_256",
                     "key_type": "rsa",
                     "key_length": k["length"],
-                    "expire_at": "{}".format(datetime.fromtimestamp(int(k["expires"]), tz=timezone.utc)),
+                    "expire_at": "{}".format(datetime.fromtimestamp(
+                        int(k["expires"]), tz=timezone.utc)),
                 },
                 'name': ids[0],
                 'key_type': 'pgp',
                 'visibility': 'private',
                 'email': ids[2].strip('<').strip('>'),
                 "description": "imported from EUR server",
-                'create_at': "{}".format(datetime.fromtimestamp(int(k["date"]), tz=timezone.utc)),
-                'expire_at': "{}".format(datetime.fromtimestamp(int(k["expires"]), tz=timezone.utc)),
+                'create_at': "{}".format(datetime.fromtimestamp(
+                    int(k["date"]), tz=timezone.utc)),
+                'expire_at': "{}".format(datetime.fromtimestamp(
+                    int(k["expires"]), tz=timezone.utc)),
                 'public_key': self.gpg.export_keys(k["keyid"]),
-                'private_key': self.gpg.export_keys(k["keyid"], secret=True, passphrase=""),
+                'private_key': self.gpg.export_keys(
+                    k["keyid"], secret=True,
+                    passphrase=_GPG_EXPORT_PASSPHRASE),
                 'certificate': "",
             }
             results.append(key)

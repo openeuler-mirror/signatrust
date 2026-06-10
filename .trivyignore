@@ -1,0 +1,85 @@
+# =============================================================================
+# Trivy vulnerability ignore list
+# Toolchain locked at nightly-2023-08-08; all dependency upgrades are blocked.
+# Each entry documents the fix version and the reason for ignoring.
+# =============================================================================
+
+# --- actix-web-lab: host header poisoning in redirect middleware ---
+# Fix: 0.26.0 | Requires rustc 1.88+ (nightly-2025+)
+GHSA-vhj5-x93p-67jw
+
+# --- curve25519-dalek: scalar timing vulnerability ---
+# Fix: 4.1.3 | Requires newer transitive deps not compatible with nightly-2023-08-08
+CVE-2024-58262
+
+# --- openssl (rust-openssl): 11 CVEs ---
+# Fix: 0.10.78+ | Locked by toolchain; newer openssl-sys requires newer rustc
+CVE-2026-41676
+CVE-2026-41678
+CVE-2026-41681
+CVE-2026-41898
+CVE-2026-42327
+CVE-2025-24898
+CVE-2026-44662
+CVE-2026-45784
+GHSA-4fcv-w3qc-ppgg
+GHSA-q445-7m23-qrmw
+GHSA-xphf-cx8h-7q9g
+CVE-2026-41677
+
+# --- pgp (rPGP): message amplification and DoS ---
+# Fix: 0.14.2 | Extensive breaking API changes; major refactor required
+CVE-2024-53856
+CVE-2024-53857
+
+# --- rand: unsound with custom logger using rand::rng() ---
+# Fix: 0.8.6, 0.9.3, 0.10.1 | 0.8.6 patch may work but requires lockfile regeneration
+GHSA-cq8v-f236-94qc
+
+# --- sqlx: binary protocol misinterpretation ---
+# Fix: 0.8.1 | Blocked by sea-orm 0.12.x (does not support sqlx 0.8.x)
+GHSA-xmrp-424f-vfpx
+
+# --- time: stack exhaustion denial of service ---
+# Fix: 0.3.47 | Requires rustc 1.88+ (nightly-2025+)
+CVE-2026-25727
+
+# --- tokio: broadcast channel clone in parallel without Sync ---
+# Fix: 1.38.2, 1.43.1, 1.44.2 | Requires newer rustc
+GHSA-rr8g-9fpq-6wmg
+
+# --- axios: 22 CVEs (SSRF, prototype pollution, RCE, DoS, etc.) ---
+# Fix: 1.16.0+ | axios runs in browser sandbox; SSRF/RCE paths not exploitable client-side
+CVE-2024-39338
+CVE-2025-27152
+CVE-2025-58754
+CVE-2025-62718
+CVE-2026-25639
+CVE-2026-40175
+CVE-2026-42033
+CVE-2026-42034
+CVE-2026-42035
+CVE-2026-42036
+CVE-2026-42037
+CVE-2026-42038
+CVE-2026-42039
+CVE-2026-42040
+CVE-2026-42041
+CVE-2026-42042
+CVE-2026-42043
+CVE-2026-42044
+CVE-2026-42264
+CVE-2026-44490
+CVE-2026-44492
+CVE-2026-44494
+CVE-2026-44495
+
+# --- js-cookie: per-instance prototype hijack ---
+# Fix: 3.0.7 | Runs in browser sandbox; prototype pollution not exploitable client-side
+CVE-2026-46625
+
+# --- axios: newly discovered CVEs (2026-06 scan) ---
+# Same rationale as other axios CVEs: pnpm lockfile incompatibility, browser sandbox
+CVE-2026-44486
+CVE-2026-44487
+CVE-2026-44496

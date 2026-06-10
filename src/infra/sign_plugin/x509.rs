@@ -1629,62 +1629,9 @@ mod test {
 
     #[test]
     fn test_validate_and_update() {
-        let public_key = "-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApj/qRL4umbfjJx1TbuXA
-eOdLzVqARnGQgiwoVN+0Sas8xdco1d4Dz4UbMdDmXY5z2+50uwpmyRskcKb1fgvF
-C8DUD8+ZHxEDITHQ1wqHdeEBh/D64JlD6MoAFHHlEMNEYgaYDUEJZIYp3uX4gMvg
-WLsBuWDvyoSkI3j+rMcRN0NWsf7aKbA9OTKyvE5lZC6+z6fyftq4Z9gwiNENEktO
-+8WAL31x1X/AHWiFwlguZlKdtozgRIkPYLU27Cz8aAvuuWGTrUYJ98UN80Wzu2gI
-rnH3ztPU6gatSvVWHonDEbdjQ/kCRlE2GPZkdPyRvb4gv5BQTeDZeahoSV17Pagg
-0QIDAQAB
------END PUBLIC KEY-----";
-        let certificate = "-----BEGIN CERTIFICATE-----
-MIIDCzCCAfOgAwIBAgIUDiehlVNb4SRwVz13zBnKAjuljmAwDQYJKoZIhvcNAQEL
-BQAwFDESMBAGA1UEAwwJWU9VUl9OQU1FMCAXDTIzMDUyMzA5NDgwMFoYDzIxMjMw
-NDI5MDk0ODAwWjAUMRIwEAYDVQQDDAlZT1VSX05BTUUwggEiMA0GCSqGSIb3DQEB
-AQUAA4IBDwAwggEKAoIBAQCmP+pEvi6Zt+MnHVNu5cB450vNWoBGcZCCLChU37RJ
-qzzF1yjV3gPPhRsx0OZdjnPb7nS7CmbJGyRwpvV+C8ULwNQPz5kfEQMhMdDXCod1
-4QGH8PrgmUPoygAUceUQw0RiBpgNQQlkhine5fiAy+BYuwG5YO/KhKQjeP6sxxE3
-Q1ax/topsD05MrK8TmVkLr7Pp/J+2rhn2DCI0Q0SS077xYAvfXHVf8AdaIXCWC5m
-Up22jOBEiQ9gtTbsLPxoC+65YZOtRgn3xQ3zRbO7aAiucffO09TqBq1K9VYeicMR
-t2ND+QJGUTYY9mR0/JG9viC/kFBN4Nl5qGhJXXs9qCDRAgMBAAGjUzBRMB0GA1Ud
-DgQWBBS8CurcB1Q9kg/KXWONMNkspM3/HjAfBgNVHSMEGDAWgBS8CurcB1Q9kg/K
-XWONMNkspM3/HjAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQAe
-6+KLTWtOlsy/U5alR+g3umo7K8X/9oMAqjzrBenOgcLUKQdsbD7RzXdZ+nZBT/ZV
-fzL6WNFYGq1SrcusrRdr5XG6+SXrUa88r/nw5WaeEa2lrk0s4fOr7svg6pKeR84A
-M/aF+RfEhNp4l+6eKjerghTbDccOoj4kKCjST6ckTxnAiQQMZL8hXPpXURLbX2Ci
-MBtYxIpT5eLClRYIREJFq/qFpAffddlVw7bENQJNoArhIUl5XxsxFz/0nVGDyM5y
-vM0L0x9sI6JA4zYrfVfvwB7cvpqw4qK5dlqHtK/Np8WvLUiNDCZUondEOf1jBT3b
-67xBfexCBpVVLNLP70Ql
------END CERTIFICATE-----";
-        let private_key = "-----BEGIN PRIVATE KEY-----
-MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCmP+pEvi6Zt+Mn
-HVNu5cB450vNWoBGcZCCLChU37RJqzzF1yjV3gPPhRsx0OZdjnPb7nS7CmbJGyRw
-pvV+C8ULwNQPz5kfEQMhMdDXCod14QGH8PrgmUPoygAUceUQw0RiBpgNQQlkhine
-5fiAy+BYuwG5YO/KhKQjeP6sxxE3Q1ax/topsD05MrK8TmVkLr7Pp/J+2rhn2DCI
-0Q0SS077xYAvfXHVf8AdaIXCWC5mUp22jOBEiQ9gtTbsLPxoC+65YZOtRgn3xQ3z
-RbO7aAiucffO09TqBq1K9VYeicMRt2ND+QJGUTYY9mR0/JG9viC/kFBN4Nl5qGhJ
-XXs9qCDRAgMBAAECggEAOOgN56P1zZZdQclPAtnQDVKW5t8Ao5xB69zznUHJs6HS
-tqHUj4hkY4dbbKzl/cZCMFkqSc/gqRwKWCk+RPwAYeqKbDMSZcjr+lPT+ZfYEGiJ
-np/FMFYmIavrZRQrZZaBdNBvAbJuZaNq96peaq/exmCU0YC18+t9R8sl2bx2TyTH
-MCyDA7w/HT4BARjzYsjqXEQQzElajcVyX0VwgEtOr40HEpNQioQi8iw94FYgh4C9
-awyR6ldIX5TmeFwWyfQxYR/WfXIw7ja9lXqKJ6dkBtY3x+3Z4qbCNB0rgfTY4RoX
-1DVHbZNb2kxKSF7d9I8ti0GhfFxOGguS14IeVI2YQQKBgQDa3130/w7adouVJlBM
-PJ1Hd5ZT1PXbymvIMuVHjE1BjfzCu9NW+voofCjQlbBejEokUwE8sY8iuU7UosZ2
-IkRUwLbF0eIBqe+oXf6CbXZjx+T1n52k+SHbn2WasHndvXEXGRubwwsLo+E3WI2A
-KC3Qbmj78GGErB5J+vy2tI79qQKBgQDCc2DCShQHsF6rwKCeeEHhAODMrunW0PtW
-lQe4uPK1mwYMXmCLGgJXI3RzyjTLWSgzI/WTIXvrRk45gnEFiTkwt5JxxbNc2WFd
-RdnQp/Qis4O/Hac2IcBqy2s4BabgEacvJNaUkoLfHAMmge2n1oeDm5/xgVgXpK1/
-Aiu0ct5y6QKBgAgBVXFphsSMw2wwG42+Rc5gXFoyls90Jt8KpYIpaoX0SINi1UcA
-JPgoGmIOp4W9wdR0SL5MjDyr5Gs4jOOzOyaSadzwYUDIU2CoF2/zyvm5TPGC5gQr
-rIZY3SF8ROjMTf+XRoA68QN6+fjJP1upnItcDnDwiNCObwkrqeSQ1A4JAoGAM2dm
-49XLd8DjNgpFK79kwwOFafavcI9schYRpX6XAvVJYwmsAfnNNpXz2gxRapRWMTbH
-W67VYHwEf+WA1VLSYJOWzibSZLA+sfaePy+3NVk5cdN3+bJweIrv/C5aUA+6n5bg
-dwRIPozcNFjSp7TpvBvu61wjGpT5HINJZHmdXskCgYEAjQf6bFXPMJHELD27RqiD
-UDWzemeq/e6D6NJhaESg49Da0N7rsqM+UtBpM/T4Ce9zuPZhLlXJobqmzIYqVDu0
-aIVg7wz2RwVCsux1duEoO8ScQghohmzn+7jysGIlN+csOClwSBaLHAIN/PmChZug
-X5BboR/QJakEK+H+EUQAiDs=
------END PRIVATE KEY-----";
+        let public_key = include_str!("../../../test_assets/x509_test_pubkey_85234966.pem");
+        let certificate = include_str!("../../../test_assets/x509_test_cert_7eaab0ea.pem");
+        let private_key = include_str!("../../../test_assets/x509_test_key_b9031dfb.pem");
         let mut datakey = get_default_datakey(None, None, None);
         datakey.public_key = public_key.as_bytes().to_vec();
         datakey.certificate = certificate.as_bytes().to_vec();
@@ -1699,23 +1646,8 @@ X5BboR/QJakEK+H+EUQAiDs=
 
     #[test]
     fn test_validate_and_update_with_sm2cert() {
-        let certificate = "-----BEGIN CERTIFICATE-----
-MIIB1DCCAXoCFGfoVD/6iDpHYUbmTA0+LH/b4tfuMAoGCCqBHM9VAYN1MGwxCzAJ
-BgNVBAYTAkNOMRAwDgYDVQQIDAdCZWlqaW5nMRAwDgYDVQQHDAdCZWlqaW5nMRIw
-EAYDVQQKDAlNeUNvbXBhbnkxDzANBgNVBAsMBlJvb3RDQTEUMBIGA1UEAwwLU00y
-IFJvb3QgQ0EwHhcNMjUxMTAzMDgxODEyWhcNMzUxMTAxMDgxODEyWjBsMQswCQYD
-VQQGEwJDTjEQMA4GA1UECAwHQmVpamluZzEQMA4GA1UEBwwHQmVpamluZzESMBAG
-A1UECgwJTXlDb21wYW55MQ8wDQYDVQQLDAZSb290Q0ExFDASBgNVBAMMC1NNMiBS
-b290IENBMFowFAYIKoEcz1UBgi0GCCqBHM9VAYItA0IABNYo1OwvitLruiU3oRAc
-uaLSplc2Vrj19z2oPicvx8hn3fQLYlqKrKcFvKOWllL3ByQVcMJ4HmRylmOrk24q
-4xYwCgYIKoEcz1UBg3UDSAAwRQIhAMnIl0Em/3b8hhR9Ly/FGlt3q2IN1EHLg64+
-JGLqK0DFAiAULqROgRSmSWpJgMzU8KMoPfDM7CJ5/NCnDqI3oM9uTw==
------END CERTIFICATE-----";
-        let private_key = "-----BEGIN PRIVATE KEY-----
-MIGIAgEAMBQGCCqBHM9VAYItBggqgRzPVQGCLQRtMGsCAQEEIDUaoPl+RCqHV/Un
-qWcBnNWXVAOM7BMiiPWQFFotA1h0oUQDQgAE1ijU7C+K0uu6JTehEBy5otKmVzZW
-uPX3Pag+Jy/HyGfd9AtiWoqspwW8o5aWUvcHJBVwwngeZHKWY6uTbirjFg==
------END PRIVATE KEY-----";
+        let certificate = include_str!("../../../test_assets/x509_test_cert_5158c0b0.pem");
+        let private_key = include_str!("../../../test_assets/x509_test_key_f5397b38.pem");
         let mut datakey = get_default_datakey(None, None, None);
         datakey.certificate = certificate.as_bytes().to_vec();
         datakey.private_key = private_key.as_bytes().to_vec();
@@ -1735,54 +1667,8 @@ uPX3Pag+Jy/HyGfd9AtiWoqspwW8o5aWUvcHJBVwwngeZHKWY6uTbirjFg==
 
     #[test]
     fn test_validate_and_update_with_rsacert() {
-        let certificate = "-----BEGIN CERTIFICATE-----
-MIIDSzCCAjOgAwIBAgIUKTs/prIakrwRyyYbYcfoy6YC6rkwDQYJKoZIhvcNAQEL
-BQAwTjELMAkGA1UEBhMCQ04xCzAJBgNVBAgMAmNuMQswCQYDVQQHDAJjbjELMAkG
-A1UECgwCY24xCzAJBgNVBAsMAmNuMQswCQYDVQQDDAJDTjAeFw0yNTExMTgxMjAy
-MTBaFw0yNjExMTgxMjAyMTBaME4xCzAJBgNVBAYTAkNOMQswCQYDVQQIDAJjbjEL
-MAkGA1UEBwwCY24xCzAJBgNVBAoMAmNuMQswCQYDVQQLDAJjbjELMAkGA1UEAwwC
-Q04wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCf87TFBu9fPQ31mjWA
-OcYMQeMmHsI/v1Sng4aBoLhWAWZZ+8AuV37wjBVuYGR4GkZHmIJBmi2YNBkPt/4A
-IqX4S8hYAAZUurXcVKub2aQOnfh9OLTIxT/GR56imlcRZDrQ+R/VrpVj3yN3qQHP
-M1oyuzWin8osCSDRHfEAWcmKVmvHfq6tYVbnmOSQfiPI8+zxMsaMT07RDogOfxEO
-/QkPyj16ih9zpK9N2rqbj7q00JIiTSBZ3P/zlshjiZSGZeVaj3bC4KnzKrdlxS46
-nfJ7tZ+sHxBqSuScO8X/ButvL7HMnB92Ut47C2SnvD/Or+z86G9KDD2pRxqXcfBo
-4cYXAgMBAAGjITAfMB0GA1UdDgQWBBSwe9s1aUMAib5BAffASj6l7+5D1DANBgkq
-hkiG9w0BAQsFAAOCAQEAPKEWCfyNxRdaemcYEXgp6/AlmFoFaNBLi0ewyKOTuy+N
-zQvvgdvFbkdsg9BygNQeZQ/WFpNwrODxMZgcGFLpfxPgq1JrIVrU4CQLn8AgTvkc
-2sw/1u4xw4ufyKIYxQdsaOPLXOwedUtY96X0e622oIrr7tmUIse8502WnhllRtHL
-aGhroMLSVZrNoAU7KHbC3fnHmQPl9HWx9m37u3DGVtLf8/uXsX74RyV6U9ESHbKw
-ptZaepLoHk4fIixgMEVMAlHrZPdtUs7X0B520fi2/BwdChqfewf6thkBK9pzGcss
-Z8qL7OaQxFqgD2qi7jjWqkqmYe/yxyIowvu1bWRtbA==
------END CERTIFICATE-----";
-        let private_key = "-----BEGIN PRIVATE KEY-----
-MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCf87TFBu9fPQ31
-mjWAOcYMQeMmHsI/v1Sng4aBoLhWAWZZ+8AuV37wjBVuYGR4GkZHmIJBmi2YNBkP
-t/4AIqX4S8hYAAZUurXcVKub2aQOnfh9OLTIxT/GR56imlcRZDrQ+R/VrpVj3yN3
-qQHPM1oyuzWin8osCSDRHfEAWcmKVmvHfq6tYVbnmOSQfiPI8+zxMsaMT07RDogO
-fxEO/QkPyj16ih9zpK9N2rqbj7q00JIiTSBZ3P/zlshjiZSGZeVaj3bC4KnzKrdl
-xS46nfJ7tZ+sHxBqSuScO8X/ButvL7HMnB92Ut47C2SnvD/Or+z86G9KDD2pRxqX
-cfBo4cYXAgMBAAECggEABZvMCOSXXCWN6cDAg4CDG0bsKhgGA6o306/e9YinLgza
-g+k58eYLg2/GCJrEqxlwwW3tk1NOqfmZr11qQKL2YuB1Y/CMSEhLvDAT3GEjSYfs
-gKeOX0PbWp6ER3tV9jwne9Bgd2OpxVi7q6R3dcZ9MS4zUUJ9GlIvnmWIX9TGJl2X
-NI8tY2SG6J+ow+OOX98IUzLcyVaZR/AJBKUgFl0PjExLfWBDSLJqJJYEamDy1INh
-1PLmPjx3Hz+6r5iaVw3OqPJcZzo+9Bj16RhybOlRvrXMAUbD7w2RzfXI096b4De+
-HgyYHFNxj5KpC6qnihkGZVBcbeIjXXPgwexfDipbQQKBgQDNei3y3l0kOXgUgfhp
-GMxnmyiHKZmtHzXJJnlNHib7wVPh6YiGDnxVl50MekxSqo53ASv0cpamcDy5TM6N
-R5ZeBJW9//MqA0OGbNOCDjYBg2E8jGvyXVPp76ouRxeO5aDordJof4isp6VAPImv
-djx3CxxNJKJhzKo5oSJZ9iD+RwKBgQDHR+zsifUDimqg33mrJ92HUMiFxM+haYMV
-RySnQZXlDPnVsuZYAdJBUKAMG8ObHy2R2KMnxDdFRRhW6AVzkMkZaQXTUh4M7sx0
-QKWHCXRYWNqoS7qOzxS9O6dW6+kmv/bMCjX6l+z2pIe3bpKuHgOPFVyJuNhz285R
-RtbxSrbRsQKBgHLRPA3DfY55YoUrHzEy/z1BsULd1xarIvX0vsF+ANCa9hF92qD2
-RTnaz5IiYLWswpDzIamlwlLc0sHEjoLZpseAjmAuPqWST1A1TXcWE82CqXoZCVTU
-G8jT+GeFqD9cRy7dun5UDX5U631alqFqU1094yGkP+ygXdp4FObqJwOPAoGACWMC
-7vVknCEV+rPsGDrNfYU5nMtzeEfvC76JJHO7asmcrws5PGYBkGAK2eco5JKoY9lP
-fh0I+XNSvS06rIHiZxcCVjzk+3j4GnW9FkpEt7CfxBOlGvr4IB3COR7toYyjRGMq
-vb4QRGHlnqdPs3HoewHnlPknAPYWls9+amk5iVECgYEAu90xfsQzVSiQc4FiDC4+
-VU0SuEtd8KmguwckE0RProzJXTs4BhooUB4uwgKA4+IP6cPG9my4vaBL055fHiYb
-xpmKp7lj+xPgtXIekR+vzIma2nXiD4Adrs2ITwcjY7dtKLyoLiVJqXQRxWeBoaDS
-hlaQghVl9wUq5TwOJgwJDsQ=
------END PRIVATE KEY-----";
+        let certificate = include_str!("../../../test_assets/x509_test_cert_ea67dab7.pem");
+        let private_key = include_str!("../../../test_assets/x509_test_key_a7ba6a94.pem");
         let mut datakey = get_default_datakey(None, None, None);
         datakey.certificate = certificate.as_bytes().to_vec();
         datakey.private_key = private_key.as_bytes().to_vec();
@@ -1802,48 +1688,8 @@ hlaQghVl9wUq5TwOJgwJDsQ=
 
     #[test]
     fn test_validate_and_update_with_dsacert() {
-        let certificate = "-----BEGIN CERTIFICATE-----
-MIIEkzCCBEGgAwIBAgIUHw8WUb9beKVreRngMZyZUrP8UqgwCwYJYIZIAWUDBAMC
-MEUxCzAJBgNVBAYTAkNOMRMwEQYDVQQIDApTb21lLVN0YXRlMSEwHwYDVQQKDBhJ
-bnRlcm5ldCBXaWRnaXRzIFB0eSBMdGQwHhcNMjUxMTE4MTI1MjUxWhcNMjYxMTE4
-MTI1MjUxWjBFMQswCQYDVQQGEwJDTjETMBEGA1UECAwKU29tZS1TdGF0ZTEhMB8G
-A1UECgwYSW50ZXJuZXQgV2lkZ2l0cyBQdHkgTHRkMIIDRDCCAjYGByqGSM44BAEw
-ggIpAoIBAQCrEexqKCpPOzXK9ZyZZeSLCEFoheoAOMTxLDXcTw9h88J7GZ70udGZ
-KinBbT/L9yZimzH3FSwyWbR8gjJxzL84q2qv8rLTtXXgjL93uF+1lDcfITgswCKm
-Uvm4uMwPCpved7U+Ni5E5E7FJHEY8MVQQdBnQsKhLpIWyi4xTEK1vHVwS3gyL7D9
-HvxaZInZ5x7tOeqKeNsXOS9zXMdkvhyvfDoMtCrq9CwAd/QNkizQ+jyiQP9/Q8xf
-crCp4RMHfMTM+c7KkB34w0FYVWg8GOMpWJw55wQ4VpSCxSrc0JC6159vxtLk/CzW
-k9IqfA7f7mr/7sR8StKEhioyQ2Z45Z3nAh0AkhAfQfPdW+1ub60zvSsjfOLso36I
-fT7TbWvhAQKCAQEAg7xfk8S1E+4NKgxypwtvvt/FVnfbgbkZ0pkQUrD8bbYZamiN
-vdMvDauEj16AEwbvUkLdZa5Ht/EcknYimgGG305Ah/hvqUayVd9C22s/7JxOyg/W
-Iy1Y6vScDWNO6Svlu9ZU8RmTEXgL9vIekbo1hAnni3zmC9/cDOuMWVdkL0vWqirw
-oY8p2QJ3hJXZTD1pgSQaI9VsnnwU+hmCrhRQQUZf6xcDWe6kpgBnCD3kJu3GDr4I
-EsA8Q4rGv+Cr4z29Dl7BiSLnJVSVQ9HOSdqvE73CYHJbeaWk0ASNBkimeqzY+5lP
-tqGHoZhDw0V6V9xmE6yA+4RA1lCZSn8aLwoEfQOCAQYAAoIBAQCEWY0OioYoUwTx
-qOtrDxUypntePUafTAjp3ZsEy54eLGVBWC4Dd9T78Zn98x/9dt/leH+7f40Dv1tA
-d2ok5cjMkeMqUEcq9iEC4SkqZfTg6seaOmMaeOSRSfIw2JR0g8RLUCtEvxyfbBNF
-2T6aka4PMqSIx4IPKpRENY2/ICYrFAjTHUFyE7d3ER/zbE+r/J8KpBXi0nDMkYcv
-1RkZhkDkxoWnVWO6BPDnbe1yL2linCNUhRtmpYHfe9DO16st7MYBdjLS7YEed9Zv
-SoBy1UasYaCEoLROzRuUDWXc+mpY73G6B1cAmZd9OU1d+lQ3K5SdIVSrej5YksTE
-5QQsoQlUoyEwHzAdBgNVHQ4EFgQUooMZNGLs7K3I1LZBzsX8gbi3fgEwCwYJYIZI
-AWUDBAMCAz8AMDwCHGdHB/xu+SQC92KUgXcW2H67qGTg5jsKYMAJBlcCHEbV7+7K
-TdRvdJ2ZKZjSsC39ZPCP7KnaP881vaI=
------END CERTIFICATE-----";
-        let private_key = "-----BEGIN PRIVATE KEY-----
-MIICXgIBADCCAjYGByqGSM44BAEwggIpAoIBAQCrEexqKCpPOzXK9ZyZZeSLCEFo
-heoAOMTxLDXcTw9h88J7GZ70udGZKinBbT/L9yZimzH3FSwyWbR8gjJxzL84q2qv
-8rLTtXXgjL93uF+1lDcfITgswCKmUvm4uMwPCpved7U+Ni5E5E7FJHEY8MVQQdBn
-QsKhLpIWyi4xTEK1vHVwS3gyL7D9HvxaZInZ5x7tOeqKeNsXOS9zXMdkvhyvfDoM
-tCrq9CwAd/QNkizQ+jyiQP9/Q8xfcrCp4RMHfMTM+c7KkB34w0FYVWg8GOMpWJw5
-5wQ4VpSCxSrc0JC6159vxtLk/CzWk9IqfA7f7mr/7sR8StKEhioyQ2Z45Z3nAh0A
-khAfQfPdW+1ub60zvSsjfOLso36IfT7TbWvhAQKCAQEAg7xfk8S1E+4NKgxypwtv
-vt/FVnfbgbkZ0pkQUrD8bbYZamiNvdMvDauEj16AEwbvUkLdZa5Ht/EcknYimgGG
-305Ah/hvqUayVd9C22s/7JxOyg/WIy1Y6vScDWNO6Svlu9ZU8RmTEXgL9vIekbo1
-hAnni3zmC9/cDOuMWVdkL0vWqirwoY8p2QJ3hJXZTD1pgSQaI9VsnnwU+hmCrhRQ
-QUZf6xcDWe6kpgBnCD3kJu3GDr4IEsA8Q4rGv+Cr4z29Dl7BiSLnJVSVQ9HOSdqv
-E73CYHJbeaWk0ASNBkimeqzY+5lPtqGHoZhDw0V6V9xmE6yA+4RA1lCZSn8aLwoE
-fQQfAh0Ajn5YKCFR13WmbVb52M44GN50U+cJ24RFKPaunA==
------END PRIVATE KEY-----";
+        let certificate = include_str!("../../../test_assets/x509_test_cert_312b4012.pem");
+        let private_key = include_str!("../../../test_assets/x509_test_key_92335ba0.pem");
         let mut datakey = get_default_datakey(None, None, None);
         datakey.certificate = certificate.as_bytes().to_vec();
         datakey.private_key = private_key.as_bytes().to_vec();

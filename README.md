@@ -125,7 +125,7 @@ There are two ways to setup a local development environment:
   
     Finally, use the command below to generate the default user and token for test environment, including:
     1.  generate default admin and it's token, used for API test
-    2.  generate default keys, `1default-x509-ca`, `default-x509-ica`, `default-x509-ee`, `default-pgp-rsa` and `default-pgp-eddsa`
+    2.  generate default keys, `default-x509-ca`, `default-x509-ica`, `default-x509-ee`, `default-pgp-rsa` and `default-pgp-eddsa`
    ```shell
    make init
    ```
@@ -163,14 +163,14 @@ make init
 Pay attention to the command output:
 ```shell
 ...skipped output
-[Result]: Administrator tommylikehu@gmail.com has been successfully created with token XmUICsVV48EjfkWYv3ch1eutRJOQh7mp3bRfmQDL will expire 2023-09-23 11:20:33 UTC
+[Result]: Administrator tommylikehu@gmail.com has been successfully created with token <YOUR_ADMIN_TOKEN> will expire 2023-09-23 11:20:33 UTC
 ...skipped output
 [Result]: Keys 'default-pgp' type pgp has been successfully generated
 [Result]: Keys 'default-x509' type x509 has been successfully generated
 ```
 Now you can use this token to debug the control service API or use the pgp keys for signing rpm packages with client.
 ```shell
-curl -k --header "Authorization:XmUICsVV48EjfkWYv3ch1eutRJOQh7mp3bRfmQDL" -v http://localhost:8080/api/v1/keys/\?page_size\=100\&page_number\=1
+curl -k --header "Authorization:<YOUR_ADMIN_TOKEN>" -v http://localhost:8080/api/v1/keys/\?page_size\=100\&page_number\=1
 ```
 ```shell
 RUST_BACKTRACE=full RUST_LOG=info ./target/debug/signatrust-client --config <client-config-file-path> add --key-name default-pgp  --file-type rpm --key-type pgp .data/simple.rpm

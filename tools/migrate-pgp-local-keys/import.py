@@ -1,13 +1,16 @@
 # Script to migrate keys from GPG local store to signatrust server
 
+import os
 import sys
-import gnupg
-from datetime import datetime, timezone
 import requests
+
+# Default request timeout in seconds
+_REQUEST_TIMEOUT = 30
 
 
 class KeyImport:
-    def __init__(self, signatrust_url=None, token=None, name=None, email=None, private_key=None, public_key=None, passphrase=None):
+    def __init__(self, signatrust_url=None, token=None, name=None, email=None,
+                 private_key=None, public_key=None, passphrase=None):
         self.headers = {
             "Authorization": token,
             "Content-Type": "application/json"
@@ -18,40 +21,69 @@ class KeyImport:
         self.private_key = private_key
         self.public_key = public_key
         self.passphrase = passphrase
+        # SSL verification: set SIGNATRUST_CA_BUNDLE to specify a custom CA bundle,
+        # or set SIGNATRUST_SSL_VERIFY=0 to disable verification (not recommended)
+        self.ssl_verify = os.environ.get("SIGNATRUST_SSL_VERIFY", "1") != "0"
 
     def _check_name_exists(self, name):
-        response = requests.head("{}/api/v1/keys/name_identical?name={}&visibility=public".format(self.signatrust_url, name), headers=self.headers, verify=False)
+        response = requests.head(
+            "{}/api/v1/keys/name_identical?name={}&visibility=public".format(
+                self.signatrust_url, name),
+            headers=self.headers,
+            verify=self.ssl_verify,
+            timeout=_REQUEST_TIMEOUT,
+        )
         if response.status_code == 200:
             print("key: {} does not exist".format(name))
             return True
         if response.status_code == 409:
             print("key: {} already exists".format(name))
             return False
-        print("failed to check key name existence code {}: and response: {}".format(response.status_code, response.content))
+        print("failed to check key name existence code {}: and response: {}".format(
+            response.status_code, response.content))
         raise Exception("failed to determine key duplication")
 
     def _check_key_enabled(self, name):
-        response = requests.get("{}/api/v1/keys/{}".format(self.signatrust_url, name), headers=self.headers, verify=False)
+        response = requests.get(
+            "{}/api/v1/keys/{}".format(self.signatrust_url, name),
+            headers=self.headers,
+            verify=self.ssl_verify,
+            timeout=_REQUEST_TIMEOUT,
+        )
         if response.status_code == 200:
             key_status = response.json()
             return key_status["key_state"] == "enabled"
-        print("failed to get key status code {}: and response: {}".format(response.status_code, response.content))
+        print("failed to get key status code {}: and response: {}".format(
+            response.status_code, response.content))
         raise Exception("failed to get key")
 
     def _enable_key(self, name):
-        response = requests.post("{}/api/v1/keys/{}/actions/enable".format(self.signatrust_url, name), headers=self.headers, verify=False)
+        response = requests.post(
+            "{}/api/v1/keys/{}/actions/enable".format(self.signatrust_url, name),
+            headers=self.headers,
+            verify=self.ssl_verify,
+            timeout=_REQUEST_TIMEOUT,
+        )
         if response.status_code == 200:
             print("key: {} has been successfully enabled".format(name))
             return
-        print("failed to enable key {}: and response: {}".format(response.status_code, response.content))
+        print("failed to enable key {}: and response: {}".format(
+            response.status_code, response.content))
         raise Exception("failed to enable key")
 
     def _create_key(self, attribute):
-        response = requests.post("{}/api/v1/keys/import".format(self.signatrust_url), json=attribute, headers=self.headers, verify=False)
+        response = requests.post(
+            "{}/api/v1/keys/import".format(self.signatrust_url),
+            json=attribute,
+            headers=self.headers,
+            verify=self.ssl_verify,
+            timeout=_REQUEST_TIMEOUT,
+        )
         if response.status_code == 201:
             print("key: {} has been successfully created".format(attribute["name"]))
             return response.json()["name"]
-        raise Exception("failed to create key {} status {} and response {}".format(attribute["name"], response.status_code, response.content))
+        raise Exception("failed to create key {} status {} and response {}".format(
+            attribute["name"], response.status_code, response.content))
 
     def import_key(self):
         print("====================== processing key: {} ====================".format(self.name))
