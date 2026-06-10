@@ -76,9 +76,8 @@ class TestKeyMigration(unittest.TestCase):
     def test_gpg_passphrase_from_env(self):
         """GPG export passphrase should be read from environment variable."""
         with mock.patch.dict(os.environ, {"GPG_EXPORT_PASSPHRASE": "secret123"}):
-            # Re-import to pick up env var (it's a module-level constant)
+            # Reload to pick up env var (it's a module-level constant)
             import importlib
-            import migrate
             importlib.reload(migrate)
             self.assertEqual(migrate._GPG_EXPORT_PASSPHRASE, "secret123")
 

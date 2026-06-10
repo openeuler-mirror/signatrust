@@ -27,6 +27,16 @@ e4799d6538895b9cd437bac681e745b9b75d0f2d:README.zh.md:curl-auth-header:150
 2c38f0b1d169bc4c163c9c817943ffd1a04488d0:docs/how to sign&verify a EFI image.md:curl-auth-header:68
 2c38f0b1d169bc4c163c9c817943ffd1a04488d0:docs/how to sign&verify a EFI image.md:curl-auth-header:76
 
+# Test assets - newly added PEM files (not production secrets)
+ac5fcfcfc29f5852de69e7e22d7ac185bc2b8f43:test_assets/pgp_test_key_25073e96.pem:private-key:1
+ac5fcfcfc29f5852de69e7e22d7ac185bc2b8f43:test_assets/rsa_test_key.pem:private-key:1
+ac5fcfcfc29f5852de69e7e22d7ac185bc2b8f43:test_assets/sm2_test_key.pem:private-key:1
+ac5fcfcfc29f5852de69e7e22d7ac185bc2b8f43:test_assets/x509_test_key_92335ba0.pem:private-key:1
+ac5fcfcfc29f5852de69e7e22d7ac185bc2b8f43:test_assets/x509_test_key_a7ba6a94.pem:private-key:1
+ac5fcfcfc29f5852de69e7e22d7ac185bc2b8f43:test_assets/x509_test_key_b9031dfb.pem:private-key:1
+ac5fcfcfc29f5852de69e7e22d7ac185bc2b8f43:test_assets/x509_test_key_f5397b38.pem:private-key:1
+ac5fcfcfc29f5852de69e7e22d7ac185bc2b8f43:README.md:generic-api-key:128
+
 # Deployment config - example cookie_key value, must be replaced in production
 176c4f0be66c4cf1a6a86bcdaa2d17e118752d86:docker/server.toml:generic-api-key:11
 b9752204a5467c3438af83670e402ec483141771:deploy/config.yaml:generic-api-key:31
