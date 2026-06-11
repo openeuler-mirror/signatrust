@@ -53,7 +53,8 @@ use crate::domain::datakey::plugins::x509::{
 };
 use crate::domain::sign_plugin::SignPlugins;
 use crate::infra::sign_plugin::cms::{
-    free, CmsContext, CmsPlugin, EVP_PKEY_CTX_set1_id, EVP_PKEY_is_a, Step,
+    free, ASN1_STRING_data, ASN1_STRING_length, CmsContext, CmsPlugin, EVP_PKEY_CTX_set1_id,
+    EVP_PKEY_is_a, Step,
 };
 use crate::util::attributes;
 use crate::util::error::{Error, Result};
@@ -101,6 +102,13 @@ extern "C" {
         pkey: *mut openssl_sys::EVP_PKEY,
     ) -> c_int;
     fn X509_sign_ctx(x: *mut openssl_sys::X509, ctx: *mut EVP_MD_CTX) -> c_int;
+    fn X509_CRL_sign_ctx(x: *mut openssl_sys::X509_CRL, ctx: *mut EVP_MD_CTX) -> c_int;
+    fn X509_CRL_get0_signature(
+        crl: *const openssl_sys::X509_CRL,
+        psig: *mut *const openssl_sys::ASN1_BIT_STRING,
+        palg: *mut *const openssl_sys::X509_ALGOR,
+    );
+    fn i2d_re_X509_CRL_tbs(crl: *mut openssl_sys::X509_CRL, out: *mut *mut u8) -> c_int;
     fn X509_sign(
         x: *mut openssl_sys::X509,
         pkey: *mut openssl_sys::EVP_PKEY,
@@ -315,6 +323,57 @@ impl X509Plugin {
                     "X509_sign_ctx failed".to_string(),
                 ));
             }
+        }
+        Ok(())
+    }
+
+    /// Sign an X.509 CRL with an SM2 key.
+    ///
+    /// Uses `EVP_DigestSignInit` + `EVP_PKEY_CTX_set1_id` + `X509_CRL_sign_ctx`
+    /// to set the SM2 distinguishing identifier per GM/T 0003.2-2012.
+    /// This mirrors `sign_cert_sm2` but for CRL signing.
+    unsafe fn sign_crl_sm2(
+        crl: *mut openssl_sys::X509_CRL,
+        pkey: &PKey<pkey::Private>,
+        digest: MessageDigest,
+    ) -> Result<()> {
+        let md_ctx = EVP_MD_CTX_new();
+        if md_ctx.is_null() {
+            return Err(Error::GeneratingKeyError(
+                "EVP_MD_CTX_new failed".to_string(),
+            ));
+        }
+        let _guard = MdCtxGuard(md_ctx);
+
+        let mut pctx: *mut openssl_sys::EVP_PKEY_CTX = ptr::null_mut();
+        if EVP_DigestSignInit(
+            md_ctx,
+            &mut pctx as *mut *mut openssl_sys::EVP_PKEY_CTX,
+            digest.as_ptr(),
+            ptr::null_mut(),
+            pkey.as_ptr() as *mut _,
+        ) != 1
+        {
+            return Err(Error::GeneratingKeyError(
+                "EVP_DigestSignInit failed".to_string(),
+            ));
+        }
+
+        if EVP_PKEY_CTX_set1_id(
+            pctx,
+            SM2_DEFAULT_ID.as_ptr() as *const c_void,
+            SM2_DEFAULT_ID.len() as c_int,
+        ) != 1
+        {
+            return Err(Error::InvalidArgumentError(
+                "EVP_PKEY_CTX_set1_id failed".to_string(),
+            ));
+        }
+        // X509_CRL_sign_ctx returns the signature length upon successful call.
+        if X509_CRL_sign_ctx(crl, md_ctx) <= 0 {
+            return Err(Error::GeneratingKeyError(
+                "X509_CRL_sign_ctx failed".to_string(),
+            ));
         }
         Ok(())
     }
@@ -1033,13 +1092,19 @@ impl SignPlugins for X509Plugin {
                 unsafe { X509_CRL_add0_revoked(crl, revoked) };
             }
         }
-        unsafe {
-            X509_CRL_sign(
-                crl,
-                private_key.as_ptr(),
-                parameter.digest_algorithm.get_real_algorithm().as_ptr(),
-            )
-        };
+        let digest = parameter.digest_algorithm.get_real_algorithm();
+        match parameter.key_type {
+            X509KeyType::Sm2 => unsafe {
+                Self::sign_crl_sm2(crl, &private_key, digest)?;
+            },
+            _ => unsafe {
+                if X509_CRL_sign(crl, private_key.as_ptr(), digest.as_ptr()) <= 0 {
+                    return Err(Error::GeneratingKeyError(
+                        "X509_CRL_sign failed".to_string(),
+                    ));
+                }
+            },
+        }
         let content = unsafe { X509Crl::from_ptr(crl) };
         Ok(content.to_pem()?)
     }
@@ -1807,6 +1872,146 @@ mod test {
                     .expect("convert to asn1 time successfully"),
             true
         );
+    }
+
+    /// Manually verify an SM2 CRL signature.  Because `X509_CRL_verify` does not
+    /// set the SM2 identifying-ID on the verify context (just as `X509_CRL_sign`
+    /// does not set it), we reconstruct the verification using
+    /// `i2d_re_X509_CRL_tbs` + `EVP_DigestVerify` + `EVP_PKEY_CTX_set1_id`,
+    /// mirroring what `verify_cert_sm2` does for certificates.
+    unsafe fn verify_crl_sm2(crl: *mut openssl_sys::X509_CRL, ca_cert: &openssl::x509::X509) {
+        // Get TBSCertList DER.
+        let tbs_len = i2d_re_X509_CRL_tbs(crl, ptr::null_mut());
+        assert!(tbs_len > 0, "i2d_re_X509_CRL_tbs (size) returned {tbs_len}");
+        let mut tbs_der: *mut u8 = ptr::null_mut();
+        let written = i2d_re_X509_CRL_tbs(crl, &mut tbs_der);
+        assert_eq!(written, tbs_len, "i2d_re_X509_CRL_tbs (write) mismatch");
+        let _tbs_guard = TbsDerGuard(tbs_der);
+
+        // Get signature.
+        // NOTE: we use low-level FFI (X509_CRL_get0_signature + ASN1_STRING_data)
+        // instead of crl.signature() because openssl::x509::X509Crl does not expose
+        // a .signature() method, unlike openssl::x509::X509 used in verify_cert_sm2.
+        let sig_ptr: *const openssl_sys::ASN1_BIT_STRING = ptr::null();
+        let sig_ptr_ptr: *mut *const openssl_sys::ASN1_BIT_STRING =
+            &sig_ptr as *const _ as *mut *const openssl_sys::ASN1_BIT_STRING;
+        X509_CRL_get0_signature(crl, sig_ptr_ptr, ptr::null_mut());
+        assert!(!sig_ptr.is_null(), "X509_CRL_get0_signature failed");
+        let sig_data = ASN1_STRING_data(sig_ptr as *mut c_void);
+        let sig_len = ASN1_STRING_length(sig_ptr as *mut c_void);
+        assert!(sig_len > 0, "signature empty");
+
+        let md_ctx = EVP_MD_CTX_new();
+        assert!(!md_ctx.is_null(), "EVP_MD_CTX_new failed");
+        let _md_guard = MdCtxGuard(md_ctx);
+
+        let pubkey = ca_cert.public_key().expect("get CA public key");
+        let sm3_md = openssl::hash::MessageDigest::sm3();
+        let mut pctx: *mut openssl_sys::EVP_PKEY_CTX = ptr::null_mut();
+        assert_eq!(
+            EVP_DigestVerifyInit(
+                md_ctx,
+                &mut pctx as *mut *mut openssl_sys::EVP_PKEY_CTX,
+                sm3_md.as_ptr(),
+                ptr::null_mut(),
+                pubkey.as_ptr() as *mut _,
+            ),
+            1,
+            "EVP_DigestVerifyInit failed"
+        );
+        assert_eq!(
+            EVP_PKEY_CTX_set1_id(
+                pctx,
+                SM2_DEFAULT_ID.as_ptr() as *const c_void,
+                SM2_DEFAULT_ID.len() as c_int,
+            ),
+            1,
+            "EVP_PKEY_CTX_set1_id failed during CRL verification"
+        );
+        assert_eq!(
+            EVP_DigestVerify(
+                md_ctx,
+                sig_data,
+                sig_len as usize,
+                tbs_der,
+                tbs_len as usize,
+            ),
+            1,
+            "SM2 CRL signature must verify with SM2 ID set"
+        );
+    }
+
+    /// Test that SM2 CRL is generated with correct SM2 signature that can be verified.
+    ///
+    /// This covers the fix where `X509_CRL_sign_ctx` + `EVP_PKEY_CTX_set1_id` is used
+    /// instead of `X509_CRL_sign`, so the SM2 Z value is computed per GM/T 0003.2-2012.
+    #[tokio::test]
+    async fn test_sm2_crl_signature_verification() {
+        let parameter = HashMap::from([
+            ("common_name".to_string(), "SM2 Test CA".to_string()),
+            ("organizational_unit".to_string(), "Test".to_string()),
+            ("organization".to_string(), "TestOrg".to_string()),
+            ("locality".to_string(), "ShenZhen".to_string()),
+            ("province_name".to_string(), "GuangDong".to_string()),
+            ("country_name".to_string(), "CN".to_string()),
+            ("key_type".to_string(), "sm2".to_string()),
+            ("key_length".to_string(), "256".to_string()),
+            ("digest_algorithm".to_string(), "sm3".to_string()),
+            ("create_at".to_string(), Utc::now().to_string()),
+            (
+                "expire_at".to_string(),
+                (Utc::now() + Duration::days(365)).to_string(),
+            ),
+        ]);
+        let dummy_engine = get_encryption_engine();
+        let infra_config = get_infra_config();
+
+        // Generate SM2 CA key and certificate.
+        let mut ca_key = get_default_datakey(
+            Some("sm2 crl test ca".to_string()),
+            Some(parameter),
+            Some(KeyType::X509CA),
+        );
+        let sec_datakey = SecDataKey::load(&ca_key, &dummy_engine)
+            .await
+            .expect("load sec datakey");
+        let plugin = X509Plugin::new(sec_datakey, None).expect("create plugin");
+        let ca_content = plugin
+            .generate_keys(&KeyType::X509CA, &infra_config)
+            .expect("generate sm2 ca key");
+        ca_key.private_key = ca_content.private_key;
+        ca_key.certificate = ca_content.certificate;
+
+        // Generate CRL.
+        let crl_sec = SecDataKey::load(&ca_key, &dummy_engine)
+            .await
+            .expect("load crl sec datakey");
+        let plugin = X509Plugin::new(crl_sec, None).expect("create crl plugin");
+        let last_update = Utc::now() + Duration::days(1);
+        let next_update = Utc::now() + Duration::days(31);
+
+        let crl_pem = plugin
+            .generate_crl_content(vec![], last_update, next_update)
+            .expect("generate sm2 crl");
+
+        // 1. Verify the CRL is valid PEM and has expected structure.
+        let crl = X509Crl::from_pem(&crl_pem).expect("load sm2 crl from pem");
+        assert_eq!(
+            crl.last_update()
+                == Asn1Time::from_unix(last_update.timestamp()).expect("convert last_update"),
+            true
+        );
+        assert_eq!(
+            crl.next_update().expect("next_update set")
+                == Asn1Time::from_unix(next_update.timestamp()).expect("convert next_update"),
+            true
+        );
+
+        // 2. Verify the CRL signature with SM2 ID set (mirrors GmSSL verification).
+        let ca_cert = x509::X509::from_pem(ca_key.certificate.as_slice()).expect("load ca cert");
+        unsafe {
+            verify_crl_sm2(crl.as_ptr(), &ca_cert);
+        }
     }
 
     /// Test 1: Verify CRL is V2 format with Authority Key Identifier (AKI) extension
