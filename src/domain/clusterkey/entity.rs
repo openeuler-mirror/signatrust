@@ -22,7 +22,7 @@ use std::vec::Vec;
 
 use crate::domain::kms_provider::KMSProvider;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ClusterKey {
     pub id: i32,
     pub data: Vec<u8>,

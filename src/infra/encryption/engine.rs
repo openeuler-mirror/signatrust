@@ -220,3 +220,224 @@ where
         )
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::domain::clusterkey::entity::ClusterKey;
+    use crate::domain::clusterkey::repository::Repository;
+    use crate::infra::encryption::algorithm::aes::Aes256GcmEncryptor;
+    use crate::infra::kms::dummy::DummyKMS;
+    use std::sync::Mutex;
+
+    /// In-memory mock of ClusterKeyRepository for unit testing the engine.
+    struct MockClusterKeyRepo {
+        keys: Mutex<Vec<ClusterKey>>,
+    }
+
+    impl MockClusterKeyRepo {
+        fn new() -> Self {
+            MockClusterKeyRepo {
+                keys: Mutex::new(Vec::new()),
+            }
+        }
+    }
+
+    #[async_trait]
+    impl Repository for MockClusterKeyRepo {
+        async fn create(&self, cluster_key: ClusterKey) -> Result<()> {
+            let mut keys = self.keys.lock().unwrap();
+            let new_id = keys.len() as i32 + 1;
+            let mut stored = cluster_key;
+            stored.id = new_id;
+            keys.push(stored);
+            Ok(())
+        }
+
+        async fn get_latest(&self, _algorithm: &str) -> Result<Option<ClusterKey>> {
+            let keys = self.keys.lock().unwrap();
+            Ok(keys.last().cloned())
+        }
+
+        async fn get_by_id(&self, id: i32) -> Result<ClusterKey> {
+            let keys = self.keys.lock().unwrap();
+            keys.iter()
+                .find(|k| k.id == id)
+                .cloned()
+                .ok_or(Error::NotFoundError)
+        }
+
+        async fn delete_by_id(&self, _id: i32) -> Result<()> {
+            Ok(())
+        }
+    }
+
+    type TestEngine =
+        EncryptionEngineWithClusterKey<MockClusterKeyRepo, DummyKMS, Aes256GcmEncryptor>;
+
+    fn make_engine() -> TestEngine {
+        let repo = MockClusterKeyRepo::new();
+        let kms = Box::new(DummyKMS::new(&HashMap::new()).unwrap());
+        let encryptor = Box::<Aes256GcmEncryptor>::default();
+        let mut config = HashMap::new();
+        config.insert("rotate_in_days".to_string(), config::Value::from("180"));
+        EncryptionEngineWithClusterKey::new(repo, encryptor, &config, kms)
+            .expect("create engine should succeed")
+    }
+
+    // ========== Config ==========
+
+    #[test]
+    fn test_new_engine_invalid_rotate_days() {
+        let repo = MockClusterKeyRepo::new();
+        let kms = Box::new(DummyKMS::new(&HashMap::new()).unwrap());
+        let encryptor = Box::<Aes256GcmEncryptor>::default();
+        let mut config = HashMap::new();
+        config.insert(
+            "rotate_in_days".to_string(),
+            config::Value::from("30"), // < 90 → rejected
+        );
+        let result: Result<TestEngine> =
+            EncryptionEngineWithClusterKey::new(repo, encryptor, &config, kms);
+        assert!(result.is_err());
+        let err_str = result.err().unwrap().to_string();
+        assert!(
+            err_str.contains("rotate in days"),
+            "unexpected error: {}",
+            err_str
+        );
+    }
+
+    #[test]
+    fn test_new_engine_valid_rotate_days() {
+        let repo = MockClusterKeyRepo::new();
+        let kms = Box::new(DummyKMS::new(&HashMap::new()).unwrap());
+        let encryptor = Box::<Aes256GcmEncryptor>::default();
+        let mut config = HashMap::new();
+        config.insert("rotate_in_days".to_string(), config::Value::from("180"));
+        let result: Result<TestEngine> =
+            EncryptionEngineWithClusterKey::new(repo, encryptor, &config, kms);
+        assert!(result.is_ok());
+    }
+
+    // ========== Key ID encoding ==========
+
+    #[tokio::test]
+    async fn test_append_cluster_key_hex_key_id_1() {
+        let mut engine = make_engine();
+        engine.initialize().await.unwrap();
+
+        let mut data = vec![0xAB, 0xCD];
+        let result = engine.append_cluster_key_hex(&mut data).await;
+        // Key ID = 1 → hex "0001" → [0x00, 0x01]
+        assert_eq!(result[0], 0x00);
+        assert_eq!(result[1], 0x01);
+        assert_eq!(&result[2..], &[0xAB, 0xCD]);
+    }
+
+    #[test]
+    fn test_key_id_byte_encoding_format() {
+        // Verify the {:04X} format produces correct byte pairs
+        // Key ID 10 = 0x000A = [0x00, 0x0A]
+        let hex = format!("{:04X}", 10i32);
+        assert_eq!(hex, "000A");
+        let bytes = key::decode_hex_string_to_u8(&hex);
+        assert_eq!(bytes, vec![0x00, 0x0A]);
+
+        // Key ID 256 = 0x0100 = [0x01, 0x00]
+        let hex = format!("{:04X}", 256i32);
+        assert_eq!(hex, "0100");
+        let bytes = key::decode_hex_string_to_u8(&hex);
+        assert_eq!(bytes, vec![0x01, 0x00]);
+
+        // Key ID 65535 = 0xFFFF
+        let hex = format!("{:04X}", 65535i32);
+        assert_eq!(hex, "FFFF");
+        let bytes = key::decode_hex_string_to_u8(&hex);
+        assert_eq!(bytes, vec![0xFF, 0xFF]);
+    }
+
+    // ========== Empty content ==========
+
+    #[tokio::test]
+    async fn test_encode_empty_content_passthrough() {
+        let mut engine = make_engine();
+        engine.initialize().await.unwrap();
+
+        let result = engine.encode(vec![]).await.unwrap();
+        assert!(result.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_decode_empty_content_passthrough() {
+        let engine = make_engine();
+        // Decode does not need initialize for empty content
+        let result = engine.decode(vec![]).await.unwrap();
+        assert!(result.is_empty());
+    }
+
+    // ========== Encode/decode roundtrip ==========
+
+    #[tokio::test]
+    async fn test_encode_decode_roundtrip() {
+        let mut engine = make_engine();
+        engine.initialize().await.unwrap();
+
+        let original = b"hello world, this is a test message for roundtrip encryption".to_vec();
+        let encrypted = engine.encode(original.clone()).await.unwrap();
+
+        // Encrypted data should differ from original
+        assert_ne!(encrypted, original);
+        // Should have at least KEY_SIZE bytes for the key ID header
+        assert!(encrypted.len() > KEY_SIZE);
+
+        let decrypted = engine.decode(encrypted).await.unwrap();
+        assert_eq!(decrypted, original);
+    }
+
+    #[tokio::test]
+    async fn test_encode_decode_empty() {
+        let mut engine = make_engine();
+        engine.initialize().await.unwrap();
+
+        let result = engine.encode(vec![]).await.unwrap();
+        assert!(result.is_empty());
+
+        let result = engine.decode(vec![]).await.unwrap();
+        assert!(result.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_encode_different_inputs_produce_different_outputs() {
+        let mut engine = make_engine();
+        engine.initialize().await.unwrap();
+
+        let e1 = engine.encode(b"message one".to_vec()).await.unwrap();
+        let e2 = engine.encode(b"message two".to_vec()).await.unwrap();
+
+        // Same key ID prefix (both use same cluster key)
+        assert_eq!(&e1[0..KEY_SIZE], &e2[0..KEY_SIZE]);
+        // But different ciphertext
+        assert_ne!(&e1[KEY_SIZE..], &e2[KEY_SIZE..]);
+    }
+
+    #[tokio::test]
+    async fn test_rotate_key_returns_false_before_rotate_period() {
+        let mut engine = make_engine();
+        engine.initialize().await.unwrap();
+
+        // rotate_in_days = 180, key just created → should return false
+        let rotated = engine.rotate_key().await.unwrap();
+        assert!(!rotated);
+    }
+
+    #[tokio::test]
+    async fn test_initialize_finds_existing_key() {
+        let mut engine = make_engine();
+        // First init creates a key
+        engine.initialize().await.unwrap();
+
+        // Re-initialize should find the existing key, not panic
+        engine.initialize().await.unwrap();
+    }
+}

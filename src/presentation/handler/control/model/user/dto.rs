@@ -225,3 +225,143 @@ pub struct Code {
     #[validate(length(min = 1))]
     pub code: String,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ========== UserIdentity ==========
+
+    #[test]
+    fn test_user_identity_from_user() {
+        let user = User {
+            id: 42,
+            email: "test@example.com".to_string(),
+        };
+        let identity = UserIdentity::from_user(user);
+        assert_eq!(identity.email, "test@example.com");
+        assert_eq!(identity.id, 42);
+        assert!(identity.csrf_token.is_none());
+        assert!(identity.csrf_generation_token.is_none());
+    }
+
+    #[test]
+    fn test_user_identity_from_user_with_csrf_token() {
+        let user = User {
+            id: 7,
+            email: "dev@example.com".to_string(),
+        };
+        let key = [0u8; 32];
+        let identity = UserIdentity::from_user_with_csrf_token(user, key).unwrap();
+        assert_eq!(identity.email, "dev@example.com");
+        assert_eq!(identity.id, 7);
+        assert!(identity.csrf_token.is_some());
+        assert!(identity.csrf_generation_token.is_some());
+    }
+
+    #[test]
+    fn test_user_identity_from_into_user() {
+        let identity = UserIdentity {
+            email: "alice@example.com".to_string(),
+            id: 99,
+            csrf_generation_token: None,
+            csrf_token: None,
+        };
+        let user: User = identity.into();
+        assert_eq!(user.email, "alice@example.com");
+        assert_eq!(user.id, 99);
+    }
+
+    // ========== Code DTO ==========
+
+    #[test]
+    fn test_code_validation_valid() {
+        let code = Code {
+            code: "abc123".to_string(),
+        };
+        assert!(code.validate().is_ok());
+    }
+
+    #[test]
+    fn test_code_validation_empty() {
+        let code = Code {
+            code: "".to_string(),
+        };
+        assert!(code.validate().is_err());
+    }
+
+    // ========== CSRF flow ==========
+
+    #[test]
+    fn test_user_identity_csrf_roundtrip() {
+        let user = User {
+            id: 1,
+            email: "bob@test.com".to_string(),
+        };
+        let key = [1u8; 32];
+        let identity = UserIdentity::from_user_with_csrf_token(user, key).unwrap();
+
+        // Generate cookie
+        let cookie = identity.generate_new_csrf_cookie(key, 600).unwrap();
+        assert!(!cookie.is_empty());
+
+        // Verify cookie is valid
+        assert!(identity.csrf_cookie_valid(key, &cookie).unwrap());
+    }
+
+    #[test]
+    fn test_user_identity_csrf_invalid_base64_decode() {
+        let user = User {
+            id: 1,
+            email: "eve@test.com".to_string(),
+        };
+        let key = [2u8; 32];
+        let identity = UserIdentity::from_user_with_csrf_token(user, key).unwrap();
+
+        // Invalid BASE64 should cause a decode error (before verification)
+        assert!(identity.csrf_cookie_valid(key, "!!!not-base64!!!").is_err());
+    }
+
+    #[test]
+    fn test_user_identity_csrf_no_tokens_fails_cookie_gen() {
+        let identity = UserIdentity {
+            email: "test@test.com".to_string(),
+            id: 1,
+            csrf_generation_token: None,
+            csrf_token: None,
+        };
+        let key = [3u8; 32];
+        assert!(identity.generate_new_csrf_cookie(key, 600).is_err());
+    }
+
+    #[test]
+    fn test_user_identity_csrf_roundtrip_different_keys() {
+        let user = User {
+            id: 1,
+            email: "multi@test.com".to_string(),
+        };
+        // Create with key1
+        let key1 = [1u8; 32];
+        let key2 = [2u8; 32];
+        let identity = UserIdentity::from_user_with_csrf_token(user, key1).unwrap();
+
+        // Generate cookie with key1, verify with key1
+        let cookie = identity.generate_new_csrf_cookie(key1, 600).unwrap();
+        assert!(identity.csrf_cookie_valid(key1, &cookie).unwrap());
+
+        // Verify with key2 should fail (cookie was encrypted with key1)
+        assert!(identity.csrf_cookie_valid(key2, &cookie).is_err());
+    }
+
+    #[test]
+    fn test_user_identity_csrf_no_token_fails() {
+        let identity = UserIdentity {
+            email: "test@test.com".to_string(),
+            id: 1,
+            csrf_generation_token: None,
+            csrf_token: None,
+        };
+        let key = [3u8; 32];
+        assert!(identity.generate_new_csrf_cookie(key, 600).is_err());
+    }
+}
