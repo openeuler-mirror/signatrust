@@ -44,6 +44,24 @@ impl DNSLoadBalancer {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_dns_lb_new() {
+        let lb = DNSLoadBalancer::new(
+            "signatrust.example.com".to_string(),
+            "8088".to_string(),
+            None,
+        )
+        .unwrap();
+        assert_eq!(lb.hostname, "signatrust.example.com");
+        assert_eq!(lb.port, "8088");
+        assert!(lb.client_config.is_none());
+    }
+}
+
 #[async_trait]
 impl DynamicLoadBalancer for DNSLoadBalancer {
     fn get_transport_channel(&self) -> Result<Channel> {
