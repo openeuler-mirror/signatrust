@@ -88,6 +88,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_database_migration() -> Result<()> {
+        // This test requires Linux bridge networking (get_bridge_ip_address).
+        // macOS/Windows Docker Desktop uses a VM without a bridge IP.
+        if cfg!(not(target_os = "linux")) {
+            return Ok(());
+        }
+
         let docker = clients::Cli::default();
         let image = GenericImage::new("mysql", "8.0")
             .with_env_var("MYSQL_DATABASE", "signatrust")
