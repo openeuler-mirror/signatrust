@@ -63,7 +63,11 @@ impl MemorySignBackend {
         let encryptor = AlgorithmFactory::new_algorithm(
             &engine_config
                 .get("algorithm")
-                .expect("encryption engine should configured")
+                .ok_or_else(|| {
+                    Error::ConfigError(
+                        "encryption engine algorithm should be configured".to_string(),
+                    )
+                })?
                 .to_string(),
         )?;
         let mut engine = EncryptionEngineWithClusterKey::new(

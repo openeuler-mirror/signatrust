@@ -118,12 +118,21 @@ where
                             }))
                         }
                     };
-                    let x509 = X509::from_pem(&public_datakey.certificate)
-                        .expect("can not get certificate from PEM");
-                    let skid_pem = x509.subject_key_id().expect("get subject key id failed");
-                    let skid_vec = skid_pem.as_slice();
-                    new_info.insert(SUBJECT_KEY_ID.to_string(), hex::encode(skid_vec));
-                    debug!("SKID (hex): {}", hex::encode(skid_vec));
+                    match X509::from_pem(&public_datakey.certificate) {
+                        Ok(x509) => {
+                            if let Some(skid_pem) = x509.subject_key_id() {
+                                new_info.insert(
+                                    SUBJECT_KEY_ID.to_string(),
+                                    hex::encode(skid_pem.as_slice()),
+                                );
+                            } else {
+                                warn!("X509 certificate has no SubjectKeyIdentifier extension");
+                            }
+                        }
+                        Err(e) => {
+                            warn!("failed to parse X509 certificate from PEM: {}", e);
+                        }
+                    }
                 }
                 Ok(Response::new(GetKeyInfoResponse {
                     attributes: new_info,
@@ -148,7 +157,15 @@ where
         let mut options: HashMap<String, String> = HashMap::new();
         let mut token: Option<String> = None;
         while let Some(content) = binaries.next().await {
-            let mut inner_result = content.unwrap();
+            let mut inner_result = match content {
+                Ok(c) => c,
+                Err(e) => {
+                    return Ok(Response::new(SignStreamResponse {
+                        signature: vec![],
+                        error: format!("stream error: {}", e),
+                    }));
+                }
+            };
             data.append(&mut inner_result.data);
             key_name = inner_result.key_id;
             key_type = inner_result.key_type;

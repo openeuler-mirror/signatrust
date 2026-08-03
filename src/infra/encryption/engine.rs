@@ -68,9 +68,7 @@ where
     ) -> Result<Self> {
         let rotate_in_days = config
             .get("rotate_in_days")
-            .expect("rotate in days should configured")
-            .to_string()
-            .parse()
+            .map(|v| v.to_string().parse().unwrap_or(DEFAULT_ROTATE_IN_DAYS))
             .unwrap_or(DEFAULT_ROTATE_IN_DAYS);
         if rotate_in_days < DEFAULT_ROTATE_IN_DAYS {
             return Err(Error::ConfigError(format!(
@@ -218,5 +216,20 @@ where
             sec_cluster_key.data.unsecure().to_owned(),
             content[KEY_SIZE..].to_vec(),
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default_rotate_in_days_is_90() {
+        assert_eq!(DEFAULT_ROTATE_IN_DAYS, 90);
+    }
+
+    #[test]
+    fn test_key_size_is_2() {
+        assert_eq!(KEY_SIZE, 2);
     }
 }

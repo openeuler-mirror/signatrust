@@ -144,7 +144,46 @@ impl HuaweiCloudKMS {
         Ok(())
     }
 
-    async fn do_request<T: Serialize + ?Sized>(
+    async fn do_request_with_retry<T: Serialize + ?Sized>(
+        &self,
+        url: &str,
+        json: &T,
+        max_retries: u32,
+    ) -> Result<serde_json::Value> {
+        let mut last_error = None;
+        for attempt in 0..=max_retries {
+            if attempt > 0 {
+                let backoff_ms = 100 * 2u64.pow(attempt - 1);
+                warn!(
+                    "KMS request retry attempt {}/{}, backoff {}ms",
+                    attempt, max_retries, backoff_ms
+                );
+                tokio::time::sleep(std::time::Duration::from_millis(backoff_ms)).await;
+            }
+            match self.do_request_once(url, json).await {
+                Ok(result) => return Ok(result),
+                Err(e) => {
+                    let should_retry = matches!(
+                        &e,
+                        Error::KMSInvokeError(msg) if msg.contains("500")
+                            || msg.contains("502")
+                            || msg.contains("503")
+                            || msg.contains("504")
+                    );
+                    if !should_retry || attempt == max_retries {
+                        return Err(e);
+                    }
+                    warn!("KMS request failed (retryable): {}", e);
+                    last_error = Some(e);
+                }
+            }
+        }
+        Err(last_error.unwrap_or_else(|| {
+            Error::KMSInvokeError("KMS request failed after retries".to_string())
+        }))
+    }
+
+    async fn do_request_once<T: Serialize + ?Sized>(
         &self,
         url: &str,
         json: &T,
@@ -183,6 +222,15 @@ impl HuaweiCloudKMS {
             )));
         }
         Ok(res.json::<serde_json::Value>().await?)
+    }
+
+    /// Compatibility wrapper: calls do_request_with_retry with default retries.
+    async fn do_request<T: Serialize + ?Sized>(
+        &self,
+        url: &str,
+        json: &T,
+    ) -> Result<serde_json::Value> {
+        self.do_request_with_retry(url, json, 3).await
     }
 }
 
@@ -549,5 +597,74 @@ mod test {
             kms_client.auth_token_cache.lock().await.as_str()
         );
         mock.assert();
+    }
+
+    #[tokio::test]
+    async fn test_kms_retry_on_5xx() {
+        let mut server = mockito::Server::new();
+        let url = server.url();
+        let config = get_kms_config(Some(url.clone()), Some(url.clone()));
+
+        // Mock auth
+        let mock_auth = server
+            .mock("POST", "/v3/auth/tokens")
+            .with_status(201)
+            .with_header(AUTH_HEADER, "fake_auth_header")
+            .expect(1) // only called once across all retries due to caching
+            .create();
+
+        // First two requests return 503, third returns 200
+        let mock_request = server
+            .mock("POST", "/kms/fake_endpoint")
+            .with_status(503)
+            .with_body(r#"{"error": "service unavailable"}"#)
+            .expect_at_least(2) // should be called multiple times
+            .create();
+
+        let kms_client =
+            HuaweiCloudKMS::new(&config).expect("create huaweicloud client should be successful");
+        let request_url = format!("{}/kms/fake_endpoint", url);
+        let fake_request = json!({"fake": "123"});
+
+        // do_request retries on 5xx, should fail after MAX_RETRIES
+        let result = kms_client.do_request(&request_url, &fake_request).await;
+        assert!(result.is_err());
+        let err_msg = result.unwrap_err().to_string();
+        assert!(err_msg.contains("503"));
+
+        mock_auth.assert();
+        mock_request.assert();
+    }
+
+    #[tokio::test]
+    async fn test_kms_retry_eventually_succeeds() {
+        let mut server = mockito::Server::new();
+        let url = server.url();
+        let config = get_kms_config(Some(url.clone()), Some(url.clone()));
+
+        // Mock auth
+        let mock_auth = server
+            .mock("POST", "/v3/auth/tokens")
+            .with_status(201)
+            .with_header(AUTH_HEADER, "fake_auth_header")
+            .create();
+
+        // After 503 responses, success
+        let mock_request = server
+            .mock("POST", "/kms/fake_endpoint")
+            .with_status(200)
+            .with_body(r#"{"key_id": "123", "plain_text_base64": "456", "plain_text": "decoded"}"#)
+            .create();
+
+        let kms_client =
+            HuaweiCloudKMS::new(&config).expect("create huaweicloud client should be successful");
+        let request_url = format!("{}/kms/fake_endpoint", url);
+        let fake_request = json!({"fake": "123"});
+
+        let result = kms_client.do_request(&request_url, &fake_request).await;
+        assert!(result.is_ok());
+
+        mock_auth.assert();
+        mock_request.assert();
     }
 }
