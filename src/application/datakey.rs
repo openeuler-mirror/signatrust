@@ -78,6 +78,145 @@ fn generate_cert_expire_json(keys: Vec<DataKey>, domain: String) -> Result<Strin
     Ok(json)
 }
 
+/// Validate that a key type and key state allow the requested action.
+/// Extracted as a pure function to enable direct unit testing of the
+/// security state machine.
+pub(crate) fn validate_key_type_and_state(key: &DataKey, key_action: KeyAction) -> Result<()> {
+    let valid_action_by_key_type = HashMap::from([
+        (
+            OpenPGP,
+            vec![
+                KeyAction::Delete,
+                KeyAction::CancelDelete,
+                KeyAction::Disable,
+                KeyAction::Enable,
+                KeyAction::Sign,
+                KeyAction::Read,
+            ],
+        ),
+        (
+            X509CA,
+            vec![
+                KeyAction::Delete,
+                KeyAction::CancelDelete,
+                KeyAction::Disable,
+                KeyAction::Enable,
+                KeyAction::IssueCert,
+                KeyAction::Read,
+            ],
+        ),
+        (
+            X509ICA,
+            vec![
+                KeyAction::Delete,
+                KeyAction::CancelDelete,
+                KeyAction::Revoke,
+                KeyAction::CancelRevoke,
+                KeyAction::Disable,
+                KeyAction::Enable,
+                KeyAction::Read,
+                KeyAction::IssueCert,
+            ],
+        ),
+        (
+            X509EE,
+            vec![
+                KeyAction::Delete,
+                KeyAction::CancelDelete,
+                KeyAction::Revoke,
+                KeyAction::CancelRevoke,
+                KeyAction::Disable,
+                KeyAction::Enable,
+                KeyAction::Read,
+                KeyAction::Sign,
+            ],
+        ),
+    ]);
+
+    let valid_state_by_key_action = HashMap::from([
+        (
+            KeyAction::Delete,
+            vec![
+                KeyState::Disabled,
+                KeyState::Revoked,
+                KeyState::PendingDelete,
+            ],
+        ),
+        (KeyAction::CancelDelete, vec![KeyState::PendingDelete]),
+        (
+            KeyAction::Revoke,
+            vec![KeyState::Disabled, KeyState::PendingRevoke],
+        ),
+        (KeyAction::CancelRevoke, vec![KeyState::PendingRevoke]),
+        (KeyAction::Enable, vec![KeyState::Disabled]),
+        (KeyAction::Disable, vec![KeyState::Enabled]),
+        (
+            KeyAction::Sign,
+            vec![
+                KeyState::Enabled,
+                KeyState::PendingDelete,
+                KeyState::PendingRevoke,
+            ],
+        ),
+        (
+            KeyAction::IssueCert,
+            vec![
+                KeyState::Enabled,
+                KeyState::PendingDelete,
+                KeyState::PendingRevoke,
+            ],
+        ),
+        (
+            KeyAction::Read,
+            vec![
+                KeyState::Enabled,
+                KeyState::PendingDelete,
+                KeyState::PendingRevoke,
+                KeyState::Disabled,
+            ],
+        ),
+    ]);
+    match valid_action_by_key_type.get(&key.key_type) {
+        None => {
+            return Err(Error::ConfigError(
+                "key type is missing, please check the key type".to_string(),
+            ));
+        }
+        Some(actions) => {
+            if !actions.contains(&key_action) {
+                return Err(Error::ActionsNotAllowedError(format!(
+                    "action '{}' is not permitted for key type '{}'",
+                    key_action, key.key_type
+                )));
+            }
+        }
+    }
+    match valid_state_by_key_action.get(&key_action) {
+        None => {
+            return Err(Error::ConfigError(
+                "key action is missing, please check the key action".to_string(),
+            ))
+        }
+        Some(states) => {
+            if !states.contains(&key.key_state) {
+                return Err(Error::ActionsNotAllowedError(format!(
+                    "action '{}' is not permitted for state '{}'",
+                    key_action, key.key_state
+                )));
+            }
+        }
+    }
+    if (key_action == KeyAction::Revoke || key_action == KeyAction::CancelRevoke)
+        && key.parent_id.is_none()
+    {
+        return Err(Error::ActionsNotAllowedError(format!(
+            "action '{}' is not permitted for key without parent",
+            key_action
+        )));
+    }
+    Ok(())
+}
+
 #[async_trait]
 pub trait KeyService: Send + Sync {
     async fn create(&self, user: UserIdentity, data: &mut DataKey) -> Result<DataKey>;
@@ -198,139 +337,7 @@ where
     }
 
     fn validate_type_and_state(&self, key: &DataKey, key_action: KeyAction) -> Result<()> {
-        let valid_action_by_key_type = HashMap::from([
-            (
-                OpenPGP,
-                vec![
-                    KeyAction::Delete,
-                    KeyAction::CancelDelete,
-                    KeyAction::Disable,
-                    KeyAction::Enable,
-                    KeyAction::Sign,
-                    KeyAction::Read,
-                ],
-            ),
-            (
-                X509CA,
-                vec![
-                    KeyAction::Delete,
-                    KeyAction::CancelDelete,
-                    KeyAction::Disable,
-                    KeyAction::Enable,
-                    KeyAction::IssueCert,
-                    KeyAction::Read,
-                ],
-            ),
-            (
-                X509ICA,
-                vec![
-                    KeyAction::Delete,
-                    KeyAction::CancelDelete,
-                    KeyAction::Revoke,
-                    KeyAction::CancelRevoke,
-                    KeyAction::Disable,
-                    KeyAction::Enable,
-                    KeyAction::Read,
-                    KeyAction::IssueCert,
-                ],
-            ),
-            (
-                X509EE,
-                vec![
-                    KeyAction::Delete,
-                    KeyAction::CancelDelete,
-                    KeyAction::Revoke,
-                    KeyAction::CancelRevoke,
-                    KeyAction::Disable,
-                    KeyAction::Enable,
-                    KeyAction::Read,
-                    KeyAction::Sign,
-                ],
-            ),
-        ]);
-
-        let valid_state_by_key_action = HashMap::from([
-            (
-                KeyAction::Delete,
-                vec![
-                    KeyState::Disabled,
-                    KeyState::Revoked,
-                    KeyState::PendingDelete,
-                ],
-            ),
-            (KeyAction::CancelDelete, vec![KeyState::PendingDelete]),
-            (
-                KeyAction::Revoke,
-                vec![KeyState::Disabled, KeyState::PendingRevoke],
-            ),
-            (KeyAction::CancelRevoke, vec![KeyState::PendingRevoke]),
-            (KeyAction::Enable, vec![KeyState::Disabled]),
-            (KeyAction::Disable, vec![KeyState::Enabled]),
-            (
-                KeyAction::Sign,
-                vec![
-                    KeyState::Enabled,
-                    KeyState::PendingDelete,
-                    KeyState::PendingRevoke,
-                ],
-            ),
-            (
-                KeyAction::IssueCert,
-                vec![
-                    KeyState::Enabled,
-                    KeyState::PendingDelete,
-                    KeyState::PendingRevoke,
-                ],
-            ),
-            (
-                KeyAction::Read,
-                vec![
-                    KeyState::Enabled,
-                    KeyState::PendingDelete,
-                    KeyState::PendingRevoke,
-                    KeyState::Disabled,
-                ],
-            ),
-        ]);
-        match valid_action_by_key_type.get(&key.key_type) {
-            None => {
-                return Err(Error::ConfigError(
-                    "key type is missing, please check the key type".to_string(),
-                ));
-            }
-            Some(actions) => {
-                if !actions.contains(&key_action) {
-                    return Err(Error::ActionsNotAllowedError(format!(
-                        "action '{}' is not permitted for key type '{}'",
-                        key_action, key.key_type
-                    )));
-                }
-            }
-        }
-        match valid_state_by_key_action.get(&key_action) {
-            None => {
-                return Err(Error::ConfigError(
-                    "key action is missing, please check the key action".to_string(),
-                ))
-            }
-            Some(states) => {
-                if !states.contains(&key.key_state) {
-                    return Err(Error::ActionsNotAllowedError(format!(
-                        "action '{}' is not permitted for state '{}'",
-                        key_action, key.key_state
-                    )));
-                }
-            }
-        }
-        if (key_action == KeyAction::Revoke || key_action == KeyAction::CancelRevoke)
-            && key.parent_id.is_none()
-        {
-            return Err(Error::ActionsNotAllowedError(format!(
-                "action '{}' is not permitted for key without parent",
-                key_action
-            )));
-        }
-        Ok(())
+        validate_key_type_and_state(key, key_action)
     }
     async fn check_key_hierarchy(
         &self,
@@ -806,6 +813,7 @@ mod tests {
     use super::*;
     use crate::domain::datakey::entity::DataKey;
     use chrono::{NaiveDate, TimeZone, Utc};
+
     fn create_test_data() -> Vec<DataKey> {
         let naive_datetime = NaiveDate::from_ymd_opt(2024, 6, 1)
             .and_then(|date| date.and_hms_opt(12, 0, 0))
@@ -879,5 +887,269 @@ mod tests {
   ]
 }"#;
         assert_eq!(json, expected_json);
+    }
+
+    // ========== validate_key_type_and_state ==========
+
+    fn make_test_key(key_type: KeyType, key_state: KeyState, parent_id: Option<i32>) -> DataKey {
+        let now = Utc::now();
+        DataKey {
+            id: 1,
+            name: "test-key".to_string(),
+            description: "".to_string(),
+            visibility: Visibility::Public,
+            user: 0,
+            attributes: HashMap::new(),
+            key_type,
+            parent_id,
+            fingerprint: "".to_string(),
+            serial_number: None,
+            private_key: vec![],
+            public_key: vec![],
+            certificate: vec![],
+            create_at: now,
+            expire_at: now,
+            key_state,
+            user_email: None,
+            request_delete_users: None,
+            request_revoke_users: None,
+            parent_key: None,
+        }
+    }
+
+    // --- KeyType × allowed actions ---
+
+    #[test]
+    fn test_openpgp_allows_sign() {
+        let key = make_test_key(KeyType::OpenPGP, KeyState::Enabled, None);
+        assert!(validate_key_type_and_state(&key, KeyAction::Sign).is_ok());
+    }
+
+    #[test]
+    fn test_openpgp_allows_read() {
+        let key = make_test_key(KeyType::OpenPGP, KeyState::Enabled, None);
+        assert!(validate_key_type_and_state(&key, KeyAction::Read).is_ok());
+    }
+
+    #[test]
+    fn test_openpgp_allows_delete_on_disabled() {
+        let key = make_test_key(KeyType::OpenPGP, KeyState::Disabled, None);
+        assert!(validate_key_type_and_state(&key, KeyAction::Delete).is_ok());
+    }
+
+    #[test]
+    fn test_openpgp_denies_issue_cert() {
+        let key = make_test_key(KeyType::OpenPGP, KeyState::Enabled, None);
+        let result = validate_key_type_and_state(&key, KeyAction::IssueCert);
+        assert!(result.is_err());
+        assert!(matches!(
+            result.unwrap_err(),
+            Error::ActionsNotAllowedError(_)
+        ));
+    }
+
+    #[test]
+    fn test_openpgp_denies_revoke() {
+        let key = make_test_key(KeyType::OpenPGP, KeyState::Disabled, None);
+        let result = validate_key_type_and_state(&key, KeyAction::Revoke);
+        assert!(result.is_err());
+    }
+
+    // --- X509 CA allowed/denied ---
+
+    #[test]
+    fn test_x509ca_allows_issue_cert() {
+        let key = make_test_key(KeyType::X509CA, KeyState::Enabled, None);
+        assert!(validate_key_type_and_state(&key, KeyAction::IssueCert).is_ok());
+    }
+
+    #[test]
+    fn test_x509ca_denies_sign() {
+        let key = make_test_key(KeyType::X509CA, KeyState::Enabled, None);
+        let result = validate_key_type_and_state(&key, KeyAction::Sign);
+        assert!(result.is_err());
+        assert!(matches!(
+            result.unwrap_err(),
+            Error::ActionsNotAllowedError(_)
+        ));
+    }
+
+    #[test]
+    fn test_x509ca_denies_revoke() {
+        let key = make_test_key(KeyType::X509CA, KeyState::Disabled, None);
+        let result = validate_key_type_and_state(&key, KeyAction::Revoke);
+        assert!(result.is_err());
+    }
+
+    // --- X509 ICA allowed/denied ---
+
+    #[test]
+    fn test_x509ica_allows_issue_cert() {
+        let key = make_test_key(KeyType::X509ICA, KeyState::Enabled, Some(1));
+        assert!(validate_key_type_and_state(&key, KeyAction::IssueCert).is_ok());
+    }
+
+    #[test]
+    fn test_x509ica_allows_revoke_with_parent() {
+        let key = make_test_key(KeyType::X509ICA, KeyState::Disabled, Some(1));
+        assert!(validate_key_type_and_state(&key, KeyAction::Revoke).is_ok());
+    }
+
+    #[test]
+    fn test_x509ica_denies_sign() {
+        let key = make_test_key(KeyType::X509ICA, KeyState::Enabled, Some(1));
+        let result = validate_key_type_and_state(&key, KeyAction::Sign);
+        assert!(result.is_err());
+    }
+
+    // --- X509 EE allowed/denied ---
+
+    #[test]
+    fn test_x509ee_allows_sign() {
+        let key = make_test_key(KeyType::X509EE, KeyState::Enabled, Some(1));
+        assert!(validate_key_type_and_state(&key, KeyAction::Sign).is_ok());
+    }
+
+    #[test]
+    fn test_x509ee_allows_revoke_with_parent() {
+        let key = make_test_key(KeyType::X509EE, KeyState::Disabled, Some(1));
+        assert!(validate_key_type_and_state(&key, KeyAction::Revoke).is_ok());
+    }
+
+    #[test]
+    fn test_x509ee_denies_issue_cert() {
+        let key = make_test_key(KeyType::X509EE, KeyState::Enabled, Some(1));
+        let result = validate_key_type_and_state(&key, KeyAction::IssueCert);
+        assert!(result.is_err());
+    }
+
+    // --- KeyState validation ---
+
+    #[test]
+    fn test_enabled_state_allows_sign() {
+        let key = make_test_key(KeyType::OpenPGP, KeyState::Enabled, None);
+        assert!(validate_key_type_and_state(&key, KeyAction::Sign).is_ok());
+    }
+
+    #[test]
+    fn test_disabled_state_denies_sign() {
+        let key = make_test_key(KeyType::OpenPGP, KeyState::Disabled, None);
+        let result = validate_key_type_and_state(&key, KeyAction::Sign);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_disabled_state_allows_enable() {
+        let key = make_test_key(KeyType::OpenPGP, KeyState::Disabled, None);
+        assert!(validate_key_type_and_state(&key, KeyAction::Enable).is_ok());
+    }
+
+    #[test]
+    fn test_enabled_state_allows_disable() {
+        let key = make_test_key(KeyType::OpenPGP, KeyState::Enabled, None);
+        assert!(validate_key_type_and_state(&key, KeyAction::Disable).is_ok());
+    }
+
+    #[test]
+    fn test_pending_delete_allows_sign() {
+        let key = make_test_key(KeyType::OpenPGP, KeyState::PendingDelete, None);
+        assert!(validate_key_type_and_state(&key, KeyAction::Sign).is_ok());
+    }
+
+    #[test]
+    fn test_pending_revoke_allows_sign() {
+        let key = make_test_key(KeyType::X509EE, KeyState::PendingRevoke, Some(1));
+        assert!(validate_key_type_and_state(&key, KeyAction::Sign).is_ok());
+    }
+
+    #[test]
+    fn test_revoked_state_allows_delete() {
+        let key = make_test_key(KeyType::OpenPGP, KeyState::Revoked, None);
+        assert!(validate_key_type_and_state(&key, KeyAction::Delete).is_ok());
+    }
+
+    #[test]
+    fn test_revoked_state_denies_enable() {
+        let key = make_test_key(KeyType::OpenPGP, KeyState::Revoked, None);
+        let result = validate_key_type_and_state(&key, KeyAction::Enable);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_deleted_state_denies_all() {
+        let key = make_test_key(KeyType::OpenPGP, KeyState::Deleted, None);
+        assert!(validate_key_type_and_state(&key, KeyAction::Read).is_err());
+        assert!(validate_key_type_and_state(&key, KeyAction::Sign).is_err());
+        assert!(validate_key_type_and_state(&key, KeyAction::Delete).is_err());
+    }
+
+    // --- Parent requirement for Revoke ---
+
+    #[test]
+    fn test_revoke_without_parent_fails() {
+        let key = make_test_key(KeyType::X509EE, KeyState::Disabled, None);
+        let result = validate_key_type_and_state(&key, KeyAction::Revoke);
+        assert!(result.is_err());
+        assert!(matches!(
+            result.unwrap_err(),
+            Error::ActionsNotAllowedError(_)
+        ));
+    }
+
+    #[test]
+    fn test_cancel_revoke_without_parent_fails() {
+        let key = make_test_key(KeyType::X509ICA, KeyState::PendingRevoke, None);
+        let result = validate_key_type_and_state(&key, KeyAction::CancelRevoke);
+        assert!(result.is_err());
+    }
+
+    // --- Read action on various states ---
+
+    #[test]
+    fn test_read_allowed_on_disabled() {
+        let key = make_test_key(KeyType::X509CA, KeyState::Disabled, None);
+        assert!(validate_key_type_and_state(&key, KeyAction::Read).is_ok());
+    }
+
+    #[test]
+    fn test_read_allowed_on_pending_delete() {
+        let key = make_test_key(KeyType::OpenPGP, KeyState::PendingDelete, None);
+        assert!(validate_key_type_and_state(&key, KeyAction::Read).is_ok());
+    }
+
+    // --- PendingRevoke state ---
+
+    #[test]
+    fn test_pending_revoke_allows_cancel_revoke() {
+        let key = make_test_key(KeyType::X509EE, KeyState::PendingRevoke, Some(1));
+        assert!(validate_key_type_and_state(&key, KeyAction::CancelRevoke).is_ok());
+    }
+
+    #[test]
+    fn test_pending_revoke_denies_disable() {
+        let key = make_test_key(KeyType::X509EE, KeyState::PendingRevoke, Some(1));
+        let result = validate_key_type_and_state(&key, KeyAction::Disable);
+        assert!(result.is_err());
+    }
+
+    // --- Delete flow ---
+
+    #[test]
+    fn test_pending_delete_allows_cancel_delete() {
+        let key = make_test_key(KeyType::OpenPGP, KeyState::PendingDelete, None);
+        assert!(validate_key_type_and_state(&key, KeyAction::CancelDelete).is_ok());
+    }
+
+    #[test]
+    fn test_pending_delete_allows_delete() {
+        let key = make_test_key(KeyType::OpenPGP, KeyState::PendingDelete, None);
+        assert!(validate_key_type_and_state(&key, KeyAction::Delete).is_ok());
+    }
+
+    #[test]
+    fn test_pending_delete_denies_enable() {
+        let key = make_test_key(KeyType::OpenPGP, KeyState::PendingDelete, None);
+        let result = validate_key_type_and_state(&key, KeyAction::Enable);
+        assert!(result.is_err());
     }
 }
