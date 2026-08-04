@@ -449,8 +449,10 @@ where
     async fn export_one(&self, user: Option<UserIdentity>, id_or_name: String) -> Result<DataKey> {
         //NOTE: since the public key or certificate basically will not change at all, we will cache the key here.
         if let Some(datakey) = self.container.get_read_datakey(&id_or_name).await {
+            crate::util::metrics::KEY_CACHE_HIT_TOTAL.inc();
             return Ok(datakey);
         }
+        crate::util::metrics::KEY_CACHE_MISS_TOTAL.inc();
         let mut key = self
             .get_and_check_permission(user, id_or_name.clone(), KeyAction::Read, true)
             .await?;

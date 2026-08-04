@@ -266,7 +266,11 @@ impl ControlServer {
                         .service(user_handler::get_scope())
                         .service(datakey_handler::get_scope()),
                 )
-                .service(web::scope("/api").service(health_handler::get_scope()))
+                .service(
+                    web::scope("/api")
+                        .service(health_handler::get_scope())
+                        .service(metrics_handler::get_scope()),
+                )
         });
         let tls_cert = self
             .server_config

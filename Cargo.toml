@@ -84,6 +84,7 @@ rustls = "~0.21.11"
 mio = "~0.8.11"
 tempfile = "3.3.0"
 rdkafka = { version = "0.25.0", features = ["cmake-build"], optional = true}
+prometheus = "0.13"
 
 [features]
 default = []

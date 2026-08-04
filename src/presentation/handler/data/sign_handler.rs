@@ -141,6 +141,9 @@ where
         &self,
         request: Request<Streaming<SignStreamRequest>>,
     ) -> Result<Response<SignStreamResponse>, Status> {
+        crate::util::metrics::GRPC_REQUESTS_TOTAL.inc();
+        crate::util::metrics::GRPC_REQUESTS_INFLIGHT.inc();
+
         let mut binaries = request.into_inner();
         let mut data: Vec<u8> = vec![];
         let mut key_name: String = "".to_string();
@@ -157,6 +160,8 @@ where
         }
         //perform token validation on private keys
         if let Err(err) = self.validate_key_token_matched(token, &key_name).await {
+            crate::util::metrics::GRPC_REQUESTS_INFLIGHT.dec();
+            crate::util::metrics::SIGN_ERRORS_TOTAL.inc();
             return Ok(Response::new(SignStreamResponse {
                 signature: vec![],
                 error: err.to_string(),
@@ -166,19 +171,29 @@ where
             "begin to sign key_type :{} key_name: {}",
             key_type, key_name
         );
-        match self
+        let timer = crate::util::metrics::SIGN_DURATION_SECONDS.start_timer();
+        let result = self
             .key_service
             .sign(key_type, key_name, &options, data)
-            .await
-        {
-            Ok(content) => Ok(Response::new(SignStreamResponse {
-                signature: content,
-                error: "".to_string(),
-            })),
-            Err(err) => Ok(Response::new(SignStreamResponse {
-                signature: vec![],
-                error: err.to_string(),
-            })),
+            .await;
+        timer.observe_duration();
+        crate::util::metrics::GRPC_REQUESTS_INFLIGHT.dec();
+
+        match result {
+            Ok(content) => {
+                crate::util::metrics::SIGN_REQUESTS_TOTAL.inc();
+                Ok(Response::new(SignStreamResponse {
+                    signature: content,
+                    error: "".to_string(),
+                }))
+            }
+            Err(err) => {
+                crate::util::metrics::SIGN_ERRORS_TOTAL.inc();
+                Ok(Response::new(SignStreamResponse {
+                    signature: vec![],
+                    error: err.to_string(),
+                }))
+            }
         }
     }
 }

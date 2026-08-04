@@ -2,6 +2,8 @@ pub mod attributes;
 pub mod cache;
 pub mod config;
 pub mod error;
+pub mod health;
 pub mod key;
+pub mod metrics;
 pub mod options;
 pub mod sign;
