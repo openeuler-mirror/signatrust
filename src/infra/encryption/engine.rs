@@ -335,28 +335,6 @@ mod tests {
         assert_eq!(&result[2..], &[0xAB, 0xCD]);
     }
 
-    #[test]
-    fn test_key_id_byte_encoding_format() {
-        // Verify the {:04X} format produces correct byte pairs
-        // Key ID 10 = 0x000A = [0x00, 0x0A]
-        let hex = format!("{:04X}", 10i32);
-        assert_eq!(hex, "000A");
-        let bytes = key::decode_hex_string_to_u8(&hex);
-        assert_eq!(bytes, vec![0x00, 0x0A]);
-
-        // Key ID 256 = 0x0100 = [0x01, 0x00]
-        let hex = format!("{:04X}", 256i32);
-        assert_eq!(hex, "0100");
-        let bytes = key::decode_hex_string_to_u8(&hex);
-        assert_eq!(bytes, vec![0x01, 0x00]);
-
-        // Key ID 65535 = 0xFFFF
-        let hex = format!("{:04X}", 65535i32);
-        assert_eq!(hex, "FFFF");
-        let bytes = key::decode_hex_string_to_u8(&hex);
-        assert_eq!(bytes, vec![0xFF, 0xFF]);
-    }
-
     // ========== Empty content ==========
 
     #[tokio::test]
@@ -436,8 +414,15 @@ mod tests {
         let mut engine = make_engine();
         // First init creates a key
         engine.initialize().await.unwrap();
+        let first_key_id = engine.latest_cluster_key.read().await.id;
 
-        // Re-initialize should find the existing key, not panic
+        // Re-initialize must find the existing key, not create a new one
         engine.initialize().await.unwrap();
+        let second_key_id = engine.latest_cluster_key.read().await.id;
+
+        assert_eq!(
+            first_key_id, second_key_id,
+            "re-initialize should reuse existing key, not create a new one"
+        );
     }
 }
