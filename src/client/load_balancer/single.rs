@@ -77,8 +77,10 @@ mod tests {
     async fn test_single_lb_invalid_url() {
         let lb = SingleLoadBalancer::new("invalid host!@#".to_string(), "8088".to_string(), None)
             .unwrap();
-        // invalid host chars may cause Endpoint::from_shared to fail
-        // or succeed but produce a channel — we just verify no panic
-        let _ = lb.get_transport_channel();
+        let result = lb.get_transport_channel();
+        assert!(
+            result.is_err(),
+            "invalid host should cause Endpoint::from_shared to fail"
+        );
     }
 }
