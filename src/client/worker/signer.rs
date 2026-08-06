@@ -29,8 +29,8 @@ use tonic::transport::Channel;
 use crate::util::error::Error;
 use std::io::{Cursor, Read};
 
-/// Maximum retry attempts for gRPC sign_stream calls.
-const MAX_RETRIES: u32 = 3;
+/// Maximum total attempts for gRPC sign_stream calls (including initial try).
+const MAX_ATTEMPTS: u32 = 4;
 /// Initial backoff in milliseconds.
 const INITIAL_BACKOFF_MS: u64 = 100;
 
@@ -83,12 +83,12 @@ impl SignHandler for RemoteSigner {
 
             // Retry gRPC sign_stream with exponential backoff
             let mut last_err = None;
-            for attempt in 0..=MAX_RETRIES {
-                if attempt > 0 {
-                    let backoff_ms = INITIAL_BACKOFF_MS * 2u64.pow(attempt - 1);
+            for attempt in 1..=MAX_ATTEMPTS {
+                if attempt > 1 {
+                    let backoff_ms = INITIAL_BACKOFF_MS * 2u64.pow(attempt - 2);
                     debug!(
-                        "gRPC sign_stream retry {}/{}, backoff {}ms",
-                        attempt, MAX_RETRIES, backoff_ms
+                        "gRPC sign_stream attempt {}/{}, backoff {}ms",
+                        attempt, MAX_ATTEMPTS, backoff_ms
                     );
                     tokio::time::sleep(std::time::Duration::from_millis(backoff_ms)).await;
                 }
@@ -117,9 +117,8 @@ impl SignHandler for RemoteSigner {
             }
             if let Some(err) = last_err {
                 *item.error.borrow_mut() = Err(Error::RemoteSignError(format!(
-                    "sign_stream failed after {} retries: {}",
-                    MAX_RETRIES + 1,
-                    err
+                    "sign_stream failed after {} attempts: {}",
+                    MAX_ATTEMPTS, err
                 )));
                 return item;
             }

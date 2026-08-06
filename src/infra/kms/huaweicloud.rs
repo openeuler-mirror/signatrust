@@ -150,10 +150,9 @@ impl HuaweiCloudKMS {
         json: &T,
         max_retries: u32,
     ) -> Result<serde_json::Value> {
-        let mut last_error = None;
-        for attempt in 0..=max_retries {
-            if attempt > 0 {
-                let backoff_ms = 100 * 2u64.pow(attempt - 1);
+        for attempt in 1..=max_retries {
+            if attempt > 1 {
+                let backoff_ms = 100 * 2u64.pow(attempt - 2);
                 warn!(
                     "KMS request retry attempt {}/{}, backoff {}ms",
                     attempt, max_retries, backoff_ms
@@ -163,24 +162,17 @@ impl HuaweiCloudKMS {
             match self.do_request_once(url, json).await {
                 Ok(result) => return Ok(result),
                 Err(e) => {
-                    let should_retry = matches!(
-                        &e,
-                        Error::KMSInvokeError(msg) if msg.contains("500")
-                            || msg.contains("502")
-                            || msg.contains("503")
-                            || msg.contains("504")
-                    );
+                    let should_retry = is_retryable_kms_error(&e);
                     if !should_retry || attempt == max_retries {
                         return Err(e);
                     }
                     warn!("KMS request failed (retryable): {}", e);
-                    last_error = Some(e);
                 }
             }
         }
-        Err(last_error.unwrap_or_else(|| {
-            Error::KMSInvokeError("KMS request failed after retries".to_string())
-        }))
+        Err(Error::KMSInvokeError(
+            "KMS request failed after retries".to_string(),
+        ))
     }
 
     async fn do_request_once<T: Serialize + ?Sized>(
@@ -230,7 +222,31 @@ impl HuaweiCloudKMS {
         url: &str,
         json: &T,
     ) -> Result<serde_json::Value> {
-        self.do_request_with_retry(url, json, 3).await
+        self.do_request_with_retry(url, json, 4).await
+    }
+}
+
+/// Determine if a KMS error is retryable.
+///
+/// Retryable errors include:
+/// - Network-level errors (connection refused, DNS failure, TLS, timeout) →
+///   `Error::HttpRequest`
+/// - KMS server errors (HTTP 5xx) → `Error::KMSInvokeError` with status code in
+///   message
+fn is_retryable_kms_error(err: &Error) -> bool {
+    match err {
+        Error::HttpRequest(_) => true,
+        Error::KMSInvokeError(msg) => {
+            // Format: "unable to encode/decode data in kms, result 503 ..."
+            // Parse the status code for server errors
+            msg.split("result ")
+                .nth(1)
+                .and_then(|s| s.split_whitespace().next())
+                .and_then(|code| code.parse::<u16>().ok())
+                .map(|code| (500..=599).contains(&code))
+                .unwrap_or(false)
+        }
+        _ => false,
     }
 }
 

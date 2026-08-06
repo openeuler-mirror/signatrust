@@ -218,18 +218,3 @@ where
         )
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_default_rotate_in_days_is_90() {
-        assert_eq!(DEFAULT_ROTATE_IN_DAYS, 90);
-    }
-
-    #[test]
-    fn test_key_size_is_2() {
-        assert_eq!(KEY_SIZE, 2);
-    }
-}

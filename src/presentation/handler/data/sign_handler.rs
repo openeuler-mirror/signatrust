@@ -126,11 +126,19 @@ where
                                     hex::encode(skid_pem.as_slice()),
                                 );
                             } else {
-                                warn!("X509 certificate has no SubjectKeyIdentifier extension");
+                                return Ok(Response::new(GetKeyInfoResponse {
+                                    attributes: HashMap::new(),
+                                    error: "X509 certificate has no SubjectKeyIdentifier \
+                                            extension"
+                                        .to_string(),
+                                }));
                             }
                         }
                         Err(e) => {
-                            warn!("failed to parse X509 certificate from PEM: {}", e);
+                            return Ok(Response::new(GetKeyInfoResponse {
+                                attributes: HashMap::new(),
+                                error: format!("failed to parse X509 certificate from PEM: {}", e),
+                            }));
                         }
                     }
                 }
