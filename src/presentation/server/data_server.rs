@@ -131,11 +131,16 @@ impl DataServer {
         let user_service = DBUserService::new(user_repo, token_repo, self.server_config.clone())?;
 
         if let Some(identity) = self.server_identity.clone() {
+            let ca_cert = self.ca_cert.clone().ok_or_else(|| {
+                Error::ConfigError(
+                    "ca_root is not configured while server identity exists".to_string(),
+                )
+            })?;
             server
                 .tls_config(
                     ServerTlsConfig::new()
                         .identity(identity)
-                        .client_ca_root(self.ca_cert.clone().unwrap()),
+                        .client_ca_root(ca_cert),
                 )?
                 .add_service(sign_grpc_handler(key_service, user_service))
                 .add_service(health_grpc_handler())

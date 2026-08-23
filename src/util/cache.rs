@@ -31,8 +31,8 @@ pub struct TimedFixedSizeCache {
     cached_users: Arc<RwLock<HashMap<String, CachedUser>>>,
     key_size: Option<usize>,
     user_size: Option<usize>,
-    key_expire: Option<i64>,
-    user_expire: Option<i64>,
+    key_expire: i64,
+    user_expire: i64,
 }
 #[derive(Clone)]
 pub struct CachedDatakey {
@@ -57,8 +57,8 @@ impl TimedFixedSizeCache {
             cached_users: Arc::new(RwLock::new(HashMap::new())),
             key_size,
             user_size,
-            key_expire: key_expire.or(Some(DATAKEY_EXPIRE_SECOND)),
-            user_expire: user_expire.or(Some(USER_EXPIRE_SECOND)),
+            key_expire: key_expire.unwrap_or(DATAKEY_EXPIRE_SECOND),
+            user_expire: user_expire.unwrap_or(USER_EXPIRE_SECOND),
         }
     }
 
@@ -66,7 +66,7 @@ impl TimedFixedSizeCache {
         self.user_size?;
         let mut rs = None;
         if let Some(user) = self.cached_users.read().await.get(identity) {
-            if Utc::now().lt(&(user.time + Duration::seconds(self.user_expire.unwrap()))) {
+            if Utc::now().lt(&(user.time + Duration::seconds(self.user_expire))) {
                 rs = Some(user.user.clone())
             }
         }
@@ -97,7 +97,7 @@ impl TimedFixedSizeCache {
         self.key_size?;
         let mut rs = None;
         if let Some(dk) = self.cached_keys.read().await.get(identity) {
-            if dk.time + Duration::seconds(self.key_expire.unwrap()) >= Utc::now() {
+            if dk.time + Duration::seconds(self.key_expire) >= Utc::now() {
                 rs = Some(dk.key.clone())
             }
         }

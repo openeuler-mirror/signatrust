@@ -77,6 +77,51 @@ where
     }
 }
 
+/// Collect a complete sign request from the incoming stream. Stream errors
+/// (e.g. client disconnect or protocol error) are reported as errors instead
+/// of panics, since sign_stream is an open entry point of the data plane.
+async fn collect_sign_request<S>(
+    binaries: &mut S,
+) -> SignatrustResult<(
+    Vec<u8>,
+    String,
+    String,
+    HashMap<String, String>,
+    Option<String>,
+)>
+where
+    S: tokio_stream::Stream<Item = std::result::Result<SignStreamRequest, Status>> + Unpin,
+{
+    let mut data: Vec<u8> = vec![];
+    let mut key_name: String = "".to_string();
+    let mut key_type: String = "".to_string();
+    let mut options: HashMap<String, String> = HashMap::new();
+    let mut token: Option<String> = None;
+    while let Some(content) = binaries.next().await {
+        let mut inner_result = content.map_err(|err| {
+            Error::ParameterError(format!("failed to receive sign request: {}", err))
+        })?;
+        data.append(&mut inner_result.data);
+        key_name = inner_result.key_id;
+        key_type = inner_result.key_type;
+        options = inner_result.options;
+        token = inner_result.token;
+    }
+    Ok((data, key_name, key_type, options, token))
+}
+
+/// Extract the subject key identifier from an X509 certificate in PEM
+/// format, reporting malformed certificates as errors instead of panics.
+fn extract_subject_key_id(certificate: &[u8]) -> SignatrustResult<String> {
+    let x509 = X509::from_pem(certificate).map_err(|err| {
+        Error::KeyParseError(format!("can not get certificate from PEM: {}", err))
+    })?;
+    let skid_pem = x509
+        .subject_key_id()
+        .ok_or_else(|| Error::KeyParseError("get subject key id failed".to_string()))?;
+    Ok(hex::encode(skid_pem.as_slice()))
+}
+
 #[tonic::async_trait]
 impl<K, U> Signatrust for SignHandler<K, U>
 where
@@ -118,12 +163,17 @@ where
                             }))
                         }
                     };
-                    let x509 = X509::from_pem(&public_datakey.certificate)
-                        .expect("can not get certificate from PEM");
-                    let skid_pem = x509.subject_key_id().expect("get subject key id failed");
-                    let skid_vec = skid_pem.as_slice();
-                    new_info.insert(SUBJECT_KEY_ID.to_string(), hex::encode(skid_vec));
-                    debug!("SKID (hex): {}", hex::encode(skid_vec));
+                    let skid_hex = match extract_subject_key_id(&public_datakey.certificate) {
+                        Ok(skid) => skid,
+                        Err(err) => {
+                            return Ok(Response::new(GetKeyInfoResponse {
+                                attributes: HashMap::new(),
+                                error: err.to_string(),
+                            }))
+                        }
+                    };
+                    new_info.insert(SUBJECT_KEY_ID.to_string(), skid_hex.clone());
+                    debug!("SKID (hex): {}", skid_hex);
                 }
                 Ok(Response::new(GetKeyInfoResponse {
                     attributes: new_info,
@@ -142,19 +192,16 @@ where
         request: Request<Streaming<SignStreamRequest>>,
     ) -> Result<Response<SignStreamResponse>, Status> {
         let mut binaries = request.into_inner();
-        let mut data: Vec<u8> = vec![];
-        let mut key_name: String = "".to_string();
-        let mut key_type: String = "".to_string();
-        let mut options: HashMap<String, String> = HashMap::new();
-        let mut token: Option<String> = None;
-        while let Some(content) = binaries.next().await {
-            let mut inner_result = content.unwrap();
-            data.append(&mut inner_result.data);
-            key_name = inner_result.key_id;
-            key_type = inner_result.key_type;
-            options = inner_result.options;
-            token = inner_result.token;
-        }
+        let (data, key_name, key_type, options, token) =
+            match collect_sign_request(&mut binaries).await {
+                Ok(result) => result,
+                Err(err) => {
+                    return Ok(Response::new(SignStreamResponse {
+                        signature: vec![],
+                        error: err.to_string(),
+                    }))
+                }
+            };
         //perform token validation on private keys
         if let Err(err) = self.validate_key_token_matched(token, &key_name).await {
             return Ok(Response::new(SignStreamResponse {
@@ -193,4 +240,68 @@ where
 {
     let app = SignHandler::new(key_service, user_service);
     SignatrustServer::new(app)
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_collect_sign_request_successful() {
+        let mut stream = tokio_stream::iter(vec![
+            Ok(SignStreamRequest {
+                data: b"hello ".to_vec(),
+                options: HashMap::new(),
+                key_type: "pgp".to_string(),
+                key_id: "fake-key".to_string(),
+                token: Some("fake-token".to_string()),
+            }),
+            Ok(SignStreamRequest {
+                data: b"world".to_vec(),
+                options: HashMap::new(),
+                key_type: "pgp".to_string(),
+                key_id: "fake-key".to_string(),
+                token: Some("fake-token".to_string()),
+            }),
+        ]);
+        let (data, key_name, key_type, options, token) = collect_sign_request(&mut stream)
+            .await
+            .expect("collect should succeed");
+        assert_eq!(data, b"hello world".to_vec());
+        assert_eq!(key_name, "fake-key");
+        assert_eq!(key_type, "pgp");
+        assert!(options.is_empty());
+        assert_eq!(token, Some("fake-token".to_string()));
+    }
+
+    #[tokio::test]
+    async fn test_collect_sign_request_stream_error() {
+        // a client disconnect or protocol error surfaces as a stream error,
+        // which must be reported instead of panicking the data plane
+        let mut stream = tokio_stream::iter(vec![Err(Status::internal("connection broken"))]);
+        let result = collect_sign_request(&mut stream).await;
+        assert!(matches!(result, Err(Error::ParameterError(_))));
+    }
+
+    #[test]
+    fn test_extract_subject_key_id_invalid_pem() {
+        let result = extract_subject_key_id(b"not a pem certificate");
+        assert!(matches!(
+            result,
+            Err(Error::KeyParseError(ref msg)) if msg.contains("can not get certificate from PEM")
+        ));
+    }
+
+    #[test]
+    fn test_extract_subject_key_id_missing_extension() {
+        // the test certificate has no subject key identifier extension,
+        // which must be reported instead of panicking
+        let certificate = std::fs::read("test_assets/rsa_test_cert.pem")
+            .expect("read test certificate should be successful");
+        let result = extract_subject_key_id(&certificate);
+        assert!(matches!(
+            result,
+            Err(Error::KeyParseError(ref msg)) if msg.contains("get subject key id failed")
+        ));
+    }
 }

@@ -208,7 +208,7 @@ impl ControlServer {
                         return Some(cookie.to_string());
                     }
                     if let Some(value) = req.headers().get("Authorization") {
-                        return Some(value.to_str().unwrap().to_string());
+                        return value.to_str().ok().map(|value| value.to_string());
                     }
                     None
                 })
@@ -220,7 +220,9 @@ impl ControlServer {
                 )
                 .period(Duration::from_secs(60))
                 .build()
-                .unwrap(),
+                .map_err(|err| {
+                    Error::ConfigError(format!("failed to build rate limiter: {:?}", err))
+                })?,
         );
 
         let openapi = ControlApiDoc::openapi();
@@ -290,11 +292,20 @@ impl ControlServer {
                     tls_key, tls_cert
                 )));
             }
-            let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
+            let mut builder =
+                SslAcceptor::mozilla_intermediate(SslMethod::tls()).map_err(|err| {
+                    Error::ConfigError(format!("failed to init ssl acceptor: {}", err))
+                })?;
             builder
                 .set_private_key_file(tls_key, SslFiletype::PEM)
-                .unwrap();
-            builder.set_certificate_chain_file(tls_cert).unwrap();
+                .map_err(|err| {
+                    Error::ConfigError(format!("failed to set private key file: {}", err))
+                })?;
+            builder
+                .set_certificate_chain_file(tls_cert)
+                .map_err(|err| {
+                    Error::ConfigError(format!("failed to set certificate chain file: {}", err))
+                })?;
             http_server.bind_openssl(addr, builder)?.run().await?;
         }
         Ok(())

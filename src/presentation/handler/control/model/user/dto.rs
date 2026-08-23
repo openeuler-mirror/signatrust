@@ -94,6 +94,11 @@ impl UserIdentity {
     }
 
     pub fn csrf_cookie_valid(&self, protect_key: [u8; 32], value: &str) -> SignatrustResult<bool> {
+        if self.csrf_token.is_none() {
+            return Err(Error::AuthError(
+                "csrf token is empty, cannot validate csrf cookie".to_string(),
+            ));
+        }
         let protect = AesGcmCsrfProtection::from_key(protect_key);
         Ok(protect.verify_token_pair(
             &protect.parse_token(&BASE64.decode(self.csrf_token.clone().unwrap().as_bytes())?)?,
@@ -124,15 +129,18 @@ impl UserIdentity {
                             if let Ok(csrf_token) =
                                 user.generate_new_csrf_cookie(protect_key_array, 600)
                             {
-                                let http_header = response.headers_mut();
-                                http_header.insert(
-                                    HeaderName::from_static(SET_COOKIE_HEADER),
-                                    HeaderValue::from_str(&format!(
-                                        "{}={}; Secure; Path=/; Max-Age=600",
-                                        CSRF_HEADER_NAME, csrf_token
-                                    ))
-                                    .unwrap(),
-                                );
+                                if let Ok(cookie_value) = HeaderValue::from_str(&format!(
+                                    "{}={}; Secure; Path=/; Max-Age=600",
+                                    CSRF_HEADER_NAME, csrf_token
+                                )) {
+                                    let http_header = response.headers_mut();
+                                    http_header.insert(
+                                        HeaderName::from_static(SET_COOKIE_HEADER),
+                                        cookie_value,
+                                    );
+                                } else {
+                                    warn!("failed to generate csrf cookie header");
+                                }
                             } else {
                                 warn!("failed to generate csrf token in middleware");
                             }
@@ -178,14 +186,19 @@ impl FromRequest for UserIdentity {
                 None => {
                     if let Some(value) = req.headers().get(AUTH_HEADER_NAME) {
                         if let Some(user_service) = req.app_data::<web::Data<dyn UserService>>() {
-                            if let Ok(user) = user_service
-                                .get_ref()
-                                .validate_token(value.to_str().unwrap())
-                                .await
-                            {
-                                return Ok(UserIdentity::from_user(user));
-                            } else {
-                                warn!("unable to find token record");
+                            match value.to_str() {
+                                Ok(token) => {
+                                    if let Ok(user) =
+                                        user_service.get_ref().validate_token(token).await
+                                    {
+                                        return Ok(UserIdentity::from_user(user));
+                                    } else {
+                                        warn!("unable to find token record");
+                                    }
+                                }
+                                Err(_) => {
+                                    warn!("authorization header contains invalid characters");
+                                }
                             }
                         }
                     } else {
@@ -199,12 +212,19 @@ impl FromRequest for UserIdentity {
                         if let Some(header) = req.headers().get(CSRF_HEADER_NAME) {
                             if let Ok(protect_key_array) = protect_key.clone().unsecure().try_into()
                             {
-                                if let Ok(true) = user
-                                    .csrf_cookie_valid(protect_key_array, header.to_str().unwrap())
-                                {
-                                    return Ok(user);
-                                } else {
-                                    warn!("csrf header is invalid");
+                                match header.to_str() {
+                                    Ok(value) => {
+                                        if let Ok(true) =
+                                            user.csrf_cookie_valid(protect_key_array, value)
+                                        {
+                                            return Ok(user);
+                                        } else {
+                                            warn!("csrf header is invalid");
+                                        }
+                                    }
+                                    Err(_) => {
+                                        warn!("csrf header contains invalid characters");
+                                    }
                                 }
                             }
                         } else {
@@ -224,4 +244,53 @@ impl FromRequest for UserIdentity {
 pub struct Code {
     #[validate(length(min = 1))]
     pub code: String,
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use actix_identity::IdentityMiddleware;
+
+    fn identity_without_csrf() -> UserIdentity {
+        UserIdentity {
+            email: "fake_email@gmail.com".to_string(),
+            id: 1,
+            csrf_generation_token: None,
+            csrf_token: None,
+        }
+    }
+
+    #[test]
+    fn test_csrf_cookie_valid_without_token() {
+        // a crafted session without csrf token must be rejected instead of panicking
+        let user = identity_without_csrf();
+        let result = user.csrf_cookie_valid([0u8; 32], "fake_cookie_value");
+        assert!(matches!(result, Err(Error::AuthError(_))));
+    }
+
+    async fn extract_identity(_user: UserIdentity) -> actix_web::HttpResponse {
+        actix_web::HttpResponse::Ok().finish()
+    }
+
+    #[actix_web::test]
+    async fn test_from_request_invalid_authorization_header() {
+        // a non-utf8 authorization header must be rejected with 401
+        // instead of panicking the control plane
+        let app = actix_web::test::init_service(
+            actix_web::App::new()
+                .wrap(IdentityMiddleware::default())
+                .route("/test", web::get().to(extract_identity)),
+        )
+        .await;
+        let req = actix_web::test::TestRequest::default()
+            .insert_header((
+                actix_web::http::header::HeaderName::from_static("authorization"),
+                actix_web::http::header::HeaderValue::from_bytes(&[0xff, 0xfe])
+                    .expect("create invalid header value should be successful"),
+            ))
+            .uri("/test")
+            .to_request();
+        let resp = actix_web::test::call_service(&app, req).await;
+        assert_eq!(resp.status(), actix_web::http::StatusCode::UNAUTHORIZED);
+    }
 }
