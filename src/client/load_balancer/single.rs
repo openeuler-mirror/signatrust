@@ -51,3 +51,36 @@ impl DynamicLoadBalancer for SingleLoadBalancer {
         Ok(Channel::balance_list(vec![endpoint].into_iter()))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_single_lb_new() {
+        let lb =
+            SingleLoadBalancer::new("localhost".to_string(), "8088".to_string(), None).unwrap();
+        assert_eq!(lb.server, "localhost");
+        assert_eq!(lb.port, "8088");
+        assert!(lb.client_config.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_single_lb_get_transport_channel() {
+        let lb =
+            SingleLoadBalancer::new("127.0.0.1".to_string(), "8088".to_string(), None).unwrap();
+        let channel = lb.get_transport_channel();
+        assert!(channel.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_single_lb_invalid_url() {
+        let lb = SingleLoadBalancer::new("invalid host!@#".to_string(), "8088".to_string(), None)
+            .unwrap();
+        let result = lb.get_transport_channel();
+        assert!(
+            result.is_err(),
+            "invalid host should cause Endpoint::from_shared to fail"
+        );
+    }
+}

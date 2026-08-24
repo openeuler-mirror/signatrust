@@ -53,3 +53,56 @@ impl SignIdentity {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_sign_identity_new() {
+        let mut opts = HashMap::new();
+        opts.insert("digest".to_string(), "sha256".to_string());
+        let identity = SignIdentity::new(
+            FileType::Rpm,
+            PathBuf::from("/tmp/test.rpm"),
+            KeyType::Pgp,
+            "my-pgp-key".to_string(),
+            opts.clone(),
+        );
+        assert_eq!(identity.file_type, FileType::Rpm);
+        assert_eq!(identity.file_path, PathBuf::from("/tmp/test.rpm"));
+        assert_eq!(identity.key_type, KeyType::Pgp);
+        assert_eq!(identity.key_id, "my-pgp-key");
+        assert_eq!(*identity.sign_options.borrow(), opts);
+        assert!(identity.error.borrow().is_ok());
+        assert!(identity.raw_content.borrow().is_empty());
+        assert!(identity.signature.borrow().is_empty());
+    }
+
+    #[test]
+    fn test_sign_identity_new_efi_x509() {
+        let identity = SignIdentity::new(
+            FileType::EfiImage,
+            PathBuf::from("/boot/efi/grub.efi"),
+            KeyType::X509EE,
+            "default-x509ee".to_string(),
+            HashMap::new(),
+        );
+        assert_eq!(identity.file_type, FileType::EfiImage);
+        assert_eq!(identity.key_type, KeyType::X509EE);
+        assert_eq!(identity.key_id, "default-x509ee");
+    }
+
+    #[test]
+    fn test_sign_identity_new_generic_file() {
+        let identity = SignIdentity::new(
+            FileType::Generic,
+            PathBuf::from("/data/checksum.sha256"),
+            KeyType::Pgp,
+            "default-pgp".to_string(),
+            HashMap::new(),
+        );
+        assert_eq!(identity.file_type, FileType::Generic);
+        assert_eq!(identity.file_path, PathBuf::from("/data/checksum.sha256"));
+    }
+}

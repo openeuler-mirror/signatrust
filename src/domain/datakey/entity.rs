@@ -425,3 +425,359 @@ impl Display for Visibility {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ========== KeyState ==========
+
+    #[test]
+    fn test_key_state_default_is_disabled() {
+        assert_eq!(KeyState::default(), KeyState::Disabled);
+    }
+
+    #[test]
+    fn test_key_state_display() {
+        assert_eq!(format!("{}", KeyState::Enabled), "enabled");
+        assert_eq!(format!("{}", KeyState::Disabled), "disabled");
+        assert_eq!(format!("{}", KeyState::PendingRevoke), "pending_revoke");
+        assert_eq!(format!("{}", KeyState::Revoked), "revoked");
+        assert_eq!(format!("{}", KeyState::PendingDelete), "pending_delete");
+        assert_eq!(format!("{}", KeyState::Deleted), "deleted");
+    }
+
+    #[test]
+    fn test_key_state_from_str_valid() {
+        assert_eq!(KeyState::from_str("enabled").unwrap(), KeyState::Enabled);
+        assert_eq!(KeyState::from_str("disabled").unwrap(), KeyState::Disabled);
+        assert_eq!(
+            KeyState::from_str("pending_revoke").unwrap(),
+            KeyState::PendingRevoke
+        );
+        assert_eq!(KeyState::from_str("revoked").unwrap(), KeyState::Revoked);
+        assert_eq!(
+            KeyState::from_str("pending_delete").unwrap(),
+            KeyState::PendingDelete
+        );
+        assert_eq!(KeyState::from_str("deleted").unwrap(), KeyState::Deleted);
+    }
+
+    #[test]
+    fn test_key_state_from_str_invalid() {
+        assert!(KeyState::from_str("unknown").is_err());
+        assert!(KeyState::from_str("").is_err());
+    }
+
+    #[test]
+    fn test_key_state_display_roundtrip() {
+        for state in &[
+            KeyState::Enabled,
+            KeyState::Disabled,
+            KeyState::PendingRevoke,
+            KeyState::Revoked,
+            KeyState::PendingDelete,
+            KeyState::Deleted,
+        ] {
+            let s = format!("{}", state);
+            let parsed = KeyState::from_str(&s).unwrap();
+            assert_eq!(*state, parsed);
+        }
+    }
+
+    // ========== KeyAction ==========
+
+    #[test]
+    fn test_key_action_display() {
+        assert_eq!(format!("{}", KeyAction::Revoke), "revoke");
+        assert_eq!(format!("{}", KeyAction::CancelRevoke), "cancel_revoke");
+        assert_eq!(format!("{}", KeyAction::Delete), "delete");
+        assert_eq!(format!("{}", KeyAction::CancelDelete), "cancel_delete");
+        assert_eq!(format!("{}", KeyAction::Disable), "disable");
+        assert_eq!(format!("{}", KeyAction::Enable), "enable");
+        assert_eq!(format!("{}", KeyAction::IssueCert), "issue_cert");
+        assert_eq!(format!("{}", KeyAction::Sign), "sign");
+        assert_eq!(format!("{}", KeyAction::Read), "read");
+    }
+
+    #[test]
+    fn test_key_action_from_str_valid() {
+        assert_eq!(KeyAction::from_str("revoke").unwrap(), KeyAction::Revoke);
+        assert_eq!(
+            KeyAction::from_str("cancel_revoke").unwrap(),
+            KeyAction::CancelRevoke
+        );
+        assert_eq!(KeyAction::from_str("delete").unwrap(), KeyAction::Delete);
+        assert_eq!(
+            KeyAction::from_str("cancel_delete").unwrap(),
+            KeyAction::CancelDelete
+        );
+        assert_eq!(KeyAction::from_str("disable").unwrap(), KeyAction::Disable);
+        assert_eq!(KeyAction::from_str("enable").unwrap(), KeyAction::Enable);
+        assert_eq!(
+            KeyAction::from_str("issue_cert").unwrap(),
+            KeyAction::IssueCert
+        );
+        assert_eq!(KeyAction::from_str("sign").unwrap(), KeyAction::Sign);
+        assert_eq!(KeyAction::from_str("read").unwrap(), KeyAction::Read);
+    }
+
+    #[test]
+    fn test_key_action_from_str_invalid() {
+        assert!(KeyAction::from_str("unknown_action").is_err());
+    }
+
+    #[test]
+    fn test_key_action_display_roundtrip() {
+        for action in &[
+            KeyAction::Revoke,
+            KeyAction::CancelRevoke,
+            KeyAction::Delete,
+            KeyAction::CancelDelete,
+            KeyAction::Disable,
+            KeyAction::Enable,
+            KeyAction::IssueCert,
+            KeyAction::Sign,
+            KeyAction::Read,
+        ] {
+            let s = format!("{}", action);
+            let parsed = KeyAction::from_str(&s).unwrap();
+            assert_eq!(*action, parsed);
+        }
+    }
+
+    // ========== KeyType ==========
+
+    #[test]
+    fn test_key_type_display() {
+        assert_eq!(format!("{}", KeyType::OpenPGP), "pgp");
+        assert_eq!(format!("{}", KeyType::X509CA), "x509ca");
+        assert_eq!(format!("{}", KeyType::X509ICA), "x509ica");
+        assert_eq!(format!("{}", KeyType::X509EE), "x509ee");
+    }
+
+    #[test]
+    fn test_key_type_from_str_valid() {
+        assert_eq!(KeyType::from_str("pgp").unwrap(), KeyType::OpenPGP);
+        assert_eq!(KeyType::from_str("x509ca").unwrap(), KeyType::X509CA);
+        assert_eq!(KeyType::from_str("x509ica").unwrap(), KeyType::X509ICA);
+        assert_eq!(KeyType::from_str("x509ee").unwrap(), KeyType::X509EE);
+    }
+
+    #[test]
+    fn test_key_type_from_str_invalid() {
+        assert!(KeyType::from_str("unknown_type").is_err());
+        assert!(KeyType::from_str("").is_err());
+    }
+
+    #[test]
+    fn test_key_type_display_roundtrip() {
+        for key_type in &[
+            KeyType::OpenPGP,
+            KeyType::X509CA,
+            KeyType::X509ICA,
+            KeyType::X509EE,
+        ] {
+            let s = format!("{}", key_type);
+            let parsed = KeyType::from_str(&s).unwrap();
+            assert_eq!(*key_type, parsed);
+        }
+    }
+
+    // ========== X509RevokeReason ==========
+
+    #[test]
+    fn test_x509_revoke_reason_display() {
+        assert_eq!(format!("{}", X509RevokeReason::Unspecified), "unspecified");
+        assert_eq!(
+            format!("{}", X509RevokeReason::KeyCompromise),
+            "key_compromise"
+        );
+        assert_eq!(
+            format!("{}", X509RevokeReason::CACompromise),
+            "ca_compromise"
+        );
+        assert_eq!(
+            format!("{}", X509RevokeReason::AffiliationChanged),
+            "affiliation_changed"
+        );
+        assert_eq!(format!("{}", X509RevokeReason::Superseded), "superseded");
+        assert_eq!(
+            format!("{}", X509RevokeReason::CessationOfOperation),
+            "cessation_of_operation"
+        );
+        assert_eq!(
+            format!("{}", X509RevokeReason::CertificateHold),
+            "certificate_hold"
+        );
+        assert_eq!(
+            format!("{}", X509RevokeReason::PrivilegeWithdrawn),
+            "privilege_withdrawn"
+        );
+        assert_eq!(
+            format!("{}", X509RevokeReason::AACompromise),
+            "aa_compromise"
+        );
+    }
+
+    #[test]
+    fn test_x509_revoke_reason_from_str_valid() {
+        assert_eq!(
+            X509RevokeReason::from_str("unspecified").unwrap(),
+            X509RevokeReason::Unspecified
+        );
+        assert_eq!(
+            X509RevokeReason::from_str("key_compromise").unwrap(),
+            X509RevokeReason::KeyCompromise
+        );
+        assert_eq!(
+            X509RevokeReason::from_str("ca_compromise").unwrap(),
+            X509RevokeReason::CACompromise
+        );
+    }
+
+    #[test]
+    fn test_x509_revoke_reason_from_str_invalid() {
+        assert!(X509RevokeReason::from_str("invalid_reason").is_err());
+    }
+
+    #[test]
+    fn test_x509_revoke_reason_roundtrip() {
+        for reason in &[
+            X509RevokeReason::Unspecified,
+            X509RevokeReason::KeyCompromise,
+            X509RevokeReason::CACompromise,
+            X509RevokeReason::AffiliationChanged,
+            X509RevokeReason::Superseded,
+            X509RevokeReason::CessationOfOperation,
+            X509RevokeReason::CertificateHold,
+            X509RevokeReason::PrivilegeWithdrawn,
+            X509RevokeReason::AACompromise,
+        ] {
+            let s = format!("{}", reason);
+            let parsed = X509RevokeReason::from_str(&s).unwrap();
+            assert_eq!(*reason, parsed);
+        }
+    }
+
+    // ========== Visibility ==========
+
+    #[test]
+    fn test_visibility_default_is_public() {
+        assert_eq!(Visibility::default(), Visibility::Public);
+    }
+
+    #[test]
+    fn test_visibility_display() {
+        assert_eq!(format!("{}", Visibility::Public), "public");
+        assert_eq!(format!("{}", Visibility::Private), "private");
+    }
+
+    #[test]
+    fn test_visibility_from_str_valid() {
+        assert_eq!(Visibility::from_str("public").unwrap(), Visibility::Public);
+        assert_eq!(
+            Visibility::from_str("private").unwrap(),
+            Visibility::Private
+        );
+    }
+
+    #[test]
+    fn test_visibility_from_str_invalid() {
+        assert!(Visibility::from_str("secret").is_err());
+    }
+
+    #[test]
+    fn test_visibility_from_parameter_none() {
+        assert_eq!(
+            Visibility::from_parameter(None).unwrap(),
+            Visibility::Public
+        );
+    }
+
+    #[test]
+    fn test_visibility_from_parameter_public() {
+        assert_eq!(
+            Visibility::from_parameter(Some("public".to_string())).unwrap(),
+            Visibility::Public
+        );
+    }
+
+    #[test]
+    fn test_visibility_from_parameter_private() {
+        assert_eq!(
+            Visibility::from_parameter(Some("private".to_string())).unwrap(),
+            Visibility::Private
+        );
+    }
+
+    #[test]
+    fn test_visibility_from_parameter_invalid() {
+        assert!(Visibility::from_parameter(Some("secret".to_string())).is_err());
+    }
+
+    // ========== X509CRL ==========
+
+    #[test]
+    fn test_x509_crl_new() {
+        let now = Utc::now();
+        let data = vec![1, 2, 3, 4];
+        let crl = X509CRL::new(42, data.clone(), now, now);
+        assert_eq!(crl.id, 0);
+        assert_eq!(crl.ca_id, 42);
+        assert_eq!(crl.data, data);
+        assert_eq!(crl.create_at, now);
+        assert_eq!(crl.update_at, now);
+    }
+
+    // ========== DataKey identity ==========
+
+    #[test]
+    fn test_data_key_get_identity() {
+        let key = DataKey {
+            id: 1,
+            name: "test-key".to_string(),
+            visibility: Visibility::Public,
+            description: "".to_string(),
+            user: 42,
+            attributes: HashMap::new(),
+            key_type: KeyType::OpenPGP,
+            parent_id: None,
+            fingerprint: "ABCD1234".to_string(),
+            serial_number: None,
+            private_key: vec![],
+            public_key: vec![],
+            certificate: vec![],
+            create_at: Utc::now(),
+            expire_at: Utc::now(),
+            key_state: KeyState::Enabled,
+            user_email: None,
+            request_delete_users: None,
+            request_revoke_users: None,
+            parent_key: None,
+        };
+        let identity = key.get_identity();
+        assert!(identity.contains("test-key"));
+        assert!(identity.contains("42"));
+        assert!(identity.contains("ABCD1234"));
+        assert!(identity.contains("pgp"));
+    }
+
+    // ========== DatakeyPaginationQuery ==========
+
+    #[test]
+    fn test_datakey_pagination_query_defaults() {
+        let query = DatakeyPaginationQuery {
+            page_size: 20,
+            page_number: 1,
+            name: None,
+            description: None,
+            key_type: None,
+            visibility: None,
+        };
+        assert_eq!(query.page_size, 20);
+        assert_eq!(query.page_number, 1);
+        assert!(query.name.is_none());
+        assert!(query.key_type.is_none());
+    }
+}

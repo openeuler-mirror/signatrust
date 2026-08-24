@@ -23,10 +23,16 @@ use secstr::*;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::HashMap;
+use std::time::Duration;
 use tokio::sync::Mutex;
 
 static SIGN_HEADER: &str = "x-auth-token";
 static AUTH_HEADER: &str = "x-subject-token";
+
+/// Connection timeout for KMS HTTP requests.
+const CONNECT_TIMEOUT: Duration = Duration::from_secs(5);
+/// Total timeout for a single KMS HTTP request.
+const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 
 #[derive(Debug, Serialize, Deserialize)]
 struct EncodeData {
@@ -92,7 +98,10 @@ impl HuaweiCloudKMS {
                 .unwrap_or(&Value::default())
                 .to_string(),
             auth_token_cache: Mutex::new("".to_string()),
-            client: Client::new(),
+            client: Client::builder()
+                .connect_timeout(CONNECT_TIMEOUT)
+                .timeout(REQUEST_TIMEOUT)
+                .build()?,
         })
     }
 
@@ -760,5 +769,61 @@ mod test {
         assert!(!is_retryable_kms_error(&Error::ConfigError(
             "bad config".to_string()
         )));
+    }
+
+    #[tokio::test]
+    async fn test_huaweicloud_request_timeout() {
+        // auth endpoint responds quickly through mockito
+        let mut iam_server = mockito::Server::new();
+        let iam_url = iam_server.url();
+        let mock_auth = iam_server
+            .mock("POST", "/v3/auth/tokens")
+            .with_status(201)
+            .with_header(AUTH_HEADER, "fake_auth_header")
+            .expect(1)
+            .create();
+
+        // kms endpoint accepts the connection but never responds, so only
+        // the request timeout on the client side can abort the call
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let kms_url = format!("http://{}", listener.local_addr().unwrap());
+        tokio::spawn(async move {
+            let (_socket, _) = listener.accept().await.unwrap();
+            // hold the connection open without sending any response
+            std::future::pending::<()>().await;
+        });
+
+        //build the client with a short request timeout so the test does not
+        //wait for the production default (30s); the production defaults are
+        //wired in HuaweiCloudKMS::new
+        let kms_client = HuaweiCloudKMS {
+            kms_id: "fake_kms_id".to_string(),
+            username: "fake_username".to_string(),
+            password: SecUtf8::from("fake_password".to_string()),
+            domain: "fake_domain".to_string(),
+            project_name: "fake_project_name".to_string(),
+            project_id: "fake_project_id".to_string(),
+            iam_endpoint: iam_url,
+            kms_endpoint: kms_url.clone(),
+            auth_token_cache: Mutex::new("".to_string()),
+            client: Client::builder()
+                .timeout(Duration::from_millis(200))
+                .build()
+                .expect("create client should be successful"),
+        };
+
+        let start = std::time::Instant::now();
+        //call do_request_once directly: this test verifies the timeout abort
+        //itself, retry behaviour is covered by the dedicated retry tests
+        let result = kms_client
+            .do_request_once(&format!("{}/kms/fake_endpoint", kms_url), &json!({}))
+            .await;
+
+        //the request must be aborted by the client timeout
+        assert!(
+            matches!(result, Err(Error::HttpRequest(ref msg)) if msg.to_lowercase().contains("timed out"))
+        );
+        assert!(start.elapsed() < Duration::from_secs(1));
+        mock_auth.assert();
     }
 }

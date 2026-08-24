@@ -117,3 +117,58 @@ impl ChannelFactory {
         self.lb.get_transport_channel()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_config(lb_type: &str, server: &str, port: &str) -> HashMap<String, Value> {
+        let mut config = HashMap::new();
+        config.insert("type".to_string(), Value::from(lb_type));
+        config.insert("server_address".to_string(), Value::from(server));
+        config.insert("server_port".to_string(), Value::from(port));
+        config
+    }
+
+    #[tokio::test]
+    async fn test_channel_factory_single_lb() {
+        let config = make_config("single", "127.0.0.1", "8088");
+        let factory = ChannelFactory::new(&config).await.unwrap();
+        let channel = factory.get_channel();
+        assert!(channel.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_channel_factory_dns_lb_construction() {
+        let config = make_config("dns", "signatrust.example.com", "8088");
+        // Factory construction succeeds; channel resolution depends on DNS
+        let factory = ChannelFactory::new(&config).await.unwrap();
+        let _channel = factory.get_channel();
+        // Channel result depends on DNS — just verify no panic
+    }
+
+    #[tokio::test]
+    async fn test_channel_factory_invalid_type() {
+        let config = make_config("invalid_lb_type", "127.0.0.1", "8088");
+        let result = ChannelFactory::new(&config).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_channel_factory_missing_server_address() {
+        let mut config = HashMap::new();
+        config.insert("type".to_string(), Value::from("single"));
+        // server_address and server_port missing
+        let result = ChannelFactory::new(&config).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_channel_factory_missing_port() {
+        let mut config = HashMap::new();
+        config.insert("type".to_string(), Value::from("single"));
+        config.insert("server_address".to_string(), Value::from("127.0.0.1"));
+        let result = ChannelFactory::new(&config).await;
+        assert!(result.is_err());
+    }
+}
