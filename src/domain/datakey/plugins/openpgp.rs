@@ -146,3 +146,127 @@ impl OpenPGPDigestAlgorithm {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ========== OpenPGPKeyType ==========
+
+    #[test]
+    fn test_openpgp_key_type_display() {
+        assert_eq!(format!("{}", OpenPGPKeyType::Rsa), "rsa");
+        assert_eq!(format!("{}", OpenPGPKeyType::Eddsa), "eddsa");
+    }
+
+    #[test]
+    fn test_openpgp_key_type_from_str_valid() {
+        assert_eq!(
+            OpenPGPKeyType::from_str("rsa").unwrap(),
+            OpenPGPKeyType::Rsa
+        );
+        assert_eq!(
+            OpenPGPKeyType::from_str("eddsa").unwrap(),
+            OpenPGPKeyType::Eddsa
+        );
+    }
+
+    #[test]
+    fn test_openpgp_key_type_from_str_invalid() {
+        assert!(OpenPGPKeyType::from_str("dsa").is_err());
+    }
+
+    #[test]
+    fn test_openpgp_key_type_roundtrip() {
+        for kt in &[OpenPGPKeyType::Rsa, OpenPGPKeyType::Eddsa] {
+            let s = format!("{}", kt);
+            let parsed = OpenPGPKeyType::from_str(&s).unwrap();
+            assert_eq!(*kt, parsed);
+        }
+    }
+
+    #[test]
+    fn test_get_real_key_type_rsa_default() {
+        assert_eq!(
+            OpenPGPKeyType::Rsa.get_real_key_type(None),
+            KeyType::Rsa(2048)
+        );
+    }
+
+    #[test]
+    fn test_get_real_key_type_rsa_custom_length() {
+        assert_eq!(
+            OpenPGPKeyType::Rsa.get_real_key_type(Some("4096".to_string())),
+            KeyType::Rsa(4096)
+        );
+    }
+
+    #[test]
+    fn test_get_real_key_type_eddsa() {
+        assert_eq!(
+            OpenPGPKeyType::Eddsa.get_real_key_type(None),
+            KeyType::EdDSA
+        );
+    }
+
+    // ========== OpenPGPDigestAlgorithm ==========
+
+    #[test]
+    fn test_openpgp_digest_algorithm_display() {
+        assert_eq!(format!("{}", OpenPGPDigestAlgorithm::SHA2_256), "sha2_256");
+        assert_eq!(format!("{}", OpenPGPDigestAlgorithm::SHA2_512), "sha2_512");
+        assert_eq!(format!("{}", OpenPGPDigestAlgorithm::SHA1), "sha1");
+        assert_eq!(format!("{}", OpenPGPDigestAlgorithm::None), "none");
+    }
+
+    #[test]
+    fn test_openpgp_digest_algorithm_from_str_valid() {
+        assert_eq!(
+            OpenPGPDigestAlgorithm::from_str("sha2_256").unwrap(),
+            OpenPGPDigestAlgorithm::SHA2_256
+        );
+        assert_eq!(
+            OpenPGPDigestAlgorithm::from_str("sha3_512").unwrap(),
+            OpenPGPDigestAlgorithm::SHA3_512
+        );
+    }
+
+    #[test]
+    fn test_openpgp_digest_algorithm_from_str_invalid() {
+        assert!(OpenPGPDigestAlgorithm::from_str("md4").is_err());
+    }
+
+    #[test]
+    fn test_openpgp_digest_algorithm_roundtrip() {
+        for algo in &[
+            OpenPGPDigestAlgorithm::None,
+            OpenPGPDigestAlgorithm::MD5,
+            OpenPGPDigestAlgorithm::SHA2_256,
+            OpenPGPDigestAlgorithm::SHA3_512,
+        ] {
+            let s = format!("{}", algo);
+            let parsed = OpenPGPDigestAlgorithm::from_str(&s).unwrap();
+            assert_eq!(*algo, parsed);
+        }
+    }
+
+    #[test]
+    fn test_get_real_algorithm_mapping() {
+        assert_eq!(
+            OpenPGPDigestAlgorithm::None.get_real_algorithm(),
+            HashAlgorithm::None
+        );
+        assert_eq!(
+            OpenPGPDigestAlgorithm::SHA2_256.get_real_algorithm(),
+            HashAlgorithm::SHA2_256
+        );
+        assert_eq!(
+            OpenPGPDigestAlgorithm::SHA3_512.get_real_algorithm(),
+            HashAlgorithm::SHA3_512
+        );
+        assert_eq!(
+            OpenPGPDigestAlgorithm::MD5.get_real_algorithm(),
+            HashAlgorithm::MD5
+        );
+    }
+}
