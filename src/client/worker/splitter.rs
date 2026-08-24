@@ -56,3 +56,97 @@ impl SignHandler for Splitter {
         item
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::client::file_handler::traits::FileHandler;
+    use crate::client::sign_identity::SignIdentity;
+    use crate::util::error::Result as AppResult;
+    use crate::util::sign::{FileType, KeyType};
+    use async_trait::async_trait;
+    use std::collections::HashMap;
+    use std::path::PathBuf;
+
+    struct MockFileHandler {
+        split_result: AppResult<Vec<Vec<u8>>>,
+    }
+
+    #[async_trait]
+    impl FileHandler for MockFileHandler {
+        fn validate_options(&self, _sign_options: &mut HashMap<String, String>) -> AppResult<()> {
+            Ok(())
+        }
+
+        async fn split_data(
+            &self,
+            _path: &PathBuf,
+            _sign_options: &mut HashMap<String, String>,
+            _key_attributes: &HashMap<String, String>,
+        ) -> AppResult<Vec<Vec<u8>>> {
+            self.split_result.clone()
+        }
+
+        async fn assemble_data(
+            &self,
+            _path: &PathBuf,
+            _data: Vec<Vec<u8>>,
+            _temp_dir: &PathBuf,
+            _sign_options: &HashMap<String, String>,
+            _key_attributes: &HashMap<String, String>,
+        ) -> AppResult<(String, String)> {
+            Ok(("".to_string(), "".to_string()))
+        }
+    }
+
+    fn make_sign_identity() -> SignIdentity {
+        SignIdentity::new(
+            FileType::Rpm,
+            PathBuf::from("/tmp/test.rpm"),
+            KeyType::Pgp,
+            "my-key".to_string(),
+            HashMap::new(),
+        )
+    }
+
+    #[tokio::test]
+    async fn test_splitter_success() {
+        let handler = Box::new(MockFileHandler {
+            split_result: Ok(vec![vec![1, 2, 3], vec![4, 5, 6]]),
+        });
+        let mut splitter =
+            Splitter::new(HashMap::from([("algo".to_string(), "sha256".to_string())]));
+        let identity = make_sign_identity();
+        let result = splitter.process(handler, identity).await;
+        assert!(result.error.borrow().is_ok());
+        assert_eq!(
+            *result.raw_content.borrow(),
+            vec![vec![1, 2, 3], vec![4, 5, 6]]
+        );
+    }
+
+    #[tokio::test]
+    async fn test_splitter_error() {
+        let handler = Box::new(MockFileHandler {
+            split_result: Err(crate::util::error::Error::SplitFileError(
+                "mock split failure".to_string(),
+            )),
+        });
+        let mut splitter = Splitter::new(HashMap::new());
+        let identity = make_sign_identity();
+        let result = splitter.process(handler, identity).await;
+        assert!(result.error.borrow().is_err());
+    }
+
+    #[tokio::test]
+    async fn test_splitter_empty_content() {
+        let handler = Box::new(MockFileHandler {
+            split_result: Ok(vec![]),
+        });
+        let mut splitter = Splitter::new(HashMap::new());
+        let identity = make_sign_identity();
+        let result = splitter.process(handler, identity).await;
+        assert!(result.error.borrow().is_ok());
+        assert!(result.raw_content.borrow().is_empty());
+    }
+}
