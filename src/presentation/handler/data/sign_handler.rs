@@ -59,22 +59,41 @@ where
         token: Option<String>,
         name: &str,
     ) -> SignatrustResult<()> {
-        let names: Vec<_> = name.split(':').collect();
-        if names.len() <= 1 {
-            return Ok(());
-        }
-        if token.is_none()
-            || !self
-                .user_service
-                .validate_token_and_email(names[0], &token.unwrap())
-                .await?
+        validate_key_token_for_name(name, token, &self.user_service).await
+    }
+}
+
+/// Extract token validation logic for the named key into a pure function
+/// that takes a name (possibly in "email:keyname" format), an optional token,
+/// and a UserService reference. Non-async logic runs first.
+pub(crate) fn parse_key_name_parts(name: &str) -> (&str, Option<&str>) {
+    let parts: Vec<&str> = name.split(':').collect();
+    if parts.len() > 1 {
+        (parts[1], Some(parts[0]))
+    } else {
+        (name, None)
+    }
+}
+
+pub(crate) async fn validate_key_token_for_name<U: UserService + 'static>(
+    name: &str,
+    token: Option<String>,
+    user_service: &U,
+) -> SignatrustResult<()> {
+    let (_key_name, email_opt) = parse_key_name_parts(name);
+    if let Some(email) = email_opt {
+        let token_value = token
+            .ok_or_else(|| Error::AuthError("user token required for private key".to_string()))?;
+        if !user_service
+            .validate_token_and_email(email, &token_value)
+            .await?
         {
             return Err(Error::AuthError(
                 "user token and email unmatched".to_string(),
             ));
         }
-        Ok(())
     }
+    Ok(())
 }
 
 #[tonic::async_trait]
@@ -193,4 +212,51 @@ where
 {
     let app = SignHandler::new(key_service, user_service);
     SignatrustServer::new(app)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_key_name_parts;
+
+    #[test]
+    fn test_parse_key_name_parts_no_colon() {
+        let (key_name, email) = parse_key_name_parts("my-pgp-key");
+        assert_eq!(key_name, "my-pgp-key");
+        assert_eq!(email, None);
+    }
+
+    #[test]
+    fn test_parse_key_name_parts_with_email_prefix() {
+        let (key_name, email) = parse_key_name_parts("user@example.com:my-pgp-key");
+        assert_eq!(key_name, "my-pgp-key");
+        assert_eq!(email, Some("user@example.com"));
+    }
+
+    #[test]
+    fn test_parse_key_name_parts_multiple_colons() {
+        let (key_name, email) = parse_key_name_parts("user@example.com:my-pgp-key:extra");
+        assert_eq!(key_name, "my-pgp-key");
+        assert_eq!(email, Some("user@example.com"));
+    }
+
+    #[test]
+    fn test_parse_key_name_parts_empty_name() {
+        let (key_name, email) = parse_key_name_parts("");
+        assert_eq!(key_name, "");
+        assert_eq!(email, None);
+    }
+
+    #[test]
+    fn test_parse_key_name_parts_only_colon() {
+        let (key_name, email) = parse_key_name_parts(":");
+        assert_eq!(key_name, "");
+        assert_eq!(email, Some(""));
+    }
+
+    #[test]
+    fn test_parse_key_name_parts_trailing_colon() {
+        let (key_name, email) = parse_key_name_parts("email@test.com:");
+        assert_eq!(key_name, "");
+        assert_eq!(email, Some("email@test.com"));
+    }
 }
