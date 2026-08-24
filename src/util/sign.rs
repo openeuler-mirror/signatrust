@@ -78,3 +78,75 @@ impl Display for KeyType {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ========== SignType ==========
+
+    #[test]
+    fn test_sign_type_display() {
+        assert_eq!(format!("{}", SignType::Cms), "cms");
+        assert_eq!(format!("{}", SignType::KernelCms), "kernel-cms");
+        assert_eq!(format!("{}", SignType::Authenticode), "authenticode");
+        assert_eq!(format!("{}", SignType::PKCS7), "pkcs7");
+        assert_eq!(format!("{}", SignType::RsaHash), "rsahash");
+    }
+
+    #[test]
+    fn test_sign_type_from_str_valid() {
+        assert_eq!(SignType::from_str("cms").unwrap(), SignType::Cms);
+        assert_eq!(
+            SignType::from_str("kernel-cms").unwrap(),
+            SignType::KernelCms
+        );
+        assert_eq!(
+            SignType::from_str("authenticode").unwrap(),
+            SignType::Authenticode
+        );
+        assert_eq!(SignType::from_str("pkcs7").unwrap(), SignType::PKCS7);
+        assert_eq!(SignType::from_str("rsahash").unwrap(), SignType::RsaHash);
+    }
+
+    #[test]
+    fn test_sign_type_from_str_invalid() {
+        assert!(SignType::from_str("unknown").is_err());
+    }
+
+    #[test]
+    fn test_sign_type_roundtrip() {
+        for st in &[
+            SignType::Cms,
+            SignType::KernelCms,
+            SignType::Authenticode,
+            SignType::PKCS7,
+            SignType::RsaHash,
+        ] {
+            let s = format!("{}", st);
+            let parsed = SignType::from_str(&s).unwrap();
+            assert_eq!(*st, parsed);
+        }
+    }
+
+    // ========== FileType ==========
+
+    #[test]
+    fn test_file_type_display() {
+        assert_eq!(format!("{}", FileType::Rpm), "rpm");
+        assert_eq!(format!("{}", FileType::Generic), "generic");
+        assert_eq!(format!("{}", FileType::KernelModule), "ko");
+        assert_eq!(format!("{}", FileType::EfiImage), "efi");
+        assert_eq!(format!("{}", FileType::ImaEvm), "ima");
+        assert_eq!(format!("{}", FileType::P7s), "p7s");
+    }
+
+    // ========== KeyType ==========
+
+    #[test]
+    fn test_key_type_display() {
+        assert_eq!(format!("{}", KeyType::Pgp), "pgp");
+        assert_eq!(format!("{}", KeyType::X509EE), "x509ee");
+        assert_eq!(format!("{}", KeyType::X509), "x509ee");
+    }
+}

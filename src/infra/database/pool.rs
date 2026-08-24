@@ -86,6 +86,12 @@ mod tests {
     use testcontainers::core::WaitFor;
     use testcontainers::images::generic::GenericImage;
 
+    /// Resolve a test Docker image from env var or default. Allows CI to use a
+    /// mirror registry without touching Docker daemon config.
+    fn test_image(env_var: &str, default: &str) -> String {
+        std::env::var(env_var).unwrap_or_else(|_| default.to_string())
+    }
+
     #[tokio::test]
     async fn test_database_migration() -> Result<()> {
         // This test requires Linux bridge networking (get_bridge_ip_address).
@@ -95,7 +101,12 @@ mod tests {
         }
 
         let docker = clients::Cli::default();
-        let image = GenericImage::new("mysql", "8.0")
+
+        let mysql_spec = test_image("TEST_MYSQL_IMAGE", "mysql:8.0");
+        let (mysql_name, mysql_tag) = mysql_spec
+            .rsplit_once(':')
+            .unwrap_or((&mysql_spec, "latest"));
+        let image = GenericImage::new(mysql_name, mysql_tag)
             .with_env_var("MYSQL_DATABASE", "signatrust")
             .with_env_var("MYSQL_PASSWORD", "test")
             .with_env_var("MYSQL_USER", "test")
@@ -103,7 +114,9 @@ mod tests {
             .with_wait_for(WaitFor::message_on_stderr("ready for connections"));
         let database = docker.run(image.clone());
 
-        let sqlx_image = GenericImage::new("tommylike/sqlx-cli", "0.7.1.1")
+        let sqlx_spec = test_image("TEST_SQLX_IMAGE", "tommylike/sqlx-cli:0.7.1.1");
+        let (sqlx_name, sqlx_tag) = sqlx_spec.rsplit_once(':').unwrap_or((&sqlx_spec, "latest"));
+        let sqlx_image = GenericImage::new(sqlx_name, sqlx_tag)
             .with_env_var(
                 "DATABASE_HOST",
                 database.get_bridge_ip_address().to_string(),

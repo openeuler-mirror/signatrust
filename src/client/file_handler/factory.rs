@@ -37,3 +37,46 @@ impl FileHandlerFactory {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashMap;
+
+    #[test]
+    fn test_get_handler_rpm() {
+        let handler = FileHandlerFactory::get_handler(&FileType::Rpm);
+        // verify we get a handler (validate_options on RPM without options should succeed)
+        assert!(handler.validate_options(&mut HashMap::new()).is_ok());
+    }
+
+    #[test]
+    fn test_get_handler_generic() {
+        let handler = FileHandlerFactory::get_handler(&FileType::Generic);
+        assert!(handler.validate_options(&mut HashMap::new()).is_ok());
+    }
+
+    #[test]
+    fn test_get_handler_kernel_module() {
+        let handler = FileHandlerFactory::get_handler(&FileType::KernelModule);
+        assert!(handler.validate_options(&mut HashMap::new()).is_ok());
+    }
+
+    #[test]
+    fn test_get_handler_efi() {
+        let handler = FileHandlerFactory::get_handler(&FileType::EfiImage);
+        assert!(handler.validate_options(&mut HashMap::new()).is_ok());
+    }
+
+    #[test]
+    fn test_get_handler_ima() {
+        let handler = FileHandlerFactory::get_handler(&FileType::ImaEvm);
+        assert!(handler.validate_options(&mut HashMap::new()).is_ok());
+    }
+
+    #[test]
+    fn test_get_handler_p7s() {
+        let handler = FileHandlerFactory::get_handler(&FileType::P7s);
+        assert!(handler.validate_options(&mut HashMap::new()).is_ok());
+    }
+}
