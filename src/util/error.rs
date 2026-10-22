@@ -60,8 +60,8 @@ pub enum Error {
     IOError(String),
     #[error("unsupported type configured: {0}")]
     UnsupportedTypeError(String),
-    #[error("kms invoke error: {0}")]
-    KMSInvokeError(String),
+    #[error("kms invoke error: {msg}")]
+    KMSInvokeError { code: Option<u16>, msg: String },
     #[error("failed to serialize/deserialize: {0}")]
     SerializeError(String),
     #[error("failed to perform http request: {0}")]

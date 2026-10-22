@@ -19,6 +19,7 @@ use crate::util::error::{Error, Result};
 use async_trait::async_trait;
 use config::Value;
 use reqwest::{header::HeaderValue, Client, StatusCode};
+use rand::Rng;
 use secstr::*;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -140,11 +141,14 @@ impl HuaweiCloudKMS {
             .send()
             .await?;
         if res.status() != StatusCode::CREATED {
-            return Err(Error::KMSInvokeError(format!(
-                "failed to get huaweicloud token {} {:?}",
-                res.status(),
-                res.headers()
-            )));
+            return Err(Error::KMSInvokeError {
+                code: Some(res.status().as_u16()),
+                msg: format!(
+                    "failed to get huaweicloud token {} {:?}",
+                    res.status(),
+                    res.headers()
+                ),
+            });
         }
         self.auth_token_cache
             .lock()
@@ -196,29 +200,39 @@ impl HuaweiCloudKMS {
                 .await?;
         }
         if res.status() != StatusCode::OK {
-            return Err(Error::KMSInvokeError(format!(
-                "unable to encode/decode data in kms, result {}",
-                res.status()
-            )));
+            return Err(Error::KMSInvokeError {
+                code: Some(res.status().as_u16()),
+                msg: format!("unable to encode/decode data in kms, result {}", res.status()),
+            });
         }
         Ok(res.json::<serde_json::Value>().await?)
     }
 
-    /// Perform a KMS request with exponential backoff on transient errors.
+    /// Perform a KMS request with exponential backoff (plus random jitter) on
+    /// transient errors.
     ///
     /// Retryable errors: network-level errors (`Error::HttpRequest`) and KMS
-    /// server errors (HTTP 5xx). Business errors (4xx other than the handled
-    /// 403) are returned immediately without retry.
+    /// server errors (HTTP 5xx, identified by the structured status code
+    /// carried in `Error::KMSInvokeError`). Business errors (4xx other than
+    /// the handled 403) are returned immediately without retry.
     async fn do_request_with_retry<T: Serialize + ?Sized>(
         &self,
         url: &str,
         json: &T,
         max_attempts: u32,
     ) -> Result<serde_json::Value> {
+        if max_attempts == 0 {
+            return Err(Error::ConfigError(
+                "max_attempts must be greater than 0".to_string(),
+            ));
+        }
         for attempt in 1..=max_attempts {
             if attempt > 1 {
-                let backoff_ms = INITIAL_BACKOFF_MS * 2u64.pow(attempt - 2);
-                warn!(
+                // random jitter within one initial backoff interval avoids
+                // retry storms when many callers fail simultaneously
+                let jitter_ms = rand::thread_rng().gen_range(0..INITIAL_BACKOFF_MS);
+                let backoff_ms = INITIAL_BACKOFF_MS * 2u64.pow(attempt - 2) + jitter_ms;
+                debug!(
                     "KMS request attempt {}/{}, backoff {}ms",
                     attempt, max_attempts, backoff_ms
                 );
@@ -227,14 +241,26 @@ impl HuaweiCloudKMS {
             match self.do_request_once(url, json).await {
                 Ok(result) => return Ok(result),
                 Err(e) => {
-                    if !is_retryable_kms_error(&e) || attempt == max_attempts {
-                        return Err(e);
+                    if is_retryable_kms_error(&e) && attempt < max_attempts {
+                        debug!("KMS request failed (retryable): {}", e);
+                        continue;
                     }
-                    warn!("KMS request failed (retryable): {}", e);
+                    if is_retryable_kms_error(&e) {
+                        error!(
+                            "KMS request failed after {} attempts: {}",
+                            max_attempts, e
+                        );
+                    }
+                    return Err(e);
                 }
             }
         }
-        unreachable!("retry loop always returns within max_attempts")
+        // the loop above always returns; kept as an explicit fallback instead
+        // of `unreachable!` so a logic bug degrades into an error, not a panic
+        Err(Error::KMSInvokeError {
+            code: None,
+            msg: "retry loop exhausted unexpectedly".to_string(),
+        })
     }
 }
 
@@ -247,17 +273,13 @@ const INITIAL_BACKOFF_MS: u64 = 100;
 ///
 /// - `Error::HttpRequest` covers network-level failures (connection refused,
 ///   DNS failure, TLS error, timeout) which are transient by nature.
-/// - `Error::KMSInvokeError` embeds the HTTP status code in the message
-///   ("... result <code> ..."); only 5xx server errors are retried, other
-///   status codes (e.g. 4xx business errors) are permanent.
+/// - `Error::KMSInvokeError` carries the HTTP status code as a structured
+///   field; only 5xx server errors are retried, other status codes (e.g. 4xx
+///   business errors) are permanent.
 fn is_retryable_kms_error(err: &Error) -> bool {
     match err {
         Error::HttpRequest(_) => true,
-        Error::KMSInvokeError(msg) => msg
-            .split("result ")
-            .nth(1)
-            .and_then(|s| s.split_whitespace().next())
-            .and_then(|code| code.parse::<u16>().ok())
+        Error::KMSInvokeError { code, .. } => code
             .map(|code| (500..=599).contains(&code))
             .unwrap_or(false),
         _ => false,
@@ -747,28 +769,89 @@ mod test {
         assert!(is_retryable_kms_error(&Error::HttpRequest(
             "connection refused".to_string()
         )));
-        // 5xx status codes embedded in message are retryable
-        for code in ["500", "502", "503", "504", "599"] {
-            assert!(is_retryable_kms_error(&Error::KMSInvokeError(format!(
-                "unable to encode/decode data in kms, result {} Service Unavailable",
-                code
-            ))));
+        // 5xx status codes are retryable
+        for code in [500u16, 502, 503, 504, 599] {
+            assert!(is_retryable_kms_error(&Error::KMSInvokeError {
+                code: Some(code),
+                msg: "kms server error".to_string(),
+            }));
         }
         // 4xx business errors are not retryable
-        for code in ["400", "404", "429"] {
-            assert!(!is_retryable_kms_error(&Error::KMSInvokeError(format!(
-                "unable to encode/decode data in kms, result {} Bad Request",
-                code
-            ))));
+        for code in [400u16, 404, 429] {
+            assert!(!is_retryable_kms_error(&Error::KMSInvokeError {
+                code: Some(code),
+                msg: "kms business error".to_string(),
+            }));
         }
-        // message containing "500" in a non-status-code context is not retryable
-        assert!(!is_retryable_kms_error(&Error::KMSInvokeError(
-            "request body exceeds 5000 bytes limit".to_string()
-        )));
+        // missing status code is not retryable
+        assert!(!is_retryable_kms_error(&Error::KMSInvokeError {
+            code: None,
+            msg: "unknown kms failure".to_string(),
+        }));
         // unrelated errors are not retryable
         assert!(!is_retryable_kms_error(&Error::ConfigError(
             "bad config".to_string()
         )));
+    }
+
+    #[tokio::test]
+    async fn test_kms_do_request_with_retry_zero_max_attempts() {
+        let mut server = mockito::Server::new();
+        let url = server.url();
+        let config = get_kms_config(Some(url.clone()), Some(url.clone()));
+
+        let kms_client =
+            HuaweiCloudKMS::new(&config).expect("create huaweicloud client should be successful");
+        let request_url = format!("{}/kms/fake_endpoint", url);
+        let fake_request = json!({"fake": "123"});
+
+        let result = kms_client
+            .do_request_with_retry(&request_url, &fake_request, 0)
+            .await;
+        assert!(
+            matches!(result, Err(Error::ConfigError(_))),
+            "max_attempts=0 should return a config error, got: {:?}",
+            result
+        );
+    }
+
+    #[tokio::test]
+    async fn test_kms_retry_on_auth_5xx() {
+        let mut server = mockito::Server::new();
+        let url = server.url();
+        let config = get_kms_config(Some(url.clone()), Some(url.clone()));
+
+        // auth endpoint fails once with 500, then succeeds (mockito matches
+        // mocks in registration order, each consumed after expect(n) hits)
+        let mock_auth_fail = server
+            .mock("POST", "/v3/auth/tokens")
+            .with_status(500)
+            .expect(1)
+            .create();
+        let mock_auth_ok = server
+            .mock("POST", "/v3/auth/tokens")
+            .with_status(201)
+            .with_header(AUTH_HEADER, "fake_auth_header")
+            .expect(1)
+            .create();
+        let mock_request = server
+            .mock("POST", "/kms/fake_endpoint")
+            .with_status(200)
+            .with_body(r#"{"key_id": "123"}"#)
+            .expect(1)
+            .create();
+
+        let kms_client =
+            HuaweiCloudKMS::new(&config).expect("create huaweicloud client should be successful");
+        let request_url = format!("{}/kms/fake_endpoint", url);
+        let fake_request = json!({"fake": "123"});
+
+        let result = kms_client.do_request(&request_url, &fake_request).await;
+        assert!(result.is_ok(), "auth 5xx should be retried: {:?}", result);
+
+        mock_auth_fail.assert();
+        mock_auth_ok.assert();
+        mock_request.assert();
     }
 
     #[tokio::test]

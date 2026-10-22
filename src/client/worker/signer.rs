@@ -28,6 +28,7 @@ use tonic::transport::Channel;
 
 use crate::util::error::Error;
 use std::io::{Cursor, Read};
+use rand::Rng;
 
 /// Maximum total attempts for gRPC sign_stream calls (including initial call).
 const MAX_ATTEMPTS: u32 = 4;
@@ -87,7 +88,10 @@ impl SignHandler for RemoteSigner {
             // denied) fail fast without retry.
             for attempt in 1..=MAX_ATTEMPTS {
                 if attempt > 1 {
-                    let backoff_ms = INITIAL_BACKOFF_MS * 2u64.pow(attempt - 2);
+                    // random jitter within one initial backoff interval avoids
+                    // retry storms when many workers fail simultaneously
+                    let jitter_ms = rand::thread_rng().gen_range(0..INITIAL_BACKOFF_MS);
+                    let backoff_ms = INITIAL_BACKOFF_MS * 2u64.pow(attempt - 2) + jitter_ms;
                     debug!(
                         "gRPC sign_stream attempt {}/{}, backoff {}ms",
                         attempt, MAX_ATTEMPTS, backoff_ms
@@ -112,22 +116,23 @@ impl SignHandler for RemoteSigner {
                     Err(e) => {
                         if !is_retryable_grpc_status(&e) {
                             *item.error.borrow_mut() = Err(Error::RemoteSignError(format!(
-                                "sign_stream failed at attempt {}: {:?}",
+                                "sign_stream failed at attempt {}: {}",
                                 attempt, e
                             )));
                             return item;
                         }
                         if attempt == MAX_ATTEMPTS {
+                            error!(
+                                "sign_stream failed after {} attempts: {}",
+                                MAX_ATTEMPTS, e
+                            );
                             *item.error.borrow_mut() = Err(Error::RemoteSignError(format!(
-                                "sign_stream failed after {} attempts: {:?}",
+                                "sign_stream failed after {} attempts: {}",
                                 MAX_ATTEMPTS, e
                             )));
                             return item;
                         }
-                        debug!(
-                            "sign_stream attempt {} failed (retryable): {:?}",
-                            attempt, e
-                        );
+                        debug!("sign_stream attempt {} failed (retryable): {}", attempt, e);
                     }
                 }
             }
