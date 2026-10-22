@@ -28,12 +28,9 @@ use tonic::transport::Channel;
 
 use crate::util::error::Error;
 use std::io::{Cursor, Read};
-use rand::Rng;
 
 /// Maximum total attempts for gRPC sign_stream calls (including initial call).
 const MAX_ATTEMPTS: u32 = 4;
-/// Initial backoff in milliseconds for gRPC retries.
-const INITIAL_BACKOFF_MS: u64 = 100;
 
 pub struct RemoteSigner {
     client: SignatrustClient<Channel>,
@@ -61,26 +58,44 @@ impl SignHandler for RemoteSigner {
         let mut signed_content = Vec::new();
         let read_data = item.raw_content.borrow().clone();
         for sign_content in read_data.into_iter() {
-            let mut sign_segments: Vec<SignStreamRequest> = Vec::new();
-            let mut buffer = vec![0; self.buffer_size];
-            let mut cursor = Cursor::new(sign_content);
-            while let Ok(length) = cursor.read(&mut buffer) {
-                if length == 0 {
-                    break;
+            // Build stream segments from the raw file content. The builder
+            // borrows `sign_content` so segments can be rebuilt on the retry
+            // path without keeping a full copy of the file around: the first
+            // attempt moves the segments (zero copy), only retries rebuild
+            // (and hence re-allocate) them. Dependencies on `self`/`item` are
+            // copied out first so the builder only holds `Send` values and can
+            // live across await points in the retry loop.
+            let buffer_size = self.buffer_size;
+            let token = self.token.clone();
+            let sign_options = item.sign_options.borrow().clone();
+            let key_type = format!("{}", item.key_type);
+            let key_id = item.key_id.clone();
+            let build_segments = |content: &[u8]| -> Vec<SignStreamRequest> {
+                let mut segments: Vec<SignStreamRequest> = Vec::new();
+                let mut buffer = vec![0; buffer_size];
+                let mut cursor = Cursor::new(content);
+                while let Ok(length) = cursor.read(&mut buffer) {
+                    if length == 0 {
+                        break;
+                    }
+                    segments.push(SignStreamRequest {
+                        data: buffer[0..length].to_vec(),
+                        options: sign_options.clone(),
+                        key_type: key_type.clone(),
+                        key_id: key_id.clone(),
+                        token: token.clone(),
+                    });
                 }
-                let content = buffer[0..length].to_vec();
-                sign_segments.push(SignStreamRequest {
-                    data: content,
-                    options: item.sign_options.borrow().clone(),
-                    key_type: format!("{}", item.key_type),
-                    key_id: item.key_id.clone(),
-                    token: self.token.clone(),
-                });
-            }
+                segments
+            };
+            let sign_segments = build_segments(sign_content.as_slice());
             if sign_segments.is_empty() {
                 *item.error.borrow_mut() = Err(Error::FileContentEmpty);
                 return item;
             }
+            // owned segments consumed exactly once (on the first attempt);
+            // retries rebuild segments from the borrowed raw content
+            let mut sign_segments = Some(sign_segments);
 
             // Retry gRPC sign_stream with exponential backoff on transient
             // errors only. Server-side business errors (non-empty error field
@@ -88,19 +103,28 @@ impl SignHandler for RemoteSigner {
             // denied) fail fast without retry.
             for attempt in 1..=MAX_ATTEMPTS {
                 if attempt > 1 {
-                    // random jitter within one initial backoff interval avoids
-                    // retry storms when many workers fail simultaneously
-                    let jitter_ms = rand::thread_rng().gen_range(0..INITIAL_BACKOFF_MS);
-                    let backoff_ms = INITIAL_BACKOFF_MS * 2u64.pow(attempt - 2) + jitter_ms;
+                    let backoff = crate::util::retry::backoff_duration(attempt);
                     debug!(
                         "gRPC sign_stream attempt {}/{}, backoff {}ms",
-                        attempt, MAX_ATTEMPTS, backoff_ms
+                        attempt,
+                        MAX_ATTEMPTS,
+                        backoff.as_millis()
                     );
-                    tokio::time::sleep(std::time::Duration::from_millis(backoff_ms)).await;
+                    tokio::time::sleep(backoff).await;
                 }
+                // move the segments on the first attempt and rebuild them only
+                // when a retry actually happens, keeping the happy path
+                // zero-copy (no full-file clone per in-flight item)
+                let stream_segments = if attempt == 1 {
+                    sign_segments
+                        .take()
+                        .expect("segments must be available on the first attempt")
+                } else {
+                    build_segments(sign_content.as_slice())
+                };
                 let result = self
                     .client
-                    .sign_stream(tokio_stream::iter(sign_segments.clone()))
+                    .sign_stream(tokio_stream::iter(stream_segments))
                     .await;
                 match result {
                     Ok(resp) => {

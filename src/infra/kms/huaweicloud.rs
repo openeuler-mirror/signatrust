@@ -19,7 +19,6 @@ use crate::util::error::{Error, Result};
 use async_trait::async_trait;
 use config::Value;
 use reqwest::{header::HeaderValue, Client, StatusCode};
-use rand::Rng;
 use secstr::*;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -178,7 +177,9 @@ impl HuaweiCloudKMS {
             .post(url)
             .header(
                 SIGN_HEADER,
-                HeaderValue::from_str(self.auth_token_cache.lock().await.as_str())?,
+                HeaderValue::from_str(self.auth_token_cache.lock().await.as_str()).map_err(
+                    |e| Error::ParameterError(format!("invalid auth token header: {}", e)),
+                )?,
             )
             .json(json)
             .send()
@@ -205,7 +206,9 @@ impl HuaweiCloudKMS {
                 msg: format!("unable to encode/decode data in kms, result {}", res.status()),
             });
         }
-        Ok(res.json::<serde_json::Value>().await?)
+        res.json::<serde_json::Value>().await.map_err(|e| {
+            Error::SerializeError(format!("unable to parse kms response: {}", e))
+        })
     }
 
     /// Perform a KMS request with exponential backoff (plus random jitter) on
@@ -228,15 +231,14 @@ impl HuaweiCloudKMS {
         }
         for attempt in 1..=max_attempts {
             if attempt > 1 {
-                // random jitter within one initial backoff interval avoids
-                // retry storms when many callers fail simultaneously
-                let jitter_ms = rand::thread_rng().gen_range(0..INITIAL_BACKOFF_MS);
-                let backoff_ms = INITIAL_BACKOFF_MS * 2u64.pow(attempt - 2) + jitter_ms;
+                let backoff = crate::util::retry::backoff_duration(attempt);
                 debug!(
                     "KMS request attempt {}/{}, backoff {}ms",
-                    attempt, max_attempts, backoff_ms
+                    attempt,
+                    max_attempts,
+                    backoff.as_millis()
                 );
-                tokio::time::sleep(std::time::Duration::from_millis(backoff_ms)).await;
+                tokio::time::sleep(backoff).await;
             }
             match self.do_request_once(url, json).await {
                 Ok(result) => return Ok(result),
@@ -266,8 +268,6 @@ impl HuaweiCloudKMS {
 
 /// Total attempts for KMS requests (including the initial call).
 const MAX_ATTEMPTS: u32 = 4;
-/// Initial backoff in milliseconds for KMS retries.
-const INITIAL_BACKOFF_MS: u64 = 100;
 
 /// Determine whether a KMS error is retryable.
 ///
