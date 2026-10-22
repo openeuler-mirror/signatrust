@@ -203,12 +203,15 @@ impl HuaweiCloudKMS {
         if res.status() != StatusCode::OK {
             return Err(Error::KMSInvokeError {
                 code: Some(res.status().as_u16()),
-                msg: format!("unable to encode/decode data in kms, result {}", res.status()),
+                msg: format!(
+                    "unable to encode/decode data in kms, result {}",
+                    res.status()
+                ),
             });
         }
-        res.json::<serde_json::Value>().await.map_err(|e| {
-            Error::SerializeError(format!("unable to parse kms response: {}", e))
-        })
+        res.json::<serde_json::Value>()
+            .await
+            .map_err(|e| Error::SerializeError(format!("unable to parse kms response: {}", e)))
     }
 
     /// Perform a KMS request with exponential backoff (plus random jitter) on
@@ -248,10 +251,7 @@ impl HuaweiCloudKMS {
                         continue;
                     }
                     if is_retryable_kms_error(&e) {
-                        error!(
-                            "KMS request failed after {} attempts: {}",
-                            max_attempts, e
-                        );
+                        error!("KMS request failed after {} attempts: {}", max_attempts, e);
                     }
                     return Err(e);
                 }
@@ -796,9 +796,9 @@ mod test {
 
     #[tokio::test]
     async fn test_kms_do_request_with_retry_zero_max_attempts() {
-        let mut server = mockito::Server::new();
-        let url = server.url();
-        let config = get_kms_config(Some(url.clone()), Some(url.clone()));
+        // no mock server needed: max_attempts=0 returns before any request
+        let url = "http://127.0.0.1:1";
+        let config = get_kms_config(Some(url.to_string()), Some(url.to_string()));
 
         let kms_client =
             HuaweiCloudKMS::new(&config).expect("create huaweicloud client should be successful");

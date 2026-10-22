@@ -146,10 +146,7 @@ impl SignHandler for RemoteSigner {
                             return item;
                         }
                         if attempt == MAX_ATTEMPTS {
-                            error!(
-                                "sign_stream failed after {} attempts: {}",
-                                MAX_ATTEMPTS, e
-                            );
+                            error!("sign_stream failed after {} attempts: {}", MAX_ATTEMPTS, e);
                             *item.error.borrow_mut() = Err(Error::RemoteSignError(format!(
                                 "sign_stream failed after {} attempts: {}",
                                 MAX_ATTEMPTS, e
